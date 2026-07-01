@@ -3,6 +3,7 @@ import { AdminRoute } from './components/AdminRoute'
 import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SupervisorRoute } from './components/SupervisorRoute'
+import { DailyScrumPage } from './pages/DailyScrumPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -10,6 +11,7 @@ import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
+import { TeamScrumPage } from './pages/TeamScrumPage'
 import { TeamTimesheetsPage } from './pages/TeamTimesheetsPage'
 import { TimeTrackingPage } from './pages/TimeTrackingPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
@@ -32,10 +34,12 @@ function App() {
           <Route path="/time-tracking" element={<TimeTrackingPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/my-kpis" element={<MyKpisPage />} />
+          <Route path="/daily-scrum" element={<DailyScrumPage />} />
 
           <Route element={<SupervisorRoute />}>
             <Route path="/team-timesheets" element={<TeamTimesheetsPage />} />
             <Route path="/team-kpis" element={<TeamKpisPage />} />
+            <Route path="/team-scrum" element={<TeamScrumPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>

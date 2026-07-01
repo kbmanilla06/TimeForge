@@ -241,6 +241,20 @@ Approved alongside the Sprint 6 (KPI Management Foundation) plan. These resolve 
 - **Visibility:** Mirrors Sprint 5 exactly — Employees see their own assignments/progress, Supervisors see their department's, Admins see all.
 - **Dashboards:** Not built in Sprint 6. Plain numeric progress only; charts/visualizations belong to the future Productivity Dashboards sprint (PRD §7.7).
 
+## Sprint 7 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 7 (Daily Scrum Reporting Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_07.md` and must be preserved unless explicitly changed.
+
+- **Lock mechanism:** A daily scrum entry becomes read-only for the employee after the first Supervisor/Admin comment. Derived from comment existence; no separate lock flag.
+- **Employee replies:** Employees cannot reply/comment on their own daily scrum entries in MVP.
+- **Comment history:** Supervisor/Admin comments are stored in a permanent comment history table, not a single overwritable comment field.
+- **Entry date:** The API accepts an explicit date, validated as non-future. The UI may default to today.
+- **Approval workflow:** No approval state machine for Daily Scrum in MVP. Supervisor/Admin comments are the only review action.
+- **Blocker detection:** No automated blocker detection in Sprint 7. AI-based recurring blocker detection is deferred.
+- **Linkage:** Daily Scrum entries are not linked to time entries, timesheets, or KPIs in Sprint 7.
+- **Visibility:** Mirrors Sprints 5-6 — Employees see their own entries, Supervisors see their department's, Admins see all.
+- **Notifications:** No Daily Scrum notification events in Sprint 7, because the locked Notifications decision's trigger list only includes timesheet events.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

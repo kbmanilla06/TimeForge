@@ -45,7 +45,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Manage KPIs')).not.toBeInTheDocument()
   })
 
-  it('shows the Time Tracking, Notifications, and My KPIs links to every authenticated role', () => {
+  it('shows the Time Tracking, Notifications, My KPIs, and Daily Scrum links to every authenticated role', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
 
     renderLayout()
@@ -53,24 +53,28 @@ describe('AppLayout', () => {
     expect(screen.getByText('Time Tracking')).toBeInTheDocument()
     expect(screen.getByText('Notifications')).toBeInTheDocument()
     expect(screen.getByText('My KPIs')).toBeInTheDocument()
+    expect(screen.getByText('Daily Scrum')).toBeInTheDocument()
   })
 
-  it('shows Team Timesheets and Team KPIs to supervisors and admins but not employees', () => {
+  it('shows Team Timesheets, Team KPIs, and Team Scrum to supervisors and admins but not employees', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
     const { unmount } = renderLayout()
     expect(screen.getByText('Team Timesheets')).toBeInTheDocument()
     expect(screen.getByText('Team KPIs')).toBeInTheDocument()
+    expect(screen.getByText('Team Scrum')).toBeInTheDocument()
     unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
     const adminRender = renderLayout()
     expect(adminRender.getByText('Team Timesheets')).toBeInTheDocument()
     expect(adminRender.getByText('Team KPIs')).toBeInTheDocument()
+    expect(adminRender.getByText('Team Scrum')).toBeInTheDocument()
     adminRender.unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
     renderLayout()
     expect(screen.queryByText('Team Timesheets')).not.toBeInTheDocument()
     expect(screen.queryByText('Team KPIs')).not.toBeInTheDocument()
+    expect(screen.queryByText('Team Scrum')).not.toBeInTheDocument()
   })
 })

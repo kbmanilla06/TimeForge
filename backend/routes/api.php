@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DailyScrumController;
 use App\Http\Controllers\KpiAssignmentController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
@@ -80,4 +81,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::delete('kpi-assignments/{kpiAssignment}', [KpiAssignmentController::class, 'destroy']);
 
     Route::get('team-members', [TeamMemberController::class, 'index']);
+
+    Route::get('daily-scrums', [DailyScrumController::class, 'index']);
+    Route::get('daily-scrums/team', [DailyScrumController::class, 'teamIndex']);
+    Route::post('daily-scrums', [DailyScrumController::class, 'store']);
+    Route::get('daily-scrums/{dailyScrum}', [DailyScrumController::class, 'show']);
+    Route::post('daily-scrums/{dailyScrum}/comments', [DailyScrumController::class, 'comment']);
 });

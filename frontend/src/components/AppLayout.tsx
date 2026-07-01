@@ -13,10 +13,12 @@ export function AppLayout() {
             <Link to="/time-tracking">Time Tracking</Link>
             <Link to="/notifications">Notifications</Link>
             <Link to="/my-kpis">My KPIs</Link>
+            <Link to="/daily-scrum">Daily Scrum</Link>
             {(user?.role === 'supervisor' || user?.role === 'admin') && (
               <>
                 <Link to="/team-timesheets">Team Timesheets</Link>
                 <Link to="/team-kpis">Team KPIs</Link>
+                <Link to="/team-scrum">Team Scrum</Link>
               </>
             )}
             {user?.role === 'admin' && (

@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(KpiAssignment::class);
     }
 
+    public function dailyScrums(): HasMany
+    {
+        return $this->hasMany(DailyScrum::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;

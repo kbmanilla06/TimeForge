@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), and Sprint 6 (KPI Management Foundation). No other business modules (daily scrum, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), and Sprint 7 (Daily Scrum Reporting Foundation). No other business modules (payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -118,6 +118,20 @@ You need the same two-user setup as above (Employee + their department Superviso
 9. Log in as a Supervisor from a different department; confirm "Team KPIs" does not show the assignment above, and that attempting to assign a KPI to a user or department outside their own department is rejected.
 10. As the Supervisor, remove one of the assignments via "Remove" on "Team KPIs"; confirm it disappears from both "Team KPIs" and the Employee's "My KPIs".
 
+## Testing Daily Scrum Manually
+
+You need the same two-user setup as above (Employee + their department Supervisor), plus the seeded Admin.
+
+1. Log in as the Employee; go to "Daily Scrum"; submit today's entry (previous work, planned work, a blocker, a note).
+2. Edit the entry (change the previous-work text) and save; confirm the change persists.
+3. Log in as that Employee's department Supervisor; go to "Team Scrum"; confirm the entry appears with the employee's name, date, and blocker visible.
+4. Add a comment; confirm it's saved.
+5. Log in as the Employee; go to "Daily Scrum"; confirm the comment is visible under that date's entry, and that the form for today is now disabled with a "reviewed and can no longer be edited" message.
+6. Log in as the Supervisor; add a second comment to the same entry; confirm both comments are retained (not overwritten).
+7. Log in as a Supervisor from a *different* department; confirm the entry does not appear in their "Team Scrum" view, and that commenting on it directly via the API is rejected.
+8. Log in as the seeded Admin; confirm every department's entries are visible in "Team Scrum" and commentable.
+9. Confirm an Employee has no way to comment on their own entry (no comment box appears on "Daily Scrum").
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -168,3 +182,5 @@ These are intentionally out of scope so far and must not be assumed when their s
 - KPI Productivity Dashboards (charts, real-time visualizations) — Sprint 6 only exposes plain numeric progress; see `docs/DECISIONS.md` Sprint 6 decisions.
 - KPI role-based and project-based assignment, periodic KPI resets, and automatic KPI-progress reversal on timesheet reopen — all explicitly deferred by Sprint 6 decisions.
 - KPI progress can become stale relative to an entry's edited value if an approved timesheet is reopened and the employee changes the reported progress afterward, since progress is only credited once (via `kpi_progress_applied_at`) and never re-evaluated. A documented Sprint 6 limitation, not a bug.
+- Daily Scrum has no approval workflow, no notification events, no linkage to time entries/timesheets/KPIs, and no automated (or AI-based) recurring-blocker detection — all explicitly deferred by Sprint 7 decisions. A Supervisor's team view lists blockers in plain text only; spotting patterns is a manual human task for MVP.
+- Employees cannot reply/comment on their own Daily Scrum entries in MVP — only Supervisors/Admins comment. A documented Sprint 7 limitation, not a bug.
