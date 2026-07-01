@@ -214,6 +214,19 @@ Approved alongside the Sprint 4 (Time Tracking Foundation) plan. These resolve t
 - **Submission/locking:** No submitted/approved/rejected status in Sprint 4. Time entries remain editable by their owner until Smart Timesheet / Approval Workflow is implemented in a later sprint.
 - **Read-only clients/projects access:** Add authenticated, read-only client/project list endpoints for non-admin users (`GET /api/projects`, `GET /api/clients`), so employees can select a client/project when logging time. Non-admins get no create/update/delete access — the existing `/api/admin/*` CRUD endpoints are unchanged.
 
+## Sprint 5 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_05.md` and must be preserved unless explicitly changed.
+
+- **KPI linkage:** Deferred entirely from Sprint 5. The KPI module does not exist yet, so no KPI progress behavior is invented here. A future KPI Management sprint must revisit timesheet approval to wire this in, per the already-locked KPI decision that approval happens via timesheet approval.
+- **Supervisor comments:** Stored in a separate comments/history table (`timesheet_comments`), not a single overwritable remarks field, so comments remain permanently attached across multiple review cycles.
+- **Task status:** Free-text `task_status` on `time_entries` for MVP. No task-status lookup table yet.
+- **Revision behavior:** Requesting revision reopens the whole daily timesheet for employee edits. No field-level revision controls.
+- **Reviewer scope:** Supervisors can review timesheets only for users in their own department. Admins can review any timesheet. Nobody — including a Supervisor or Admin — can review their own timesheet.
+- **Notifications:** Minimal in-app notifications for timesheet submitted, approved, rejected, revision requested, and reopened. No email notifications, no notification bell/badge widget — a simple notifications list page only.
+- **HR/Finance visibility:** Deferred until the payroll/reporting sprint.
+- **One-timesheet-per-day rule:** Enforced — one `Timesheet` row per `(user_id, date)`.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

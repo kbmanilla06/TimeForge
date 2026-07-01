@@ -1,4 +1,5 @@
 import type { Client, Department, Project } from './admin'
+import type { TimesheetStatus } from './timesheet'
 
 export interface TimeEntry {
   id: number
@@ -6,11 +7,13 @@ export interface TimeEntry {
   project_id: number | null
   client_id: number | null
   department_id: number | null
+  timesheet_id: number | null
   date: string
   start_time: string
   end_time: string | null
   duration_minutes: number | null
   task: string
+  task_status: string | null
   work_category: string
   description: string
   reference_links: string[] | null
@@ -18,6 +21,11 @@ export interface TimeEntry {
   project?: Project | null
   client?: Client | null
   department?: Department | null
+  timesheet?: { id: number; status: TimesheetStatus } | null
+}
+
+export function isTimeEntryLocked(entry: TimeEntry): boolean {
+  return entry.timesheet != null && entry.timesheet.status !== 'revision_requested'
 }
 
 export interface TimeEntrySummary {
@@ -36,6 +44,7 @@ export interface TimeEntryFormPayload {
   project_id?: number | null
   client_id?: number | null
   task: string
+  task_status?: string | null
   work_category: string
   description: string
   reference_links?: string[] | null
@@ -46,6 +55,7 @@ export interface StartTimerPayload {
   project_id?: number | null
   client_id?: number | null
   task: string
+  task_status?: string | null
   work_category: string
   description: string
   reference_links?: string[] | null

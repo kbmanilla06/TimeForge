@@ -6,8 +6,10 @@ use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TimeEntryController;
+use App\Http\Controllers\TimesheetController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -52,4 +54,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::patch('time-entries/{timeEntry}', [TimeEntryController::class, 'update']);
     Route::patch('time-entries/{timeEntry}/stop', [TimeEntryController::class, 'stopTimer']);
     Route::delete('time-entries/{timeEntry}', [TimeEntryController::class, 'destroy']);
+
+    Route::get('timesheets', [TimesheetController::class, 'index']);
+    Route::get('timesheets/team', [TimesheetController::class, 'teamIndex']);
+    Route::post('timesheets', [TimesheetController::class, 'store']);
+    Route::get('timesheets/{timesheet}', [TimesheetController::class, 'show']);
+    Route::patch('timesheets/{timesheet}/approve', [TimesheetController::class, 'approve']);
+    Route::patch('timesheets/{timesheet}/reject', [TimesheetController::class, 'reject']);
+    Route::patch('timesheets/{timesheet}/request-revision', [TimesheetController::class, 'requestRevision']);
+    Route::patch('timesheets/{timesheet}/reopen', [TimesheetController::class, 'reopen']);
+
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead']);
 });

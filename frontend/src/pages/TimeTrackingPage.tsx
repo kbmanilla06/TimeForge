@@ -11,8 +11,10 @@ import {
   stopTimer,
   updateTimeEntry,
 } from '../lib/timeEntryApi'
+import { listMyTimesheets, submitTimesheet } from '../lib/timesheetApi'
 import type { Client, Project } from '../types/admin'
-import type { TimeEntry, TimeEntryFormPayload, TimeEntrySummary } from '../types/timeEntry'
+import { isTimeEntryLocked, type TimeEntry, type TimeEntryFormPayload, type TimeEntrySummary } from '../types/timeEntry'
+import type { Timesheet } from '../types/timesheet'
 
 const EMPTY_FORM = {
   date: '',
@@ -47,8 +49,19 @@ function toDatetimeLocal(value: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+function groupByDate(entries: TimeEntry[]): [string, TimeEntry[]][] {
+  const groups = new Map<string, TimeEntry[]>()
+  for (const entry of entries) {
+    const list = groups.get(entry.date) ?? []
+    list.push(entry)
+    groups.set(entry.date, list)
+  }
+  return Array.from(groups.entries()).sort(([a], [b]) => (a < b ? 1 : -1))
+}
+
 export function TimeTrackingPage() {
   const [entries, setEntries] = useState<TimeEntry[]>([])
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([])
   const [summary, setSummary] = useState<TimeEntrySummary | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -88,16 +101,18 @@ export function TimeTrackingPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const [entryList, summaryData, projectList, clientList] = await Promise.all([
+      const [entryList, summaryData, projectList, clientList, timesheetList] = await Promise.all([
         listTimeEntries(),
         getSummary(),
         listProjectsForSelf(),
         listClientsForSelf(),
+        listMyTimesheets(),
       ])
       setEntries(entryList)
       setSummary(summaryData)
       setProjects(projectList)
       setClients(clientList)
+      setTimesheets(timesheetList)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Unable to load time tracking data.')
     } finally {
@@ -220,6 +235,16 @@ export function TimeTrackingPage() {
       await loadAll()
     } catch (err) {
       setTimerError(err instanceof ApiError ? err.message : 'Unable to stop timer.')
+    }
+  }
+
+  async function handleSubmitTimesheet(date: string) {
+    setError(null)
+    try {
+      await submitTimesheet({ date })
+      await loadAll()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to submit timesheet.')
     }
   }
 
@@ -458,54 +483,98 @@ export function TimeTrackingPage() {
         </form>
       </section>
 
-      <section className="mt-6">
+      <section className="mt-6 space-y-6">
         <h2 className="text-lg font-medium text-slate-900">My Time Entries</h2>
-        <table className="mt-3 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
-              <th className="py-2">Date</th>
-              <th className="py-2">Duration</th>
-              <th className="py-2">Project</th>
-              <th className="py-2">Task</th>
-              <th className="py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.id} className="border-b border-slate-100">
-                <td className="py-2">{entry.date}</td>
-                <td className="py-2">{entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}</td>
-                <td className="py-2">{entry.project?.name ?? '—'}</td>
-                <td className="py-2">{entry.task}</td>
-                <td className="space-x-2 py-2">
+
+        {groupByDate(entries).map(([date, dateEntries]) => {
+          const timesheet = timesheets.find((t) => t.date === date)
+          const canSubmit = !timesheet || timesheet.status === 'revision_requested'
+          const hasRunningEntry = dateEntries.some((entry) => entry.end_time === null)
+
+          return (
+            <div key={date} className="rounded-md border border-slate-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-slate-900">{date}</p>
+                  <p className="text-sm text-slate-500">
+                    Status: {timesheet ? timesheet.status : 'not submitted'}
+                  </p>
+                </div>
+                {canSubmit && (
                   <button
                     type="button"
-                    onClick={() => startEditing(entry)}
-                    disabled={!entry.end_time}
-                    className="text-slate-900 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                    onClick={() => handleSubmitTimesheet(date)}
+                    disabled={hasRunningEntry}
+                    className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                    title={hasRunningEntry ? 'Stop the running timer before submitting' : undefined}
                   >
-                    Edit
+                    Submit Timesheet
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(entry)}
-                    disabled={!entry.end_time}
-                    className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {entries.length === 0 && (
-              <tr>
-                <td colSpan={5} className="py-4 text-center text-slate-400">
-                  No time entries yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                )}
+              </div>
+
+              {timesheet && (timesheet.comments ?? []).length > 0 && (
+                <div className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
+                  {(timesheet.comments ?? []).map((comment) => (
+                    <p key={comment.id} className="text-slate-600">
+                      <span className="font-medium">{comment.author?.name ?? 'Reviewer'}</span> ({comment.action}):{' '}
+                      {comment.comment ?? <em>no comment</em>}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              <table className="mt-3 w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500">
+                    <th className="py-2">Duration</th>
+                    <th className="py-2">Project</th>
+                    <th className="py-2">Task</th>
+                    <th className="py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dateEntries.map((entry) => {
+                    const locked = isTimeEntryLocked(entry)
+                    const disabled = !entry.end_time || locked
+
+                    return (
+                      <tr key={entry.id} className="border-b border-slate-100">
+                        <td className="py-2">
+                          {entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}
+                        </td>
+                        <td className="py-2">{entry.project?.name ?? '—'}</td>
+                        <td className="py-2">{entry.task}</td>
+                        <td className="space-x-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditing(entry)}
+                            disabled={disabled}
+                            title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                            className="text-slate-900 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(entry)}
+                            disabled={disabled}
+                            title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                            className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        })}
+
+        {entries.length === 0 && <p className="text-slate-400">No time entries yet.</p>}
       </section>
     </main>
   )

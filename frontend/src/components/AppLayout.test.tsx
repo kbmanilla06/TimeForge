@@ -43,11 +43,28 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Manage Projects')).not.toBeInTheDocument()
   })
 
-  it('shows the Time Tracking link to every authenticated role', () => {
+  it('shows the Time Tracking and Notifications links to every authenticated role', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
 
     renderLayout()
 
     expect(screen.getByText('Time Tracking')).toBeInTheDocument()
+    expect(screen.getByText('Notifications')).toBeInTheDocument()
+  })
+
+  it('shows Team Timesheets to supervisors and admins but not employees', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
+    const { unmount } = renderLayout()
+    expect(screen.getByText('Team Timesheets')).toBeInTheDocument()
+    unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
+    const adminRender = renderLayout()
+    expect(adminRender.getByText('Team Timesheets')).toBeInTheDocument()
+    adminRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    renderLayout()
+    expect(screen.queryByText('Team Timesheets')).not.toBeInTheDocument()
   })
 })

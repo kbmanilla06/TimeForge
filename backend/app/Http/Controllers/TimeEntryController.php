@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class TimeEntryController extends Controller
 {
-    private const RELATIONS = ['project', 'client', 'department'];
+    private const RELATIONS = ['project', 'client', 'department', 'timesheet'];
 
     public function index(Request $request): JsonResponse
     {

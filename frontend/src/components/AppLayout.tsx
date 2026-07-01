@@ -11,6 +11,10 @@ export function AppLayout() {
           <div className="flex items-center gap-4 text-sm font-medium text-slate-700">
             <Link to="/">Home</Link>
             <Link to="/time-tracking">Time Tracking</Link>
+            <Link to="/notifications">Notifications</Link>
+            {(user?.role === 'supervisor' || user?.role === 'admin') && (
+              <Link to="/team-timesheets">Team Timesheets</Link>
+            )}
             {user?.role === 'admin' && (
               <>
                 <Link to="/admin/users">Manage Users</Link>

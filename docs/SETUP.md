@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), and Sprint 4 (Time Tracking Foundation). No other business modules (timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), and Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation). No other business modules (daily scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -86,6 +86,23 @@ Every authenticated role (not just Admin) has access to the "Time Tracking" nav 
 8. Confirm the summary panel shows correct Today / This Week / This Month / Payroll Period totals, and that Edit/Delete are disabled for the currently-running entry (only available once stopped).
 9. Log in as a second user; confirm they cannot see the first user's time entries (via the UI or by calling `GET /api/time-entries` directly with their own token).
 
+## Testing Smart Timesheet Submission And Supervisor Approval Manually
+
+You need at least two users in the same department with different roles (Employee + Supervisor), plus the seeded Admin — create/assign via the Sprint 2 admin UI if not already present.
+
+1. Log in as the Employee; go to Time Tracking; log some time for today (timer or manual entry).
+2. Under "My Time Entries", find today's date group; confirm it shows "Status: not submitted" and a "Submit Timesheet" button.
+3. Click "Submit Timesheet"; confirm the status changes to `submitted` and Edit/Delete on that date's entries become disabled.
+4. Log out; log in as that Employee's department Supervisor; click "Team Timesheets" in the nav; confirm the submission appears with the employee's name, date, and linked entries.
+5. Type a comment and click "Reject"; confirm it requires a comment (try submitting empty first).
+6. Log back in as the Employee; confirm the rejection comment is visible under that date's entries, but the entries remain locked (rejection is terminal for MVP — only Supervisor/Admin actions unlock).
+7. Repeat steps 1-4 with a fresh date, but this time click "Request Revision" with a comment instead of Reject.
+8. Log back in as the Employee; confirm the comment is visible AND that date's entries are now editable again. Edit one, then click "Submit Timesheet" again for that same date.
+9. Log in as the Supervisor; approve it with a comment; confirm entries stay locked and the comment history shows both the revision-request and approval comments (not overwritten).
+10. Log in as a Supervisor from a *different* department; confirm "Team Timesheets" shows none of the above.
+11. Log in as the seeded Admin; go to Team Timesheets; confirm the approved timesheet is visible with a "Reopen" button (Supervisors do not see this button); reopen it with a comment; confirm status returns to `revision_requested` and entries unlock again.
+12. Check the "Notifications" page for each role at each step above (submitted, approved, rejected, revision requested, reopened); mark one as read.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -129,4 +146,8 @@ These are intentionally out of scope so far and must not be assumed when their s
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
 - Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).
-- Smart Timesheet submission and the submitted/locked entry state, Supervisor Approval Workflow, and KPI linkage from time entries — none of these exist yet; all Sprint 4 time entries remain editable/deletable by their owner indefinitely until a later sprint introduces submission.
+- KPI Management and any KPI-progress linkage from timesheet approval — deferred entirely from Sprint 5 (see `docs/DECISIONS.md` Sprint 5 decisions); must be revisited once the KPI module exists.
+- Payroll Preparation and HR/Finance visibility into approved timesheets — deferred until that sprint.
+- Field-level "flagged" revision requests — revision request reopens the whole day's entries, not specific fields.
+- Email notifications and a nav notification bell/badge — only a "Notifications" list page exists for now.
+- Rejected timesheets are currently terminal (no owner resubmission path) — only "Request Revision" reopens entries for editing. This is a faithful implementation of the approved decisions but a known usability gap worth revisiting if it proves too restrictive in practice.

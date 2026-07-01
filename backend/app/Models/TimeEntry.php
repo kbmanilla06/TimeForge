@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TimesheetStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,10 +18,12 @@ class TimeEntry extends Model
         'project_id',
         'client_id',
         'department_id',
+        'timesheet_id',
         'date',
         'start_time',
         'end_time',
         'task',
+        'task_status',
         'work_category',
         'description',
         'reference_links',
@@ -65,6 +68,21 @@ class TimeEntry extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function timesheet(): BelongsTo
+    {
+        return $this->belongsTo(Timesheet::class);
+    }
+
+    /**
+     * An entry is locked once its timesheet exists and isn't back in a
+     * revision-requested (editable) state.
+     */
+    public function isLocked(): bool
+    {
+        return $this->timesheet !== null
+            && $this->timesheet->status !== TimesheetStatus::RevisionRequested;
     }
 
     /**

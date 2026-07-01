@@ -31,6 +31,7 @@ class UpdateTimeEntryRequest extends FormRequest
             'project_id' => ['nullable', 'exists:projects,id'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'task' => ['required', 'string', 'max:255'],
+            'task_status' => ['nullable', 'string', 'max:255'],
             'work_category' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'reference_links' => ['nullable', 'array'],

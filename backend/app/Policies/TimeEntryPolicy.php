@@ -32,18 +32,20 @@ class TimeEntryPolicy
     }
 
     /**
-     * Only the owner may update their entry.
+     * Only the owner may update their entry, and only while it isn't
+     * locked by a submitted/approved/rejected timesheet (Sprint 5).
      */
     public function update(User $user, TimeEntry $timeEntry): bool
     {
-        return $timeEntry->user_id === $user->id;
+        return $timeEntry->user_id === $user->id && ! $timeEntry->isLocked();
     }
 
     /**
-     * Only the owner may delete their entry.
+     * Only the owner may delete their entry, and only while it isn't
+     * locked by a submitted/approved/rejected timesheet (Sprint 5).
      */
     public function delete(User $user, TimeEntry $timeEntry): bool
     {
-        return $timeEntry->user_id === $user->id;
+        return $timeEntry->user_id === $user->id && ! $timeEntry->isLocked();
     }
 }

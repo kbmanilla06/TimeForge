@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../lib/apiClient'
 import * as timeEntryApi from '../lib/timeEntryApi'
+import * as timesheetApi from '../lib/timesheetApi'
 import { TimeTrackingPage } from './TimeTrackingPage'
 
 vi.mock('../lib/timeEntryApi')
+vi.mock('../lib/timesheetApi')
 
 const baseSummary = {
   today_minutes: 60,
@@ -29,6 +31,7 @@ describe('TimeTrackingPage', () => {
     ])
     vi.mocked(timeEntryApi.listClientsForSelf).mockResolvedValue([{ id: 1, name: 'Acme Corp' }])
     vi.mocked(timeEntryApi.getSummary).mockResolvedValue(baseSummary)
+    vi.mocked(timesheetApi.listMyTimesheets).mockResolvedValue([])
   })
 
   it('renders the summary totals and existing entries', async () => {
@@ -39,6 +42,8 @@ describe('TimeTrackingPage', () => {
         project_id: 1,
         client_id: null,
         department_id: null,
+        timesheet_id: null,
+        task_status: null,
         date: '2026-01-14',
         start_time: '2026-01-14 09:00:00',
         end_time: '2026-01-14 10:00:00',
@@ -67,6 +72,8 @@ describe('TimeTrackingPage', () => {
         project_id: null,
         client_id: null,
         department_id: null,
+        timesheet_id: null,
+        task_status: null,
         date: '2026-01-14',
         start_time: new Date().toISOString(),
         end_time: null,
@@ -94,6 +101,8 @@ describe('TimeTrackingPage', () => {
       project_id: null,
       client_id: null,
       department_id: null,
+      timesheet_id: null,
+      task_status: null,
       date: '2026-01-14',
       start_time: new Date().toISOString(),
       end_time: null,
@@ -169,6 +178,8 @@ describe('TimeTrackingPage', () => {
         project_id: null,
         client_id: null,
         department_id: null,
+        timesheet_id: null,
+        task_status: null,
         date: '2026-01-14',
         start_time: new Date().toISOString(),
         end_time: null,
@@ -186,5 +197,144 @@ describe('TimeTrackingPage', () => {
 
     expect(screen.getByRole('button', { name: 'Edit' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  })
+
+  it('shows a Submit Timesheet button for a date with no timesheet yet, and submits it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      {
+        id: 5,
+        user_id: 1,
+        project_id: null,
+        client_id: null,
+        department_id: null,
+        timesheet_id: null,
+        date: '2026-01-14',
+        start_time: '2026-01-14 09:00:00',
+        end_time: '2026-01-14 10:00:00',
+        duration_minutes: 60,
+        task: 'Unsubmitted work',
+        task_status: null,
+        work_category: 'Development',
+        description: 'Not yet submitted.',
+        reference_links: null,
+        deliverables: null,
+        timesheet: null,
+      },
+    ])
+    vi.mocked(timesheetApi.submitTimesheet).mockResolvedValue({
+      id: 1,
+      user_id: 1,
+      date: '2026-01-14',
+      status: 'submitted',
+      submitted_at: '2026-01-14T10:00:00Z',
+      reviewed_by: null,
+      reviewed_at: null,
+    })
+
+    render(<TimeTrackingPage />)
+    await screen.findByText('Unsubmitted work')
+
+    expect(screen.getByText('Status: not submitted')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Submit Timesheet' }))
+
+    await waitFor(() => {
+      expect(timesheetApi.submitTimesheet).toHaveBeenCalledWith({ date: '2026-01-14' })
+    })
+  })
+
+  it('does not show a Submit Timesheet button once a date is submitted, and disables edit/delete', async () => {
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      {
+        id: 6,
+        user_id: 1,
+        project_id: null,
+        client_id: null,
+        department_id: null,
+        timesheet_id: 1,
+        date: '2026-01-14',
+        start_time: '2026-01-14 09:00:00',
+        end_time: '2026-01-14 10:00:00',
+        duration_minutes: 60,
+        task: 'Submitted work',
+        task_status: null,
+        work_category: 'Development',
+        description: 'Already submitted.',
+        reference_links: null,
+        deliverables: null,
+        timesheet: { id: 1, status: 'submitted' },
+      },
+    ])
+    vi.mocked(timesheetApi.listMyTimesheets).mockResolvedValue([
+      {
+        id: 1,
+        user_id: 1,
+        date: '2026-01-14',
+        status: 'submitted',
+        submitted_at: '2026-01-14T10:00:00Z',
+        reviewed_by: null,
+        reviewed_at: null,
+      },
+    ])
+
+    render(<TimeTrackingPage />)
+    await screen.findByText('Submitted work')
+
+    expect(screen.getByText('Status: submitted')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Submit Timesheet' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
+  })
+
+  it('shows supervisor comments for a rejected timesheet', async () => {
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      {
+        id: 7,
+        user_id: 1,
+        project_id: null,
+        client_id: null,
+        department_id: null,
+        timesheet_id: 1,
+        date: '2026-01-14',
+        start_time: '2026-01-14 09:00:00',
+        end_time: '2026-01-14 10:00:00',
+        duration_minutes: 60,
+        task: 'Needs fixes',
+        task_status: null,
+        work_category: 'Development',
+        description: 'Rejected work.',
+        reference_links: null,
+        deliverables: null,
+        timesheet: { id: 1, status: 'rejected' },
+      },
+    ])
+    vi.mocked(timesheetApi.listMyTimesheets).mockResolvedValue([
+      {
+        id: 1,
+        user_id: 1,
+        date: '2026-01-14',
+        status: 'rejected',
+        submitted_at: '2026-01-14T10:00:00Z',
+        reviewed_by: 2,
+        reviewed_at: '2026-01-14T11:00:00Z',
+        comments: [
+          {
+            id: 1,
+            timesheet_id: 1,
+            author_id: 2,
+            action: 'rejected',
+            comment: 'Please add more detail.',
+            author: { id: 2, name: 'Sam Supervisor' },
+            created_at: '2026-01-14T11:00:00Z',
+          },
+        ],
+      },
+    ])
+
+    render(<TimeTrackingPage />)
+
+    expect(await screen.findByText(/Please add more detail\./)).toBeInTheDocument()
+    expect(screen.getByText(/Sam Supervisor/)).toBeInTheDocument()
   })
 })

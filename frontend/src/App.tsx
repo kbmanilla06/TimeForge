@@ -2,10 +2,13 @@ import { Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/AdminRoute'
 import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { SupervisorRoute } from './components/SupervisorRoute'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { TeamTimesheetsPage } from './pages/TeamTimesheetsPage'
 import { TimeTrackingPage } from './pages/TimeTrackingPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
@@ -24,6 +27,11 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/time-tracking" element={<TimeTrackingPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+
+          <Route element={<SupervisorRoute />}>
+            <Route path="/team-timesheets" element={<TeamTimesheetsPage />} />
+          </Route>
 
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UsersPage />} />
