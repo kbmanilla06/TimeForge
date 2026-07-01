@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DailyScrumController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KpiAssignmentController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
@@ -96,4 +97,6 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     Route::get('team-hours-report/export/pdf', [TeamHoursReportController::class, 'exportPdf']);
     Route::get('team-hours-report/export/excel', [TeamHoursReportController::class, 'exportExcel']);
+
+    Route::get('dashboard', [DashboardController::class, 'index']);
 });

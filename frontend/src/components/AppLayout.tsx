@@ -22,6 +22,9 @@ export function AppLayout() {
               </>
             )}
             {(user?.role === 'admin' || user?.role === 'hr_finance') && <Link to="/payroll">Payroll</Link>}
+            {(user?.role === 'supervisor' || user?.role === 'admin' || user?.role === 'hr_finance') && (
+              <Link to="/dashboard">Dashboard</Link>
+            )}
             {user?.role === 'admin' && (
               <>
                 <Link to="/admin/users">Manage Users</Link>

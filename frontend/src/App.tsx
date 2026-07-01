@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/AdminRoute'
 import { AppLayout } from './components/AppLayout'
+import { DashboardRoute } from './components/DashboardRoute'
 import { PayrollRoute } from './components/PayrollRoute'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SupervisorRoute } from './components/SupervisorRoute'
 import { DailyScrumPage } from './pages/DailyScrumPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -46,6 +48,10 @@ function App() {
 
           <Route element={<PayrollRoute />}>
             <Route path="/payroll" element={<PayrollPage />} />
+          </Route>
+
+          <Route element={<DashboardRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>

@@ -283,16 +283,26 @@ Approved alongside the Sprint 9 (Reporting And Exports Foundation) plan. These r
 - **Branding:** Text-only TimeForge branding in exported reports. No logo required.
 - **Scope:** No dashboards, charts, stored reports, queued exports, AI summaries, or new report types in Sprint 9.
 
+## Sprint 10 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 10 (Dashboard And Analytics Foundation) plan. These resolve `docs/QUESTIONS.md` Section Q (previously OPEN, now RESOLVED — see that section) plus the implementation-level gaps flagged in `sprints/SPRINT_10.md`, and must be preserved unless explicitly changed.
+
+- **Dashboard role scoping (resolves Section Q, Question 1):** Admin and HR/Finance see organization-wide dashboard metrics. Supervisors see their own department's dashboard metrics. Employees do not get a dedicated Dashboard page in Sprint 10, because their self-productivity needs are already covered by the Time Tracking summary and My KPIs page.
+- **Refresh behavior (resolves Section Q, Question 2):** No real-time push, no scheduled dashboard jobs, and no background refresh in Sprint 10. Dashboard data is recomputed on page load and when the user clicks a manual Refresh button.
+- **Metric definitions:** Productivity = approved hours. Department performance = approved hours plus KPI completion. Billable vs. non-billable is inferred from whether the time entry has an associated project/client, because no explicit billable flag exists yet.
+- **Period behavior:** Reuse the existing semi-monthly payroll period helper. Add a day-by-day breakdown only where needed, for attendance trends.
+- **Chart library:** Recharts for frontend dashboard charts.
+- **Payroll summary visibility:** Payroll summary appears only for Admin and HR/Finance. It is omitted entirely from Supervisor dashboard responses.
+- **Dashboard export:** No export button on the dashboard in Sprint 10. Sprint 9 already covers exports.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:
 
-- Dashboard role-scoping and refresh behavior (real-time vs. scheduled/manual).
 - Attachment malware scanning requirement.
 - Attachment/reference file retention period.
 - Deployment target and production hosting details.
 - AI provider selection and external data privacy rules.
-- Chart/visualization library (dashboard sprint) and PDF/Excel export libraries (reporting sprint) — Claude Code may propose these when reached.
 
 Full question text and traceability: `docs/QUESTIONS.md`.
 

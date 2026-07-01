@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), and Sprint 9 (Reporting And Exports Foundation). No other business modules (AI, dashboards, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), and Sprint 10 (Dashboard And Analytics Foundation). No other business modules (AI, attachments) exist yet.
 
 ## Prerequisites
 
@@ -157,6 +157,18 @@ Uses the same Employee/Supervisor/Admin/HR-Finance set from the Payroll walkthro
 6. Log in as an Employee; confirm no export buttons appear anywhere, and all four export endpoints (`/api/payroll/export/pdf`, `/export/excel`, `/api/team-hours-report/export/pdf`, `/export/excel`) return 403 if called directly.
 7. Log in as the Admin; confirm they can export both report types, for any department, exactly like HR/Finance.
 
+## Testing Dashboard And Analytics Manually
+
+Uses the same Employee/Supervisor/Admin/HR-Finance set and logged time from the Payroll and Reporting manual tests above (8-hour and 10-hour approved days for the Employee, in the same department as the Supervisor).
+
+1. Log in as HR/Finance; go to "Dashboard"; confirm it's labeled "Organization-wide" and shows Total Hours `18.00`, Billable/Non-Billable hours, a Pending Approvals count, a Department Performance chart bar for the Employee's department, a Project Allocation chart, an Attendance Trend chart covering every day in the period, KPI Completion progress bars (if any KPIs are assigned), an Employee Productivity table row for the Employee, and a Payroll Summary card matching the on-screen Payroll page's totals.
+2. Change the date picker to a different period; confirm every metric updates to reflect only that period.
+3. Log a new time entry in another browser tab as the Employee, then click "Refresh" on the Dashboard (without changing the date); confirm the numbers update — and confirm they do *not* update automatically without clicking Refresh or reloading.
+4. Log in as the department Supervisor; go to "Dashboard"; confirm it's labeled "Department: <name>", shows the same metrics scoped to that department only, and has **no Payroll Summary card anywhere**.
+5. Log in as a Supervisor from a different department; confirm their Dashboard shows different numbers, scoped to their own department only.
+6. Log in as an Employee; confirm no "Dashboard" nav link appears, and `GET /api/dashboard` returns 403 if called directly.
+7. Log in as the Admin; confirm they see the same organization-wide view HR/Finance sees, including the Payroll Summary card.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -195,7 +207,6 @@ npm run test
 
 These are intentionally out of scope so far and must not be assumed when their sprint is reached — see `docs/QUESTIONS.md` Section Q, and the flagged sub-items in Section P:
 
-- Dashboard role-scoping and refresh behavior.
 - Attachment malware scanning and retention period. Attachment upload/storage itself is not implemented yet (Sprint 4 deferred it entirely — see `docs/DECISIONS.md` Sprint 4 decisions).
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
@@ -215,3 +226,7 @@ These are intentionally out of scope so far and must not be assumed when their s
 - Queue-based/asynchronous export, any stored report record, and the "payroll report ready" notification event — all explicitly deferred by Sprint 9 decisions. Every export in Sprint 9 is generated fresh, synchronously, on each request.
 - No new on-screen report-preview page exists for either report type — "Export PDF"/"Export Excel" buttons were added to the existing `PayrollPage` and `TeamTimesheetsPage` instead. See `docs/DECISIONS.md` Sprint 9 decisions.
 - `maatwebsite/excel` could not be installed (its pinned `phpoffice/phpspreadsheet` dependency requires `php <8.5.0`; this environment runs PHP 8.5.7). Excel export uses `phpoffice/phpspreadsheet` directly instead — the same underlying engine, used via its own API rather than the Laravel wrapper. If a future environment runs an older PHP, `maatwebsite/excel` could be reconsidered, but there's no reason to revisit this while on PHP 8.5.
+- Employees do not get a Dashboard in Sprint 10 — only Supervisor (own department), Admin, and HR/Finance (organization-wide) do. Employees' own productivity monitoring remains available via the Time Tracking summary and My KPIs page, per Sprint 10's resolution of `docs/QUESTIONS.md` Section Q.
+- No real-time push or scheduled background refresh for the Dashboard — data is recomputed on page load and via a manual "Refresh" button only, per Sprint 10 decisions.
+- No export button on the Dashboard, no new database migrations, and no `billable` schema field — billable/non-billable is inferred from whether a time entry has a linked project/client, an heuristic with no prior precedent in the schema. All explicitly scoped by Sprint 10 decisions.
+- "Employee productivity" and "department performance" use simple, literal definitions (approved hours; approved hours plus average KPI completion) rather than any weighted scoring formula, since none is defined anywhere in the PRD or decisions.

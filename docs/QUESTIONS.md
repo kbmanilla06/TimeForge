@@ -214,12 +214,12 @@ Resolved alongside the Sprint 3 (Client And Project Management Foundation) plan;
 5. Should attachment storage be local disk, or a cloud object store (e.g., S3-compatible)?
    **Answer:** Local storage for MVP. Admin can revise this later.
 
-## Q. Dashboard Access And Behavior — OPEN
+## Q. Dashboard Access And Behavior — RESOLVED (Sprint 10)
 
 1. Should dashboard data be role-scoped (e.g., Supervisors see only their team, Admin/HR see the whole organization)?
+   **Answer:** Yes. Admin and HR/Finance see organization-wide dashboard metrics. Supervisors see their own department's metrics only. Employees do not get a dedicated Dashboard page in Sprint 10, because their self-productivity monitoring needs are already covered by the Time Tracking summary and My KPIs page.
 2. Should dashboards refresh in real time, or on a scheduled/manual basis?
-
-**Status:** Not answered in the MVP decision round. Must be resolved before the Dashboard/Analytics sprint begins.
+   **Answer:** Neither literal real-time push nor a scheduled background job. Dashboard data is recomputed on page load and when the user clicks a manual Refresh button — no real-time push, no scheduled dashboard jobs, no background refresh in Sprint 10.
 
 ## R. General Policy For Undefined Items — RESOLVED (MVP)
 

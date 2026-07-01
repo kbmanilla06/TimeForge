@@ -98,4 +98,25 @@ describe('AppLayout', () => {
     renderLayout()
     expect(screen.queryByText('Payroll')).not.toBeInTheDocument()
   })
+
+  it('shows Dashboard to supervisor, admin, and hr_finance but not employees', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
+    const { unmount } = renderLayout()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
+    const adminRender = renderLayout()
+    expect(adminRender.getByText('Dashboard')).toBeInTheDocument()
+    adminRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
+    const hrRender = renderLayout()
+    expect(hrRender.getByText('Dashboard')).toBeInTheDocument()
+    hrRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    renderLayout()
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument()
+  })
 })
