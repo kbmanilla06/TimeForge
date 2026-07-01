@@ -14,6 +14,8 @@ export function AppLayout() {
               <>
                 <Link to="/admin/users">Manage Users</Link>
                 <Link to="/admin/departments">Manage Departments</Link>
+                <Link to="/admin/clients">Manage Clients</Link>
+                <Link to="/admin/projects">Manage Projects</Link>
               </>
             )}
           </div>

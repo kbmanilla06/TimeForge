@@ -162,7 +162,7 @@ These decisions were approved as the MVP scope on 2026-07-01. Full question-to-a
 
 - MVP includes basic client and project records, since time entries require client and project fields.
 - Advanced project management is out of scope.
-- Ownership of client/project CRUD, project lifecycle status, project-client cardinality, and multi-project employee assignment are NOT yet decided — see Decisions Still Required.
+- Client and Project CRUD ownership, lifecycle/status, cardinality, and employee-project assignment are resolved — see "Sprint 3 Implementation Decisions (Approved)" below.
 
 ### Attachments
 
@@ -191,15 +191,21 @@ Approved alongside the Sprint 2 (Admin User And Department Management UI) plan. 
 - **Frontend test runner:** Vitest + React Testing Library, for Sprint 2 and going forward — Vite-native, fits the existing React/TypeScript stack.
 - **User edit scope:** The Admin edit form may update only `name`, `email`, `role`, and `department_id`, matching the existing `UpdateUserRequest`. Status changes remain separate Activate/Deactivate actions. No admin-triggered password reset for other users in Sprint 2.
 
+## Sprint 3 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 3 (Client And Project Management Foundation) plan. These resolve `docs/QUESTIONS.md` Section O and the implementation-level gaps flagged in `sprints/SPRINT_03.md`, and must be preserved unless explicitly changed.
+
+- **Client CRUD:** Admin-only for MVP, mirroring the Department pattern.
+- **Project CRUD:** Admin-only for MVP.
+- **Project lifecycle/status:** None for MVP. Project fields stay minimal: `name` and optional `client_id`. No `description` field — one was not already planned in `sprints/SPRINT_03.md`, so the "if already planned" condition in the approval does not apply; none is added.
+- **Project-client cardinality:** A project may belong to zero or one client (nullable foreign key). No many-to-many relationship in MVP.
+- **Employee-project assignment:** No employee-project assignment table in MVP. When Time Tracking is built, any employee may reference any active/available project unless a later approved decision changes this.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:
 
 - Dashboard role-scoping and refresh behavior (real-time vs. scheduled/manual).
-- Client/project CRUD ownership (who can create/manage clients and projects).
-- Project lifecycle/status model.
-- Project-to-client cardinality (one client per project vs. many).
-- Whether employees can be assigned to multiple projects simultaneously.
 - Attachment malware scanning requirement.
 - Attachment/reference file retention period.
 - Deployment target and production hosting details.

@@ -32,3 +32,34 @@ export interface CreateDepartmentPayload {
 export interface UpdateDepartmentPayload {
   name: string
 }
+
+export interface Client {
+  id: number
+  name: string
+  projects_count?: number
+}
+
+export interface Project {
+  id: number
+  name: string
+  client_id: number | null
+  client?: Client | null
+}
+
+export interface CreateClientPayload {
+  name: string
+}
+
+export interface UpdateClientPayload {
+  name: string
+}
+
+export interface CreateProjectPayload {
+  name: string
+  client_id?: number | null
+}
+
+export interface UpdateProjectPayload {
+  name: string
+  client_id: number | null
+}

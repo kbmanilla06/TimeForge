@@ -28,6 +28,8 @@ describe('AppLayout', () => {
 
     expect(screen.getByText('Manage Users')).toBeInTheDocument()
     expect(screen.getByText('Manage Departments')).toBeInTheDocument()
+    expect(screen.getByText('Manage Clients')).toBeInTheDocument()
+    expect(screen.getByText('Manage Projects')).toBeInTheDocument()
   })
 
   it('hides admin nav links for non-admin users', () => {
@@ -37,5 +39,7 @@ describe('AppLayout', () => {
 
     expect(screen.queryByText('Manage Users')).not.toBeInTheDocument()
     expect(screen.queryByText('Manage Departments')).not.toBeInTheDocument()
+    expect(screen.queryByText('Manage Clients')).not.toBeInTheDocument()
+    expect(screen.queryByText('Manage Projects')).not.toBeInTheDocument()
   })
 })

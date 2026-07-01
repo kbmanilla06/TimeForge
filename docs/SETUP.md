@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), and Sprint 2 (Admin User And Department Management UI). No other business modules (time tracking, timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), and Sprint 3 (Client And Project Management Foundation). No other business modules (time tracking, timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -59,15 +59,18 @@ Only a System Administrator can create other users (`docs/DECISIONS.md`), so `Da
 Once MySQL is reachable (Option B, or a locally installed MySQL) and both apps are running:
 
 1. Log in at `http://localhost:5173/login` with the seeded Admin credentials.
-2. You should land on `/` and see "Welcome, TimeForge Admin (admin)", with a top nav showing Home, Manage Users, and Manage Departments (admin-only links) plus a Log out button.
+2. You should land on `/` and see "Welcome, TimeForge Admin (admin)", with a top nav showing Home, Manage Users, Manage Departments, Manage Clients, and Manage Projects (admin-only links) plus a Log out button.
 3. Go to Manage Departments; create a department (e.g., "Engineering").
 4. Go to Manage Users; click Create User, fill in name/email/initial password/role/department, and submit. Confirm the new user appears in the list with status `pending`.
 5. Click Activate on that user; confirm the status updates to `active` without a page reload.
 6. Click Edit on that user; change their role or department and save; confirm the list reflects the change.
 7. Click Deactivate on that user; confirm a browser confirmation dialog appears, and the status updates to `deactivated` after confirming.
 8. Try deleting a department that still has a user assigned to it; confirm the browser dialog names how many users will be unassigned.
-9. Log out via the nav bar; confirm you're redirected to `/login`.
-10. Log in as a non-admin user and confirm navigating directly to `/admin/users` redirects you back to `/`.
+9. Go to Manage Clients; create a client (e.g., "Acme Corp").
+10. Go to Manage Projects; create a project (e.g., "Website Redesign") and assign it to "Acme Corp"; confirm the list shows "Acme Corp" as its client.
+11. Return to Manage Clients; confirm it shows 1 project for "Acme Corp". Delete "Acme Corp"; confirm the warning names 1 affected project, and that the project still exists afterward with no client.
+12. Log out via the nav bar; confirm you're redirected to `/login`.
+13. Log in as a non-admin user and confirm navigating directly to `/admin/users`, `/admin/clients`, or `/admin/projects` redirects you back to `/`.
 
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
@@ -105,10 +108,10 @@ npm run test
 
 ## Known Deferred Items
 
-These are intentionally out of scope for Sprint 0 and must not be assumed when their sprint is reached — see `docs/QUESTIONS.md` Section Q, and the flagged sub-items in Sections O and P:
+These are intentionally out of scope so far and must not be assumed when their sprint is reached — see `docs/QUESTIONS.md` Section Q, and the flagged sub-items in Section P:
 
 - Dashboard role-scoping and refresh behavior.
-- Client/project CRUD ownership, lifecycle status, and cardinality.
 - Attachment malware scanning and retention period.
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
+- Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).

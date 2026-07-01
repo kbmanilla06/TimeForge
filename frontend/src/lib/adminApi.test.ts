@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { activateUser, createDepartment, deleteDepartment, listUsers } from './adminApi'
+import {
+  activateUser,
+  createDepartment,
+  createProject,
+  deleteClient,
+  deleteDepartment,
+  listUsers,
+  updateProject,
+} from './adminApi'
 
 function mockFetchOnce(body: unknown, status = 200) {
   const fetchMock = vi.fn().mockResolvedValue({
@@ -67,6 +75,45 @@ describe('adminApi', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/admin/departments/3'),
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('createProject posts the payload including an optional client_id', async () => {
+    const project = { id: 1, name: 'Website Redesign', client_id: 2 }
+    const fetchMock = mockFetchOnce(project, 201)
+
+    const result = await createProject({ name: 'Website Redesign', client_id: 2 })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/admin/projects'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ name: 'Website Redesign', client_id: 2 }),
+      }),
+    )
+    expect(result).toEqual(project)
+  })
+
+  it('updateProject patches the correct project id', async () => {
+    const project = { id: 1, name: 'Renamed Project', client_id: null }
+    const fetchMock = mockFetchOnce(project)
+
+    await updateProject(1, { name: 'Renamed Project', client_id: null })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/admin/projects/1'),
+      expect.objectContaining({ method: 'PATCH' }),
+    )
+  })
+
+  it('deleteClient calls DELETE on the correct client id', async () => {
+    const fetchMock = mockFetchOnce(null, 204)
+
+    await deleteClient(5)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/admin/clients/5'),
       expect.objectContaining({ method: 'DELETE' }),
     )
   })

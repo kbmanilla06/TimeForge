@@ -1,9 +1,15 @@
 import type {
   AdminUser,
+  Client,
+  CreateClientPayload,
   CreateDepartmentPayload,
+  CreateProjectPayload,
   CreateUserPayload,
   Department,
+  Project,
+  UpdateClientPayload,
   UpdateDepartmentPayload,
+  UpdateProjectPayload,
   UpdateUserPayload,
 } from '../types/admin'
 import { apiFetch } from './apiClient'
@@ -42,4 +48,36 @@ export function updateDepartment(id: number, payload: UpdateDepartmentPayload): 
 
 export function deleteDepartment(id: number): Promise<null> {
   return apiFetch<null>(`/admin/departments/${id}`, { method: 'DELETE' })
+}
+
+export function listClients(): Promise<Client[]> {
+  return apiFetch<Client[]>('/admin/clients')
+}
+
+export function createClient(payload: CreateClientPayload): Promise<Client> {
+  return apiFetch<Client>('/admin/clients', { method: 'POST', body: payload })
+}
+
+export function updateClient(id: number, payload: UpdateClientPayload): Promise<Client> {
+  return apiFetch<Client>(`/admin/clients/${id}`, { method: 'PATCH', body: payload })
+}
+
+export function deleteClient(id: number): Promise<null> {
+  return apiFetch<null>(`/admin/clients/${id}`, { method: 'DELETE' })
+}
+
+export function listProjects(): Promise<Project[]> {
+  return apiFetch<Project[]>('/admin/projects')
+}
+
+export function createProject(payload: CreateProjectPayload): Promise<Project> {
+  return apiFetch<Project>('/admin/projects', { method: 'POST', body: payload })
+}
+
+export function updateProject(id: number, payload: UpdateProjectPayload): Promise<Project> {
+  return apiFetch<Project>(`/admin/projects/${id}`, { method: 'PATCH', body: payload })
+}
+
+export function deleteProject(id: number): Promise<null> {
+  return apiFetch<null>(`/admin/projects/${id}`, { method: 'DELETE' })
 }

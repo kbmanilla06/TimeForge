@@ -6,7 +6,9 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { ClientsPage } from './pages/admin/ClientsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
+import { ProjectsPage } from './pages/admin/ProjectsPage'
 import { UserFormPage } from './pages/admin/UserFormPage'
 import { UsersPage } from './pages/admin/UsersPage'
 
@@ -26,6 +28,8 @@ function App() {
             <Route path="/admin/users/new" element={<UserFormPage />} />
             <Route path="/admin/users/:userId/edit" element={<UserFormPage />} />
             <Route path="/admin/departments" element={<DepartmentsPage />} />
+            <Route path="/admin/clients" element={<ClientsPage />} />
+            <Route path="/admin/projects" element={<ProjectsPage />} />
           </Route>
         </Route>
       </Route>

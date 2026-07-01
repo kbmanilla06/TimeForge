@@ -186,17 +186,20 @@ Section Q remains open. Any question marked **OPEN** must be answered before its
 
 **Answer (applies to all of the above):** Leave and holiday handling are entirely out of scope for MVP.
 
-## O. Client And Project Management — RESOLVED (MVP, high-level only)
+## O. Client And Project Management — RESOLVED (MVP)
 
 1. Who can create and manage clients: Admin only, or also Supervisors/HR?
+   **Answer:** Admin only for MVP.
 2. Who can create and manage projects: Admin only, or also Supervisors?
+   **Answer:** Admin only for MVP.
 3. Do projects have a lifecycle/status (e.g., active, on hold, completed, archived)?
+   **Answer:** No. Project fields stay minimal for MVP: `name` and optional `client_id`. No status/lifecycle field.
 4. Is a project tied to exactly one client, or can it span multiple clients?
+   **Answer:** A project may belong to zero or one client (nullable). No many-to-many relationship in MVP.
 5. Can employees be assigned to multiple projects simultaneously?
+   **Answer:** No dedicated assignment table in MVP. Any employee may reference any active/available project when logging time, unless a later approved decision changes this.
 
-**Answer (applies to all of the above):** MVP should include basic client and project records because time entries require client and project fields. Advanced project management is out of scope.
-
-**Still OPEN for the Client/Project sprint:** questions 1-5 above are not individually answered by the approved decision. Per Section R, Claude Code must ask these specific sub-questions before implementing client/project CRUD, ownership rules, lifecycle status, or cardinality — do not assume.
+Resolved alongside the Sprint 3 (Client And Project Management Foundation) plan; see `docs/DECISIONS.md` "Sprint 3 Implementation Decisions (Approved)".
 
 ## P. Attachments And File Handling — RESOLVED (MVP, mostly)
 
