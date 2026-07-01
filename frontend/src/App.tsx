@@ -6,6 +6,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { TimeTrackingPage } from './pages/TimeTrackingPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
 import { ProjectsPage } from './pages/admin/ProjectsPage'
@@ -22,6 +23,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/time-tracking" element={<TimeTrackingPage />} />
 
           <Route element={<AdminRoute />}>
             <Route path="/admin/users" element={<UsersPage />} />

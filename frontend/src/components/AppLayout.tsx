@@ -10,6 +10,7 @@ export function AppLayout() {
         <nav className="mx-auto flex max-w-4xl items-center justify-between">
           <div className="flex items-center gap-4 text-sm font-medium text-slate-700">
             <Link to="/">Home</Link>
+            <Link to="/time-tracking">Time Tracking</Link>
             {user?.role === 'admin' && (
               <>
                 <Link to="/admin/users">Manage Users</Link>

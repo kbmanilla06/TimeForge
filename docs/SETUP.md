@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), and Sprint 3 (Client And Project Management Foundation). No other business modules (time tracking, timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), and Sprint 4 (Time Tracking Foundation). No other business modules (timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -72,6 +72,20 @@ Once MySQL is reachable (Option B, or a locally installed MySQL) and both apps a
 12. Log out via the nav bar; confirm you're redirected to `/login`.
 13. Log in as a non-admin user and confirm navigating directly to `/admin/users`, `/admin/clients`, or `/admin/projects` redirects you back to `/`.
 
+## Testing Time Tracking Manually
+
+Every authenticated role (not just Admin) has access to the "Time Tracking" nav link and page:
+
+1. Log in as any active user (Admin or otherwise) and click "Time Tracking" in the nav bar.
+2. Start a timer: fill in Task/Work Category/Description (project/client optional), click "Start Timer". Confirm the elapsed-time display starts counting up and the Start form is replaced by a running-timer view with a "Stop" button.
+3. Click "Stop"; confirm the entry appears in "My Time Entries" with a computed duration, and the Timer section reverts to the Start form.
+4. Add a manual entry via the "Add Manual Time Entry" form (date, start, end, project, task, category, description, optional reference links/deliverables — one per line). Confirm it appears in the list.
+5. Try adding a manual entry that overlaps an existing one; confirm it's rejected with an error message.
+6. Try adding a manual entry dated tomorrow; confirm it's rejected.
+7. Start a timer, then try starting a second one before stopping the first; confirm it's rejected.
+8. Confirm the summary panel shows correct Today / This Week / This Month / Payroll Period totals, and that Edit/Delete are disabled for the currently-running entry (only available once stopped).
+9. Log in as a second user; confirm they cannot see the first user's time entries (via the UI or by calling `GET /api/time-entries` directly with their own token).
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -111,7 +125,8 @@ npm run test
 These are intentionally out of scope so far and must not be assumed when their sprint is reached — see `docs/QUESTIONS.md` Section Q, and the flagged sub-items in Section P:
 
 - Dashboard role-scoping and refresh behavior.
-- Attachment malware scanning and retention period.
+- Attachment malware scanning and retention period. Attachment upload/storage itself is not implemented yet (Sprint 4 deferred it entirely — see `docs/DECISIONS.md` Sprint 4 decisions).
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
 - Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).
+- Smart Timesheet submission and the submitted/locked entry state, Supervisor Approval Workflow, and KPI linkage from time entries — none of these exist yet; all Sprint 4 time entries remain editable/deletable by their owner indefinitely until a later sprint introduces submission.

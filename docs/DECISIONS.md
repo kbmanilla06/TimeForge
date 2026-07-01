@@ -201,6 +201,19 @@ Approved alongside the Sprint 3 (Client And Project Management Foundation) plan.
 - **Project-client cardinality:** A project may belong to zero or one client (nullable foreign key). No many-to-many relationship in MVP.
 - **Employee-project assignment:** No employee-project assignment table in MVP. When Time Tracking is built, any employee may reference any active/available project unless a later approved decision changes this.
 
+## Sprint 4 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 4 (Time Tracking Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_04.md` and must be preserved unless explicitly changed.
+
+- **Task field:** Free text for MVP. No separate `tasks` table.
+- **Work category field:** Free text for MVP, stored as `work_category`. No separate work-categories table.
+- **Reference links and deliverables:** In scope for Sprint 4 (not deferred with attachments). Stored as nullable JSON array fields (`reference_links`, `deliverables`) on `time_entries`, cast to `array` on the model, validated as Laravel array/string rules — whichever fits existing code style. Distinct from attachments: these are plain text/URL data, not file uploads, so they don't carry the still-open malware-scanning/retention questions.
+- **Time entry ownership and visibility:** Any active user, regardless of role, may create and manage their own time entries. In Sprint 4, a user can only see their own entries. Supervisor/team visibility is deferred to a later reporting or approval sprint.
+- **Running timer rule:** A user may have only one running timer at a time.
+- **Attachments:** Deferred entirely from Sprint 4 — no upload fields or storage yet. The attachment rules already recorded elsewhere in this file (permitted file types, 10MB limit, local storage) and the still-open malware-scanning/retention questions in `docs/QUESTIONS.md` Section P remain for the sprint that actually implements attachment upload.
+- **Submission/locking:** No submitted/approved/rejected status in Sprint 4. Time entries remain editable by their owner until Smart Timesheet / Approval Workflow is implemented in a later sprint.
+- **Read-only clients/projects access:** Add authenticated, read-only client/project list endpoints for non-admin users (`GET /api/projects`, `GET /api/clients`), so employees can select a client/project when logging time. Non-admins get no create/update/delete access — the existing `/api/admin/*` CRUD endpoints are unchanged.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:
