@@ -77,4 +77,25 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Team KPIs')).not.toBeInTheDocument()
     expect(screen.queryByText('Team Scrum')).not.toBeInTheDocument()
   })
+
+  it('shows Payroll to admin and hr_finance but not supervisors or employees', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
+    const { unmount } = renderLayout()
+    expect(screen.getByText('Payroll')).toBeInTheDocument()
+    unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
+    const hrRender = renderLayout()
+    expect(hrRender.getByText('Payroll')).toBeInTheDocument()
+    hrRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
+    const supervisorRender = renderLayout()
+    expect(supervisorRender.queryByText('Payroll')).not.toBeInTheDocument()
+    supervisorRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    renderLayout()
+    expect(screen.queryByText('Payroll')).not.toBeInTheDocument()
+  })
 })

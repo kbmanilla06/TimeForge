@@ -49,6 +49,18 @@ class UserManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_set_an_employees_hourly_rate(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $employee = User::factory()->create();
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/users/{$employee->id}", ['hourly_rate' => 20.5]);
+
+        $response->assertOk();
+        $this->assertEquals(20.5, $employee->fresh()->hourly_rate);
+    }
+
     public function test_admin_can_activate_and_deactivate_a_user(): void
     {
         $admin = User::factory()->admin()->create();

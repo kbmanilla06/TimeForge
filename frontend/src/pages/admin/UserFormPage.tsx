@@ -17,6 +17,7 @@ export function UserFormPage() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('employee')
   const [departmentId, setDepartmentId] = useState('')
+  const [hourlyRate, setHourlyRate] = useState('')
 
   const [departments, setDepartments] = useState<Department[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -39,6 +40,7 @@ export function UserFormPage() {
             setEmail(existing.email)
             setRole(existing.role)
             setDepartmentId(existing.department_id ? String(existing.department_id) : '')
+            setHourlyRate(existing.hourly_rate != null ? String(existing.hourly_rate) : '')
           }
         }
       } catch (err) {
@@ -64,6 +66,7 @@ export function UserFormPage() {
           email,
           role,
           department_id: departmentId ? Number(departmentId) : null,
+          hourly_rate: hourlyRate ? Number(hourlyRate) : null,
         })
       } else {
         await createUser({
@@ -182,6 +185,25 @@ export function UserFormPage() {
           </select>
           {errors.department_id && <p className="mt-1 text-sm text-red-600">{errors.department_id[0]}</p>}
         </div>
+
+        {isEditMode && (
+          <div>
+            <label htmlFor="hourlyRate" className="block text-sm font-medium text-slate-700">
+              Hourly Rate
+            </label>
+            <input
+              id="hourlyRate"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 20.00"
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(e.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+            {errors.hourly_rate && <p className="mt-1 text-sm text-red-600">{errors.hourly_rate[0]}</p>}
+          </div>
+        )}
 
         <button
           type="submit"

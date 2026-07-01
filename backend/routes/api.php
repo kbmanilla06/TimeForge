@@ -11,6 +11,7 @@ use App\Http\Controllers\DailyScrumController;
 use App\Http\Controllers\KpiAssignmentController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\TimeEntryController;
@@ -87,4 +88,6 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('daily-scrums', [DailyScrumController::class, 'store']);
     Route::get('daily-scrums/{dailyScrum}', [DailyScrumController::class, 'show']);
     Route::post('daily-scrums/{dailyScrum}/comments', [DailyScrumController::class, 'comment']);
+
+    Route::get('payroll', [PayrollController::class, 'index']);
 });

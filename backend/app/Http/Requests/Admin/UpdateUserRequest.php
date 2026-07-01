@@ -28,6 +28,7 @@ class UpdateUserRequest extends FormRequest
             'email' => ['sometimes', 'required', 'email', Rule::unique('users', 'email')->ignore($this->route('user'))],
             'role' => ['sometimes', 'required', Rule::enum(UserRole::class)],
             'department_id' => ['sometimes', 'nullable', 'exists:departments,id'],
+            'hourly_rate' => ['sometimes', 'nullable', 'numeric', 'min:0'],
         ];
     }
 }

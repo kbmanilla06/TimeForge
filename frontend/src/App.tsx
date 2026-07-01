@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/AdminRoute'
 import { AppLayout } from './components/AppLayout'
+import { PayrollRoute } from './components/PayrollRoute'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SupervisorRoute } from './components/SupervisorRoute'
 import { DailyScrumPage } from './pages/DailyScrumPage'
@@ -9,6 +10,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
+import { PayrollPage } from './pages/PayrollPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
 import { TeamScrumPage } from './pages/TeamScrumPage'
@@ -40,6 +42,10 @@ function App() {
             <Route path="/team-timesheets" element={<TeamTimesheetsPage />} />
             <Route path="/team-kpis" element={<TeamKpisPage />} />
             <Route path="/team-scrum" element={<TeamScrumPage />} />
+          </Route>
+
+          <Route element={<PayrollRoute />}>
+            <Route path="/payroll" element={<PayrollPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>

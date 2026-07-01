@@ -6,6 +6,7 @@ use App\Http\Requests\StartTimerRequest;
 use App\Http\Requests\StoreTimeEntryRequest;
 use App\Http\Requests\UpdateTimeEntryRequest;
 use App\Models\TimeEntry;
+use App\Support\PayrollPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -91,7 +92,7 @@ class TimeEntryController extends Controller
     {
         $userId = $request->user()->id;
         $today = Carbon::today();
-        [$periodStart, $periodEnd] = $this->currentPayrollPeriod($today);
+        [$periodStart, $periodEnd] = PayrollPeriod::resolve($today);
 
         $sumMinutes = fn (Carbon $from, Carbon $to) => (int) TimeEntry::where('user_id', $userId)
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
@@ -105,17 +106,5 @@ class TimeEntryController extends Controller
             'payroll_period_start' => $periodStart->toDateString(),
             'payroll_period_end' => $periodEnd->toDateString(),
         ]);
-    }
-
-    /**
-     * @return array{0: Carbon, 1: Carbon}
-     */
-    private function currentPayrollPeriod(Carbon $date): array
-    {
-        if ($date->day <= 15) {
-            return [$date->copy()->startOfMonth(), $date->copy()->setDay(15)];
-        }
-
-        return [$date->copy()->setDay(16), $date->copy()->endOfMonth()];
     }
 }

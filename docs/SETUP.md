@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), and Sprint 7 (Daily Scrum Reporting Foundation). No other business modules (payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), and Sprint 8 (Payroll Preparation Foundation). No other business modules (AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -132,6 +132,19 @@ You need the same two-user setup as above (Employee + their department Superviso
 8. Log in as the seeded Admin; confirm every department's entries are visible in "Team Scrum" and commentable.
 9. Confirm an Employee has no way to comment on their own entry (no comment box appears on "Daily Scrum").
 
+## Testing Payroll Preparation Manually
+
+You need an Employee, their department Supervisor, the seeded Admin, and an HR/Finance user (create one via Manage Users with role "hr_finance" — this role has existed since Sprint 1 but had no permissions until this sprint).
+
+1. Log in as the seeded Admin; go to Manage Users; edit the Employee; set their Hourly Rate (e.g., 20.00); save.
+2. Log in as the Employee; log an 8-hour manual entry for one day and a 10-hour manual entry for a different day within the same payroll period (1st-15th or 16th-end of month); submit both days' timesheets.
+3. Log in as the Supervisor; approve both submitted timesheets.
+4. Log in as the HR/Finance user; go to "Payroll"; confirm the Employee's row shows Approved Hrs `18.00`, Overtime Hrs `2.00`, an Estimated Payroll of `(16 x $20) + (2 x $20 x 1.25) = $370.00`, and Attendance `2`.
+5. Log a third day's time but leave its timesheet unsubmitted (or submitted but not yet approved), and get a fourth day's timesheet rejected by the Supervisor; confirm those hours appear under Pending Hrs / Rejected Hrs, not Approved Hrs.
+6. Change the date picker to a date in a different payroll period; confirm the numbers reset to reflect only that period.
+7. Log in as the Admin; go to "Payroll"; confirm the same table is visible.
+8. Log in as the Supervisor and then as the Employee; confirm neither sees a "Payroll" nav link, and that calling `GET /api/payroll` directly with their token returns 403.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -175,7 +188,7 @@ These are intentionally out of scope so far and must not be assumed when their s
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
 - Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).
-- Payroll Preparation and HR/Finance visibility into approved timesheets — deferred until that sprint.
+- HR/Finance can now view live payroll summaries (Sprint 8), but still cannot view raw Timesheet records directly (e.g., `GET /api/timesheets/team` remains Supervisor/Admin-only, unchanged from Sprint 5) — only the computed payroll numbers are exposed. Direct timesheet-record visibility for HR/Finance, if needed, is a future follow-up.
 - Field-level "flagged" revision requests — revision request reopens the whole day's entries, not specific fields.
 - Email notifications and a nav notification bell/badge — only a "Notifications" list page exists for now.
 - Rejected timesheets are currently terminal (no owner resubmission path) — only "Request Revision" reopens entries for editing. This is a faithful implementation of the approved decisions but a known usability gap worth revisiting if it proves too restrictive in practice.
@@ -184,3 +197,7 @@ These are intentionally out of scope so far and must not be assumed when their s
 - KPI progress can become stale relative to an entry's edited value if an approved timesheet is reopened and the employee changes the reported progress afterward, since progress is only credited once (via `kpi_progress_applied_at`) and never re-evaluated. A documented Sprint 6 limitation, not a bug.
 - Daily Scrum has no approval workflow, no notification events, no linkage to time entries/timesheets/KPIs, and no automated (or AI-based) recurring-blocker detection — all explicitly deferred by Sprint 7 decisions. A Supervisor's team view lists blockers in plain text only; spotting patterns is a manual human task for MVP.
 - Employees cannot reply/comment on their own Daily Scrum entries in MVP — only Supervisors/Admins comment. A documented Sprint 7 limitation, not a bug.
+- PDF/Excel export, stored/historical payroll reports, queue-based report generation, and the "payroll report ready" notification event — all deferred to a future Reporting And Exports sprint; Sprint 8 only exposes live-computed payroll data as JSON and an in-app table. See `docs/DECISIONS.md` Sprint 8 decisions.
+- Payroll periods are fixed semi-monthly (1st-15th, 16th-end of month) with no admin-configurable period length; the overtime multiplier is a single global `config('payroll.overtime_multiplier')` value (`.env`-overridable), not a per-employee override or in-app settings screen — all explicitly deferred by Sprint 8 decisions.
+- Supervisors and Employees cannot view payroll data in Sprint 8 — only Admin and HR/Finance can. This is narrower than every other module's Supervisor-sees-own-department default, because neither the PRD nor `docs/DECISIONS.md` names Supervisors as payroll viewers (only as report exporters, a separate deferred feature).
+- Taxes, deductions, benefits, and allowances remain out of scope for MVP, as already decided prior to Sprint 8.

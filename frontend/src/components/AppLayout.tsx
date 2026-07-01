@@ -21,6 +21,7 @@ export function AppLayout() {
                 <Link to="/team-scrum">Team Scrum</Link>
               </>
             )}
+            {(user?.role === 'admin' || user?.role === 'hr_finance') && <Link to="/payroll">Payroll</Link>}
             {user?.role === 'admin' && (
               <>
                 <Link to="/admin/users">Manage Users</Link>

@@ -79,7 +79,7 @@ describe('UserFormPage', () => {
     expect(screen.queryByLabelText('Initial Password')).not.toBeInTheDocument()
   })
 
-  it('submits only name, email, role, and department_id when editing', async () => {
+  it('submits name, email, role, department_id, and hourly_rate when editing', async () => {
     const user = userEvent.setup()
     vi.mocked(adminApi.listUsers).mockResolvedValue([
       {
@@ -113,6 +113,48 @@ describe('UserFormPage', () => {
         email: 'existing@example.com',
         role: 'supervisor',
         department_id: 1,
+        hourly_rate: null,
+      })
+    })
+  })
+
+  it('prefills an existing hourly rate and submits an updated value', async () => {
+    const user = userEvent.setup()
+    vi.mocked(adminApi.listUsers).mockResolvedValue([
+      {
+        id: 2,
+        name: 'Existing User',
+        email: 'existing@example.com',
+        role: 'supervisor',
+        status: 'active',
+        department_id: 1,
+        hourly_rate: 15,
+      },
+    ])
+    vi.mocked(adminApi.updateUser).mockResolvedValue({
+      id: 2,
+      name: 'Existing User',
+      email: 'existing@example.com',
+      role: 'supervisor',
+      status: 'active',
+      department_id: 1,
+      hourly_rate: 25,
+    })
+
+    renderAt('/admin/users/2/edit')
+    expect(await screen.findByDisplayValue('15')).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Hourly Rate'))
+    await user.type(screen.getByLabelText('Hourly Rate'), '25')
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => {
+      expect(adminApi.updateUser).toHaveBeenCalledWith(2, {
+        name: 'Existing User',
+        email: 'existing@example.com',
+        role: 'supervisor',
+        department_id: 1,
+        hourly_rate: 25,
       })
     })
   })

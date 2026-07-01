@@ -8,6 +8,7 @@ export interface Department {
 
 export interface AdminUser extends User {
   department?: Department | null
+  hourly_rate?: number | null
 }
 
 export interface CreateUserPayload {
@@ -23,6 +24,7 @@ export interface UpdateUserPayload {
   email: string
   role: Role
   department_id: number | null
+  hourly_rate?: number | null
 }
 
 export interface CreateDepartmentPayload {

@@ -255,6 +255,20 @@ Approved alongside the Sprint 7 (Daily Scrum Reporting Foundation) plan. These r
 - **Visibility:** Mirrors Sprints 5-6 — Employees see their own entries, Supervisors see their department's, Admins see all.
 - **Notifications:** No Daily Scrum notification events in Sprint 7, because the locked Notifications decision's trigger list only includes timesheet events.
 
+## Sprint 8 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 8 (Payroll Preparation Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_08.md` and must be preserved unless explicitly changed.
+
+- **Hourly rate:** Stored per employee/user (`hourly_rate`). Admin edits it through the existing user edit flow — no separate payroll settings screen.
+- **Overtime multiplier:** One global overtime multiplier, default 1.25, configurable via environment/config, not a database-backed settings UI.
+- **Payroll period:** Fixed semi-monthly periods (1st-15th and 16th-end of month). The existing payroll-period helper logic (from Sprint 4's `TimeEntryController`) is extracted and reused, not duplicated.
+- **Overtime calculation:** Calculated per day — approved minutes beyond 8 hours in a day are overtime. Daily overtime is summed across the payroll period.
+- **Hour buckets:** Approved, pending, and rejected hours derive directly from timesheet status. No new payroll-specific status schema.
+- **Attendance summary:** The distinct count of days with time entries in the payroll period. No clock-in/out attendance behavior is invented.
+- **Live computation:** Payroll reports are live-computed estimates only. No generated payroll reports are stored in Sprint 8.
+- **Visibility:** Only Admin and HR/Finance can view payroll estimates in Sprint 8. Supervisors and employees cannot view payroll estimates yet.
+- **Notifications and exports:** No payroll notifications, PDF export, Excel export, stored reports, or queue-based report generation in Sprint 8. These belong to later reporting/export sprints.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

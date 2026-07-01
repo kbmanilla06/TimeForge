@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'department_id'])]
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -70,6 +70,11 @@ class User extends Authenticatable
     public function isSupervisor(): bool
     {
         return $this->role === UserRole::Supervisor;
+    }
+
+    public function isHrFinance(): bool
+    {
+        return $this->role === UserRole::HrFinance;
     }
 
     public function isActive(): bool
