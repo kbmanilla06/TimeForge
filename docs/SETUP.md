@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), and Sprint 8 (Payroll Preparation Foundation). No other business modules (AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), and Sprint 9 (Reporting And Exports Foundation). No other business modules (AI, dashboards, attachments) exist yet.
 
 ## Prerequisites
 
@@ -145,6 +145,18 @@ You need an Employee, their department Supervisor, the seeded Admin, and an HR/F
 7. Log in as the Admin; go to "Payroll"; confirm the same table is visible.
 8. Log in as the Supervisor and then as the Employee; confirm neither sees a "Payroll" nav link, and that calling `GET /api/payroll` directly with their token returns 403.
 
+## Testing Reporting And Exports Manually
+
+Uses the same Employee/Supervisor/Admin/HR-Finance set from the Payroll walkthrough above, with the same 8-hour and 10-hour approved days already logged.
+
+1. Log in as HR/Finance; go to "Payroll"; click "Export PDF"; confirm a PDF downloads and, when opened, shows the same numbers as the on-screen table — including the Employee's hourly rate and estimated payroll.
+2. Click "Export Excel"; confirm an `.xlsx` file downloads and contains the same numbers in spreadsheet form.
+3. Log in as the department Supervisor; go to "Team Timesheets"; click "Export Hours PDF" then "Export Hours Excel"; confirm both show approved/overtime/pending/rejected hours and attendance for their department only, with **no hourly rate or estimated-payroll column anywhere**.
+4. Log in as a Supervisor from a different department; confirm their exported Team Hours Report only covers their own department's employees, not the first Supervisor's.
+5. Confirm that second Supervisor cannot reach the Payroll Report at all: no "Payroll" nav link, and `GET /api/payroll/export/pdf` / `/export/excel` called directly return 403.
+6. Log in as an Employee; confirm no export buttons appear anywhere, and all four export endpoints (`/api/payroll/export/pdf`, `/export/excel`, `/api/team-hours-report/export/pdf`, `/export/excel`) return 403 if called directly.
+7. Log in as the Admin; confirm they can export both report types, for any department, exactly like HR/Finance.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -197,7 +209,9 @@ These are intentionally out of scope so far and must not be assumed when their s
 - KPI progress can become stale relative to an entry's edited value if an approved timesheet is reopened and the employee changes the reported progress afterward, since progress is only credited once (via `kpi_progress_applied_at`) and never re-evaluated. A documented Sprint 6 limitation, not a bug.
 - Daily Scrum has no approval workflow, no notification events, no linkage to time entries/timesheets/KPIs, and no automated (or AI-based) recurring-blocker detection — all explicitly deferred by Sprint 7 decisions. A Supervisor's team view lists blockers in plain text only; spotting patterns is a manual human task for MVP.
 - Employees cannot reply/comment on their own Daily Scrum entries in MVP — only Supervisors/Admins comment. A documented Sprint 7 limitation, not a bug.
-- PDF/Excel export, stored/historical payroll reports, queue-based report generation, and the "payroll report ready" notification event — all deferred to a future Reporting And Exports sprint; Sprint 8 only exposes live-computed payroll data as JSON and an in-app table. See `docs/DECISIONS.md` Sprint 8 decisions.
 - Payroll periods are fixed semi-monthly (1st-15th, 16th-end of month) with no admin-configurable period length; the overtime multiplier is a single global `config('payroll.overtime_multiplier')` value (`.env`-overridable), not a per-employee override or in-app settings screen — all explicitly deferred by Sprint 8 decisions.
-- Supervisors and Employees cannot view payroll data in Sprint 8 — only Admin and HR/Finance can. This is narrower than every other module's Supervisor-sees-own-department default, because neither the PRD nor `docs/DECISIONS.md` names Supervisors as payroll viewers (only as report exporters, a separate deferred feature).
+- Supervisors and Employees cannot view payroll data on-screen — only Admin and HR/Finance can. This is narrower than every other module's Supervisor-sees-own-department default, because neither the PRD nor `docs/DECISIONS.md` names Supervisors as payroll viewers (only as report exporters, which Sprint 9 satisfies via the separate, non-financial Team Hours Report).
 - Taxes, deductions, benefits, and allowances remain out of scope for MVP, as already decided prior to Sprint 8.
+- Queue-based/asynchronous export, any stored report record, and the "payroll report ready" notification event — all explicitly deferred by Sprint 9 decisions. Every export in Sprint 9 is generated fresh, synchronously, on each request.
+- No new on-screen report-preview page exists for either report type — "Export PDF"/"Export Excel" buttons were added to the existing `PayrollPage` and `TeamTimesheetsPage` instead. See `docs/DECISIONS.md` Sprint 9 decisions.
+- `maatwebsite/excel` could not be installed (its pinned `phpoffice/phpspreadsheet` dependency requires `php <8.5.0`; this environment runs PHP 8.5.7). Excel export uses `phpoffice/phpspreadsheet` directly instead — the same underlying engine, used via its own API rather than the Laravel wrapper. If a future environment runs an older PHP, `maatwebsite/excel` could be reconsidered, but there's no reason to revisit this while on PHP 8.5.

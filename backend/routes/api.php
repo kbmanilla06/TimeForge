@@ -13,6 +13,7 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TeamHoursReportController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\TimeEntryController;
 use App\Http\Controllers\TimesheetController;
@@ -90,4 +91,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('daily-scrums/{dailyScrum}/comments', [DailyScrumController::class, 'comment']);
 
     Route::get('payroll', [PayrollController::class, 'index']);
+    Route::get('payroll/export/pdf', [PayrollController::class, 'exportPdf']);
+    Route::get('payroll/export/excel', [PayrollController::class, 'exportExcel']);
+
+    Route::get('team-hours-report/export/pdf', [TeamHoursReportController::class, 'exportPdf']);
+    Route::get('team-hours-report/export/excel', [TeamHoursReportController::class, 'exportExcel']);
 });

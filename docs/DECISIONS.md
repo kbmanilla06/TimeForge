@@ -269,6 +269,20 @@ Approved alongside the Sprint 8 (Payroll Preparation Foundation) plan. These res
 - **Visibility:** Only Admin and HR/Finance can view payroll estimates in Sprint 8. Supervisors and employees cannot view payroll estimates yet.
 - **Notifications and exports:** No payroll notifications, PDF export, Excel export, stored reports, or queue-based report generation in Sprint 8. These belong to later reporting/export sprints.
 
+## Sprint 9 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 9 (Reporting And Exports Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_09.md` and must be preserved unless explicitly changed.
+
+- **Export libraries:** `barryvdh/laravel-dompdf` for PDF exports. `maatwebsite/excel` failed to install (its pinned `phpoffice/phpspreadsheet` dependency requires `php <8.5.0`, and this environment runs PHP 8.5.7) — reported and approved for substitution with `phpoffice/phpspreadsheet` directly (the same underlying engine `maatwebsite/excel` wraps), used via its own `Spreadsheet`/`Xlsx` writer API instead of the Laravel abstraction layer.
+- **Report types:** Two separate report types — Payroll Report (Admin and HR/Finance only; includes rates and estimated pay) and Team Hours Report (Supervisor own department, Admin/HR-Finance any department; excludes hourly rates and estimated pay).
+- **Synchronous export:** Synchronous export generation in Sprint 9. No queues yet.
+- **Stored reports:** No generated report records are stored in Sprint 9.
+- **Payroll report ready notification:** Not implemented in Sprint 9, because exports are synchronous and there is no delayed "ready" event.
+- **Shared calculation:** Sprint 8's payroll/hour bucketing logic is extracted into a reusable calculator/service so the Payroll Report and Team Hours Report do not duplicate logic.
+- **Export UI placement:** Export buttons are added to the existing `PayrollPage` and `TeamTimesheetsPage`. No new report browsing pages in Sprint 9.
+- **Branding:** Text-only TimeForge branding in exported reports. No logo required.
+- **Scope:** No dashboards, charts, stored reports, queued exports, AI summaries, or new report types in Sprint 9.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

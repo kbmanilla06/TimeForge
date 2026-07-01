@@ -1,10 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as download from '../lib/download'
+import * as reportsApi from '../lib/reportsApi'
 import * as timesheetApi from '../lib/timesheetApi'
 import { TeamTimesheetsPage } from './TeamTimesheetsPage'
 
 vi.mock('../lib/timesheetApi')
+vi.mock('../lib/reportsApi')
+vi.mock('../lib/download')
 
 const mockUseAuth = vi.fn()
 vi.mock('../context/AuthContext', () => ({
@@ -126,5 +130,39 @@ describe('TeamTimesheetsPage', () => {
 
     expect(await screen.findByText(/Missing details\./)).toBeInTheDocument()
     expect(screen.getByText(/Sam Supervisor/)).toBeInTheDocument()
+  })
+
+  it('exports the team hours report as PDF and triggers a download', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timesheetApi.listTeamTimesheets).mockResolvedValue([submittedTimesheet])
+    const blob = new Blob(['pdf'])
+    vi.mocked(reportsApi.exportTeamHoursPdf).mockResolvedValue(blob)
+
+    render(<TeamTimesheetsPage />)
+    await screen.findByText(/Jane Employee/)
+
+    await user.click(screen.getByRole('button', { name: 'Export Hours PDF' }))
+
+    await waitFor(() => {
+      expect(reportsApi.exportTeamHoursPdf).toHaveBeenCalled()
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'team-hours-report.pdf')
+    })
+  })
+
+  it('exports the team hours report as Excel and triggers a download', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timesheetApi.listTeamTimesheets).mockResolvedValue([submittedTimesheet])
+    const blob = new Blob(['xlsx'])
+    vi.mocked(reportsApi.exportTeamHoursExcel).mockResolvedValue(blob)
+
+    render(<TeamTimesheetsPage />)
+    await screen.findByText(/Jane Employee/)
+
+    await user.click(screen.getByRole('button', { name: 'Export Hours Excel' }))
+
+    await waitFor(() => {
+      expect(reportsApi.exportTeamHoursExcel).toHaveBeenCalled()
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'team-hours-report.xlsx')
+    })
   })
 })

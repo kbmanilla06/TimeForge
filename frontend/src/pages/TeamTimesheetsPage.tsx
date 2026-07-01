@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../lib/apiClient'
+import { downloadBlob } from '../lib/download'
+import { exportTeamHoursExcel, exportTeamHoursPdf } from '../lib/reportsApi'
 import {
   approveTimesheet,
   listTeamTimesheets,
@@ -21,6 +23,7 @@ export function TeamTimesheetsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<number, string>>({})
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     void load()
@@ -85,13 +88,59 @@ export function TeamTimesheetsPage() {
     }
   }
 
+  async function handleExportPdf() {
+    setError(null)
+    setIsExporting(true)
+    try {
+      const blob = await exportTeamHoursPdf()
+      downloadBlob(blob, 'team-hours-report.pdf')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to export the team hours report.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleExportExcel() {
+    setError(null)
+    setIsExporting(true)
+    try {
+      const blob = await exportTeamHoursExcel()
+      downloadBlob(blob, 'team-hours-report.xlsx')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to export the team hours report.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (isLoading) {
     return <p className="mx-auto max-w-4xl px-4 py-8 text-slate-500">Loading…</p>
   }
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Team Timesheets</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-slate-900">Team Timesheets</h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={isExporting}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
+          >
+            Export Hours PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
+          >
+            Export Hours Excel
+          </button>
+        </div>
+      </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 

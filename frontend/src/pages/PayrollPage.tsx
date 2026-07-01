@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../lib/apiClient'
-import { getPayrollSummary } from '../lib/payrollApi'
+import { downloadBlob } from '../lib/download'
+import { exportPayrollExcel, exportPayrollPdf, getPayrollSummary } from '../lib/payrollApi'
 import type { PayrollSummaryRow } from '../types/payroll'
 
 function formatHours(minutes: number): string {
@@ -16,6 +17,7 @@ export function PayrollPage() {
   const [date, setDate] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     void load()
@@ -38,6 +40,32 @@ export function PayrollPage() {
     void load(value || undefined)
   }
 
+  async function handleExportPdf() {
+    setError(null)
+    setIsExporting(true)
+    try {
+      const blob = await exportPayrollPdf(date || undefined)
+      downloadBlob(blob, 'payroll-report.pdf')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to export the payroll report.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleExportExcel() {
+    setError(null)
+    setIsExporting(true)
+    try {
+      const blob = await exportPayrollExcel(date || undefined)
+      downloadBlob(blob, 'payroll-report.xlsx')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to export the payroll report.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (isLoading) {
     return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-500">Loading…</p>
   }
@@ -48,12 +76,30 @@ export function PayrollPage() {
     <main className="mx-auto max-w-5xl px-4 py-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-900">Payroll</h1>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => handleDateChange(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => handleDateChange(e.target.value)}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            disabled={isExporting}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
+          >
+            Export PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
+          >
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {periodLabel && <p className="mt-2 text-sm text-slate-500">Period: {periodLabel}</p>}

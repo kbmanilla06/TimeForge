@@ -2,109 +2,137 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TimesheetStatus;
 use App\Enums\UserStatus;
-use App\Models\TimeEntry;
 use App\Models\User;
+use App\Support\ExcelExporter;
+use App\Support\HoursSummaryCalculator;
 use App\Support\PayrollPeriod;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PayrollController extends Controller
 {
     public function index(Request $request): JsonResponse
+    {
+        $this->authorizeView($request);
+
+        $summaries = $this->buildPayrollSummary($this->resolvePeriod($request));
+
+        return response()->json($summaries->values());
+    }
+
+    public function exportPdf(Request $request): Response
+    {
+        $this->authorizeView($request);
+
+        [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+        $rows = $this->buildPayrollSummary([$periodStart, $periodEnd]);
+
+        return Pdf::loadView('reports.payroll', [
+            'rows' => $rows,
+            'periodStart' => $periodStart->toDateString(),
+            'periodEnd' => $periodEnd->toDateString(),
+            'generatedAt' => now()->toDateTimeString(),
+        ])->download('payroll-report.pdf');
+    }
+
+    public function exportExcel(Request $request): StreamedResponse
+    {
+        $this->authorizeView($request);
+
+        $rows = $this->buildPayrollSummary($this->resolvePeriod($request))
+            ->map(fn (array $row) => [
+                $row['name'],
+                $row['department'] ?? '',
+                $row['hourly_rate'],
+                round($row['approved_minutes'] / 60, 2),
+                round($row['overtime_minutes'] / 60, 2),
+                round($row['pending_minutes'] / 60, 2),
+                round($row['rejected_minutes'] / 60, 2),
+                $row['attendance_days'],
+                $row['estimated_payroll'],
+            ])
+            ->all();
+
+        return ExcelExporter::download(
+            'Payroll Report',
+            ['Employee', 'Department', 'Hourly Rate', 'Approved Hrs', 'Overtime Hrs', 'Pending Hrs', 'Rejected Hrs', 'Attendance', 'Estimated Payroll'],
+            $rows,
+            'payroll-report.xlsx',
+        );
+    }
+
+    private function authorizeView(Request $request): void
     {
         $user = $request->user();
 
         if (! ($user->isAdmin() || $user->isHrFinance())) {
             abort(403, 'You are not authorized to view payroll data.');
         }
-
-        $referenceDate = $request->filled('date') ? Carbon::parse($request->query('date')) : Carbon::today();
-        [$periodStart, $periodEnd] = PayrollPeriod::resolve($referenceDate);
-
-        $entriesByUser = TimeEntry::with('timesheet')
-            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-            ->get()
-            ->groupBy('user_id');
-
-        $overtimeMultiplier = (float) config('payroll.overtime_multiplier');
-
-        $summaries = User::where('status', UserStatus::Active)
-            ->with('department')
-            ->get()
-            ->map(function (User $employee) use ($entriesByUser, $overtimeMultiplier, $periodStart, $periodEnd) {
-                return $this->summarizeForEmployee(
-                    $employee,
-                    $entriesByUser->get($employee->id, collect()),
-                    $overtimeMultiplier,
-                    $periodStart,
-                    $periodEnd,
-                );
-            });
-
-        return response()->json($summaries->values());
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, TimeEntry>  $entries
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private function resolvePeriod(Request $request): array
+    {
+        $referenceDate = $request->filled('date') ? Carbon::parse($request->query('date')) : Carbon::today();
+
+        return PayrollPeriod::resolve($referenceDate);
+    }
+
+    /**
+     * @param  array{0: Carbon, 1: Carbon}  $period
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function buildPayrollSummary(array $period): Collection
+    {
+        [$periodStart, $periodEnd] = $period;
+        $overtimeMultiplier = (float) config('payroll.overtime_multiplier');
+
+        $employees = User::where('status', UserStatus::Active)->with('department')->get();
+
+        return HoursSummaryCalculator::summarizeForUsers($employees, $periodStart, $periodEnd)
+            ->map(function (array $summary) use ($employees, $overtimeMultiplier) {
+                $employee = $employees->firstWhere('id', $summary['user_id']);
+
+                return $this->withPayrollFigures($summary, $employee, $overtimeMultiplier);
+            });
+    }
+
+    /**
+     * @param  array<string, mixed>  $summary
      * @return array<string, mixed>
      */
-    private function summarizeForEmployee(
-        User $employee,
-        $entries,
-        float $overtimeMultiplier,
-        Carbon $periodStart,
-        Carbon $periodEnd
-    ): array {
-        $byDate = $entries->groupBy(fn (TimeEntry $entry) => $entry->date->toDateString());
-
-        $regularMinutes = 0;
-        $overtimeMinutes = 0;
-        $pendingMinutes = 0;
-        $rejectedMinutes = 0;
-
-        foreach ($byDate as $dateEntries) {
-            $dailyMinutes = (int) $dateEntries->sum('duration_minutes');
-            $timesheet = $dateEntries->first()->timesheet;
-
-            if ($timesheet === null) {
-                continue;
-            }
-
-            if ($timesheet->status === TimesheetStatus::Approved) {
-                $regularMinutes += min($dailyMinutes, 480);
-                $overtimeMinutes += max(0, $dailyMinutes - 480);
-            } elseif (in_array($timesheet->status, [TimesheetStatus::Submitted, TimesheetStatus::RevisionRequested], true)) {
-                $pendingMinutes += $dailyMinutes;
-            } elseif ($timesheet->status === TimesheetStatus::Rejected) {
-                $rejectedMinutes += $dailyMinutes;
-            }
-        }
-
+    private function withPayrollFigures(array $summary, User $employee, float $overtimeMultiplier): array
+    {
         $hourlyRate = $employee->hourly_rate !== null ? (float) $employee->hourly_rate : null;
-        $regularHours = $regularMinutes / 60;
-        $overtimeHours = $overtimeMinutes / 60;
+        $regularHours = $summary['regular_minutes'] / 60;
+        $overtimeHours = $summary['overtime_minutes'] / 60;
 
         $estimatedPayroll = $hourlyRate !== null
             ? round(($regularHours * $hourlyRate) + ($overtimeHours * $hourlyRate * $overtimeMultiplier), 2)
             : null;
 
         return [
-            'user_id' => $employee->id,
-            'name' => $employee->name,
-            'department' => $employee->department?->name,
+            'user_id' => $summary['user_id'],
+            'name' => $summary['name'],
+            'department' => $summary['department'],
             'hourly_rate' => $hourlyRate,
-            'approved_minutes' => $regularMinutes + $overtimeMinutes,
-            'regular_minutes' => $regularMinutes,
-            'overtime_minutes' => $overtimeMinutes,
-            'pending_minutes' => $pendingMinutes,
-            'rejected_minutes' => $rejectedMinutes,
-            'attendance_days' => $byDate->count(),
+            'approved_minutes' => $summary['approved_minutes'],
+            'regular_minutes' => $summary['regular_minutes'],
+            'overtime_minutes' => $summary['overtime_minutes'],
+            'pending_minutes' => $summary['pending_minutes'],
+            'rejected_minutes' => $summary['rejected_minutes'],
+            'attendance_days' => $summary['attendance_days'],
             'estimated_payroll' => $estimatedPayroll,
-            'period_start' => $periodStart->toDateString(),
-            'period_end' => $periodEnd->toDateString(),
+            'period_start' => $summary['period_start'],
+            'period_end' => $summary['period_end'],
         ];
     }
 }

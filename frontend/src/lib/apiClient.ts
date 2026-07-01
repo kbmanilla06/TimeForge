@@ -59,3 +59,31 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
   return data as T
 }
+
+/**
+ * For authenticated binary downloads (PDF/Excel exports). Resolves to a
+ * Blob on success; on failure, attempts to parse a JSON error body (the
+ * backend's abort() responses are JSON even though a successful response
+ * here is binary) before falling back to a generic message.
+ */
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {}
+
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API_URL}/api${path}`, { method: 'GET', headers })
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new ApiError(
+      response.status,
+      (data?.message as string) ?? 'Something went wrong.',
+      data?.errors as Record<string, string[]> | undefined,
+    )
+  }
+
+  return response.blob()
+}

@@ -1,10 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as download from '../lib/download'
 import * as payrollApi from '../lib/payrollApi'
 import { PayrollPage } from './PayrollPage'
 
 vi.mock('../lib/payrollApi')
+vi.mock('../lib/download')
 
 const baseRow = {
   user_id: 1,
@@ -74,5 +76,39 @@ describe('PayrollPage', () => {
     render(<PayrollPage />)
 
     expect(await screen.findByText('No active employees found.')).toBeInTheDocument()
+  })
+
+  it('exports a PDF and triggers a download', async () => {
+    const user = userEvent.setup()
+    vi.mocked(payrollApi.getPayrollSummary).mockResolvedValue([baseRow])
+    const blob = new Blob(['pdf'])
+    vi.mocked(payrollApi.exportPayrollPdf).mockResolvedValue(blob)
+
+    render(<PayrollPage />)
+    await screen.findByText('Jane Employee')
+
+    await user.click(screen.getByRole('button', { name: 'Export PDF' }))
+
+    await waitFor(() => {
+      expect(payrollApi.exportPayrollPdf).toHaveBeenCalledWith(undefined)
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'payroll-report.pdf')
+    })
+  })
+
+  it('exports an Excel file and triggers a download', async () => {
+    const user = userEvent.setup()
+    vi.mocked(payrollApi.getPayrollSummary).mockResolvedValue([baseRow])
+    const blob = new Blob(['xlsx'])
+    vi.mocked(payrollApi.exportPayrollExcel).mockResolvedValue(blob)
+
+    render(<PayrollPage />)
+    await screen.findByText('Jane Employee')
+
+    await user.click(screen.getByRole('button', { name: 'Export Excel' }))
+
+    await waitFor(() => {
+      expect(payrollApi.exportPayrollExcel).toHaveBeenCalledWith(undefined)
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'payroll-report.xlsx')
+    })
   })
 })
