@@ -175,6 +175,14 @@ These decisions were approved as the MVP scope on 2026-07-01. Full question-to-a
 
 - If a requirement remains undefined when its sprint is reached, stop and ask. Do not invent additional business rules.
 
+## Sprint 1 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 1 (Authentication And Role Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_01.md` and must be preserved unless explicitly changed.
+
+- **Initial password provisioning:** The Admin sets the initial password directly when creating a user account. No invite-email flow for MVP; that is deferred.
+- **Team/department model:** A single `departments` table. For MVP, a Supervisor's "team" means every user who shares the same `department_id` as that Supervisor. No separate teams table.
+- **Sanctum authentication style:** Token-based Sanctum authentication for MVP, because the backend and frontend are separate applications and the deployment target is not yet final. Cookie-based SPA (stateful) authentication may be revisited if frontend and backend are later deployed under one domain.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

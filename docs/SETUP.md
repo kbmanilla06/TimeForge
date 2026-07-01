@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 foundation setup only. No business modules (time tracking, timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation) and Sprint 1 (Authentication And Role Foundation). No other business modules (time tracking, timesheets, scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -28,13 +28,47 @@ php artisan serve         # http://localhost:8000
 
 The default `.env` is configured for MySQL (`DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=timeforge`, `DB_USERNAME=timeforge`, `DB_PASSWORD=secret`) and Redis-backed queues (`QUEUE_CONNECTION=redis`), matching the services defined in `docker-compose.yml`. Without a running MySQL/Redis instance, `php artisan migrate` and queue commands will fail to connect — this is expected until Option B is available. `php artisan test` does not require a live database; PHPUnit is configured to use an in-memory SQLite connection for tests.
 
+`FRONTEND_URL` (default `http://localhost:5173`) tells the backend where the React SPA lives, so password-reset emails link to the SPA's `/reset-password/:token` page instead of a Laravel-named web route (this app is API-only, so no such route exists).
+
+After migrating, seed the database to create the one bootstrap account (see "Seeded Admin Account" below):
+
+```bash
+php artisan db:seed
+```
+
 ### Frontend (`frontend/`)
 
 ```bash
 cd frontend
-npm install     # already run during scaffolding; re-run after pulling new commits
-npm run dev     # http://localhost:5173
+cp .env.example .env   # sets VITE_API_URL=http://localhost:8000
+npm install             # already run during scaffolding; re-run after pulling new commits
+npm run dev             # http://localhost:5173
 ```
+
+## Seeded Admin Account
+
+Only a System Administrator can create other users (`docs/DECISIONS.md`), so `DatabaseSeeder` creates exactly one bootstrap Admin account:
+
+- Email: `admin@timeforge.test`
+- Password: `password`
+
+**Development only.** Do not use these credentials, or this seeder, against a production database.
+
+## Testing The Auth Flow Manually
+
+Once MySQL is reachable (Option B, or a locally installed MySQL) and both apps are running:
+
+1. Log in at `http://localhost:5173/login` with the seeded Admin credentials.
+2. You should land on `/` and see "Welcome, TimeForge Admin (admin)".
+3. Create a second user via the API (no admin UI yet — that's Sprint 2):
+   ```bash
+   curl -X POST http://localhost:8000/api/admin/users \
+     -H "Authorization: Bearer <token from login response>" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"New Employee","email":"employee@example.com","password":"password","role":"employee"}'
+   ```
+4. Confirm the new user's `status` is `pending` and that logging in as them fails until you `PATCH /api/admin/users/{id}/activate`.
+5. Log out via the button on the placeholder home page; confirm you're redirected to `/login`.
 
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 

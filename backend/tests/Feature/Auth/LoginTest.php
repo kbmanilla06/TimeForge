@@ -1,0 +1,105 @@
+<?php
+
+namespace Tests\Feature\Auth;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class LoginTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_active_user_can_log_in(): void
+    {
+        $user = User::factory()->create(['password' => 'password']);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertOk()->assertJsonStructure(['user', 'token']);
+    }
+
+    public function test_login_fails_with_wrong_password(): void
+    {
+        $user = User::factory()->create(['password' => 'password']);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_pending_user_cannot_log_in(): void
+    {
+        $user = User::factory()->pending()->create(['password' => 'password']);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_deactivated_user_cannot_log_in(): void
+    {
+        $user = User::factory()->deactivated()->create(['password' => 'password']);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_deactivated_user_token_stops_working(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+
+        $user->update(['status' => \App\Enums\UserStatus::Deactivated]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/me');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_authenticated_user_can_fetch_me(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/me');
+
+        $response->assertOk()->assertJsonPath('user.id', $user->id);
+    }
+
+    public function test_user_can_log_out(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/logout');
+
+        $response->assertOk();
+
+        // Asserted against the database rather than a second simulated
+        // request: Laravel's Sanctum guard caches the resolved user on its
+        // guard instance for the lifetime of the test's container, so a
+        // second in-process request can return a stale "still authenticated"
+        // result even though the token row is gone. A fresh request in a
+        // real deployment would correctly receive a 401.
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+}

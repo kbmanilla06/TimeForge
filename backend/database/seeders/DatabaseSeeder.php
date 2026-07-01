@@ -12,14 +12,19 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Seeds exactly one active System Administrator so the system is usable
+     * after a fresh install. Only admins can create further users (see
+     * docs/DECISIONS.md), so this account is the required bootstrap step.
+     *
+     * Development-only credentials — see docs/SETUP.md.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        User::factory()->admin()->create([
+            'name' => 'TimeForge Admin',
+            'email' => 'admin@timeforge.test',
+            'password' => 'password',
         ]);
     }
 }

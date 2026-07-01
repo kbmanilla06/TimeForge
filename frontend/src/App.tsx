@@ -1,20 +1,20 @@
-import { Routes, Route } from 'react-router-dom'
-
-function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-white">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold text-slate-900">TimeForge</h1>
-        <p className="mt-2 text-slate-500">Foundation scaffold — Sprint 0</p>
-      </div>
-    </main>
-  )
-}
+import { Route, Routes } from 'react-router-dom'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { HomePage } from './pages/HomePage'
+import { LoginPage } from './pages/LoginPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
     </Routes>
   )
 }
