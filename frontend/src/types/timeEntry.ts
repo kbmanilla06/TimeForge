@@ -8,6 +8,7 @@ export interface TimeEntry {
   client_id: number | null
   department_id: number | null
   timesheet_id: number | null
+  kpi_assignment_id: number | null
   date: string
   start_time: string
   end_time: string | null
@@ -18,6 +19,7 @@ export interface TimeEntry {
   description: string
   reference_links: string[] | null
   deliverables: string[] | null
+  kpi_progress_value: number | null
   project?: Project | null
   client?: Client | null
   department?: Department | null
@@ -49,6 +51,8 @@ export interface TimeEntryFormPayload {
   description: string
   reference_links?: string[] | null
   deliverables?: string[] | null
+  kpi_assignment_id?: number | null
+  kpi_progress_value?: number | null
 }
 
 export interface StartTimerPayload {
@@ -60,4 +64,6 @@ export interface StartTimerPayload {
   description: string
   reference_links?: string[] | null
   deliverables?: string[] | null
+  kpi_assignment_id?: number | null
+  kpi_progress_value?: number | null
 }

@@ -52,6 +52,11 @@ class User extends Authenticatable
         return $this->hasMany(Timesheet::class);
     }
 
+    public function kpiAssignments(): HasMany
+    {
+        return $this->hasMany(KpiAssignment::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;

@@ -11,8 +11,10 @@ import {
   stopTimer,
   updateTimeEntry,
 } from '../lib/timeEntryApi'
+import { listMyAssignments } from '../lib/kpiApi'
 import { listMyTimesheets, submitTimesheet } from '../lib/timesheetApi'
 import type { Client, Project } from '../types/admin'
+import type { KpiAssignment } from '../types/kpi'
 import { isTimeEntryLocked, type TimeEntry, type TimeEntryFormPayload, type TimeEntrySummary } from '../types/timeEntry'
 import type { Timesheet } from '../types/timesheet'
 
@@ -27,6 +29,13 @@ const EMPTY_FORM = {
   description: '',
   referenceLinks: '',
   deliverables: '',
+  kpiAssignmentId: '',
+  kpiProgressValue: '',
+}
+
+function kpiAssignmentLabel(assignment: KpiAssignment): string {
+  const target = assignment.department ? `${assignment.department.name} (dept.)` : assignment.user?.name
+  return `${assignment.kpi?.name ?? 'KPI'}${target ? ` — ${target}` : ''}`
 }
 
 function formatMinutes(minutes: number | null): string {
@@ -65,6 +74,7 @@ export function TimeTrackingPage() {
   const [summary, setSummary] = useState<TimeEntrySummary | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [clients, setClients] = useState<Client[]>([])
+  const [assignments, setAssignments] = useState<KpiAssignment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,6 +88,8 @@ export function TimeTrackingPage() {
   const [timerDescription, setTimerDescription] = useState('')
   const [timerProjectId, setTimerProjectId] = useState('')
   const [timerClientId, setTimerClientId] = useState('')
+  const [timerKpiAssignmentId, setTimerKpiAssignmentId] = useState('')
+  const [timerKpiProgressValue, setTimerKpiProgressValue] = useState('')
   const [timerError, setTimerError] = useState<string | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
@@ -101,18 +113,20 @@ export function TimeTrackingPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const [entryList, summaryData, projectList, clientList, timesheetList] = await Promise.all([
+      const [entryList, summaryData, projectList, clientList, timesheetList, assignmentList] = await Promise.all([
         listTimeEntries(),
         getSummary(),
         listProjectsForSelf(),
         listClientsForSelf(),
         listMyTimesheets(),
+        listMyAssignments(),
       ])
       setEntries(entryList)
       setSummary(summaryData)
       setProjects(projectList)
       setClients(clientList)
       setTimesheets(timesheetList)
+      setAssignments(assignmentList)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Unable to load time tracking data.')
     } finally {
@@ -139,6 +153,8 @@ export function TimeTrackingPage() {
       description: entry.description,
       referenceLinks: (entry.reference_links ?? []).join('\n'),
       deliverables: (entry.deliverables ?? []).join('\n'),
+      kpiAssignmentId: entry.kpi_assignment_id ? String(entry.kpi_assignment_id) : '',
+      kpiProgressValue: entry.kpi_progress_value !== null ? String(entry.kpi_progress_value) : '',
     })
   }
 
@@ -162,6 +178,8 @@ export function TimeTrackingPage() {
       description: form.description,
       reference_links: toList(form.referenceLinks),
       deliverables: toList(form.deliverables),
+      kpi_assignment_id: form.kpiAssignmentId ? Number(form.kpiAssignmentId) : null,
+      kpi_progress_value: form.kpiProgressValue ? Number(form.kpiProgressValue) : null,
     }
   }
 
@@ -214,12 +232,16 @@ export function TimeTrackingPage() {
         description: timerDescription,
         project_id: timerProjectId ? Number(timerProjectId) : null,
         client_id: timerClientId ? Number(timerClientId) : null,
+        kpi_assignment_id: timerKpiAssignmentId ? Number(timerKpiAssignmentId) : null,
+        kpi_progress_value: timerKpiProgressValue ? Number(timerKpiProgressValue) : null,
       })
       setTimerTask('')
       setTimerCategory('')
       setTimerDescription('')
       setTimerProjectId('')
       setTimerClientId('')
+      setTimerKpiAssignmentId('')
+      setTimerKpiProgressValue('')
       await loadAll()
     } catch (err) {
       setTimerError(err instanceof ApiError ? err.message : 'Unable to start timer.')
@@ -319,6 +341,27 @@ export function TimeTrackingPage() {
                 </option>
               ))}
             </select>
+            <select
+              value={timerKpiAssignmentId}
+              onChange={(e) => setTimerKpiAssignmentId(e.target.value)}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="">— No KPI —</option>
+              {assignments.map((assignment) => (
+                <option key={assignment.id} value={assignment.id}>
+                  {kpiAssignmentLabel(assignment)}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min="0"
+              placeholder="KPI progress (e.g. 2)"
+              value={timerKpiProgressValue}
+              onChange={(e) => setTimerKpiProgressValue(e.target.value)}
+              disabled={!timerKpiAssignmentId}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
+            />
             <textarea
               required
               placeholder="Description"
@@ -398,6 +441,9 @@ export function TimeTrackingPage() {
           )}
           {formErrors.end_time && <p className="col-span-2 text-sm text-red-600">{formErrors.end_time[0]}</p>}
           {formErrors.date && <p className="col-span-2 text-sm text-red-600">{formErrors.date[0]}</p>}
+          {formErrors.kpi_assignment_id && (
+            <p className="col-span-2 text-sm text-red-600">{formErrors.kpi_assignment_id[0]}</p>
+          )}
 
           <select
             value={form.projectId}
@@ -423,6 +469,28 @@ export function TimeTrackingPage() {
               </option>
             ))}
           </select>
+
+          <select
+            value={form.kpiAssignmentId}
+            onChange={(e) => setForm({ ...form, kpiAssignmentId: e.target.value })}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">— No KPI —</option>
+            {assignments.map((assignment) => (
+              <option key={assignment.id} value={assignment.id}>
+                {kpiAssignmentLabel(assignment)}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="0"
+            placeholder="KPI progress (e.g. 2)"
+            value={form.kpiProgressValue}
+            onChange={(e) => setForm({ ...form, kpiProgressValue: e.target.value })}
+            disabled={!form.kpiAssignmentId}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
+          />
 
           <input
             type="text"

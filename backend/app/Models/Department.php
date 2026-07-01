@@ -19,4 +19,9 @@ class Department extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function kpiAssignments(): HasMany
+    {
+        return $this->hasMany(KpiAssignment::class);
+    }
 }

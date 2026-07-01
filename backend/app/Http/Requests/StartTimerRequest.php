@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesKpiAssignment;
 use App\Models\TimeEntry;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StartTimerRequest extends FormRequest
 {
+    use ValidatesKpiAssignment;
+
     /**
      * Any active user may start a timer (enforced by auth:sanctum + active
      * route middleware); no per-record check applies.
@@ -35,6 +38,7 @@ class StartTimerRequest extends FormRequest
             'reference_links.*' => ['string', 'max:2048'],
             'deliverables' => ['nullable', 'array'],
             'deliverables.*' => ['string', 'max:255'],
+            ...$this->kpiAssignmentRules(),
         ];
     }
 
@@ -51,6 +55,8 @@ class StartTimerRequest extends FormRequest
                     'You already have a running timer. Stop it before starting a new one.'
                 );
             }
+
+            $this->validateKpiAssignmentVisibility($validator);
         });
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Requests\RejectTimesheetRequest;
 use App\Http\Requests\ReopenTimesheetRequest;
 use App\Http\Requests\RequestRevisionTimesheetRequest;
 use App\Http\Requests\SubmitTimesheetRequest;
+use App\Models\KpiAssignment;
 use App\Models\TimeEntry;
 use App\Models\Timesheet;
 use App\Models\TimesheetComment;
@@ -113,6 +114,8 @@ class TimesheetController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $this->creditKpiProgress($timesheet);
+
         TimesheetComment::create([
             'timesheet_id' => $timesheet->id,
             'author_id' => $request->user()->id,
@@ -123,6 +126,29 @@ class TimesheetController extends Controller
         $timesheet->user->notify(new TimesheetApproved($timesheet, $comment));
 
         return response()->json($timesheet->fresh(self::RELATIONS));
+    }
+
+    /**
+     * Credit each linked entry's KPI progress exactly once. Entries already
+     * marked via kpi_progress_applied_at are skipped, so a timesheet that is
+     * later reopened and re-approved does not double-count.
+     */
+    private function creditKpiProgress(Timesheet $timesheet): void
+    {
+        $entries = $timesheet->timeEntries()
+            ->whereNotNull('kpi_assignment_id')
+            ->whereNull('kpi_progress_applied_at')
+            ->get();
+
+        foreach ($entries as $entry) {
+            KpiAssignment::whereKey($entry->kpi_assignment_id)
+                ->increment('progress_value', $entry->kpi_progress_value ?? 0);
+
+            // kpi_progress_applied_at is intentionally excluded from
+            // TimeEntry::$fillable (it must never be user-settable), so a
+            // mass-assignment update() here would silently no-op.
+            $entry->forceFill(['kpi_progress_applied_at' => now()])->save();
+        }
     }
 
     public function reject(RejectTimesheetRequest $request, Timesheet $timesheet): JsonResponse

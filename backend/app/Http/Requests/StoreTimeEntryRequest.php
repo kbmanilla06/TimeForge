@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesKpiAssignment;
 use App\Models\TimeEntry;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,6 +10,8 @@ use Illuminate\Support\Carbon;
 
 class StoreTimeEntryRequest extends FormRequest
 {
+    use ValidatesKpiAssignment;
+
     /**
      * Any active user may create their own time entries (enforced by
      * auth:sanctum + active route middleware); no per-record check applies.
@@ -39,22 +42,23 @@ class StoreTimeEntryRequest extends FormRequest
             'reference_links.*' => ['string', 'max:2048'],
             'deliverables' => ['nullable', 'array'],
             'deliverables.*' => ['string', 'max:255'],
+            ...$this->kpiAssignmentRules(),
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->filled('start_time') || ! $this->filled('end_time')) {
-                return;
+            if ($this->filled('start_time') && $this->filled('end_time')) {
+                $start = Carbon::parse($this->input('start_time'));
+                $end = Carbon::parse($this->input('end_time'));
+
+                if (TimeEntry::hasOverlap($this->user()->id, $start, $end)) {
+                    $validator->errors()->add('start_time', 'This time entry overlaps with an existing entry.');
+                }
             }
 
-            $start = Carbon::parse($this->input('start_time'));
-            $end = Carbon::parse($this->input('end_time'));
-
-            if (TimeEntry::hasOverlap($this->user()->id, $start, $end)) {
-                $validator->errors()->add('start_time', 'This time entry overlaps with an existing entry.');
-            }
+            $this->validateKpiAssignmentVisibility($validator);
         });
     }
 }

@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), and Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation). No other business modules (daily scrum, KPI, payroll, AI, dashboards, reports, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), and Sprint 6 (KPI Management Foundation). No other business modules (daily scrum, payroll, AI, dashboards, reports, attachments) exist yet.
 
 ## Prerequisites
 
@@ -103,6 +103,21 @@ You need at least two users in the same department with different roles (Employe
 11. Log in as the seeded Admin; go to Team Timesheets; confirm the approved timesheet is visible with a "Reopen" button (Supervisors do not see this button); reopen it with a comment; confirm status returns to `revision_requested` and entries unlock again.
 12. Check the "Notifications" page for each role at each step above (submitted, approved, rejected, revision requested, reopened); mark one as read.
 
+## Testing KPI Management Manually
+
+You need the same two-user setup as above (Employee + their department Supervisor), plus the seeded Admin.
+
+1. Log in as the seeded Admin; go to "Manage KPIs"; create a KPI (e.g., name "Bugs Resolved", target 10, unit "bugs").
+2. Log in as the Supervisor; go to "Team KPIs"; assign "Bugs Resolved" to the Employee (select the KPI, "Assign to a person", pick them from the list). Confirm it appears in the table with progress `0 / 10 bugs`.
+3. Also assign "Bugs Resolved" directly to your own department ("Assign to my department"); confirm a second row appears showing the department name.
+4. Log in as the Employee; go to "Time Tracking"; add a manual entry (or use the timer) and pick "Bugs Resolved" from the KPI dropdown — confirm you see both your individual assignment and the department's assignment as separate options — enter a progress value (e.g., 3).
+5. Go to "My KPIs"; confirm the assignment is listed but progress is still `0 / 10 bugs` (progress has not been credited yet — only submission/approval trigger it).
+6. Submit that day's timesheet; confirm progress is still `0`.
+7. Log in as the Supervisor; go to "Team Timesheets"; approve it. Confirm progress now shows `3 / 10 bugs` on both "Team KPIs" (Supervisor) and "My KPIs" (Employee, after logging back in).
+8. Log in as the Admin; reopen that timesheet from "Team Timesheets"; confirm progress does not change. Have the Employee resubmit without editing the KPI fields, then have the Supervisor re-approve; confirm progress is still `3 / 10 bugs` (not `6`) — this is the double-counting protection.
+9. Log in as a Supervisor from a different department; confirm "Team KPIs" does not show the assignment above, and that attempting to assign a KPI to a user or department outside their own department is rejected.
+10. As the Supervisor, remove one of the assignments via "Remove" on "Team KPIs"; confirm it disappears from both "Team KPIs" and the Employee's "My KPIs".
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -146,8 +161,10 @@ These are intentionally out of scope so far and must not be assumed when their s
 - Docker Desktop installation and container validation (`docker compose up`).
 - Production deployment target and CI/CD.
 - Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).
-- KPI Management and any KPI-progress linkage from timesheet approval — deferred entirely from Sprint 5 (see `docs/DECISIONS.md` Sprint 5 decisions); must be revisited once the KPI module exists.
 - Payroll Preparation and HR/Finance visibility into approved timesheets — deferred until that sprint.
 - Field-level "flagged" revision requests — revision request reopens the whole day's entries, not specific fields.
 - Email notifications and a nav notification bell/badge — only a "Notifications" list page exists for now.
 - Rejected timesheets are currently terminal (no owner resubmission path) — only "Request Revision" reopens entries for editing. This is a faithful implementation of the approved decisions but a known usability gap worth revisiting if it proves too restrictive in practice.
+- KPI Productivity Dashboards (charts, real-time visualizations) — Sprint 6 only exposes plain numeric progress; see `docs/DECISIONS.md` Sprint 6 decisions.
+- KPI role-based and project-based assignment, periodic KPI resets, and automatic KPI-progress reversal on timesheet reopen — all explicitly deferred by Sprint 6 decisions.
+- KPI progress can become stale relative to an entry's edited value if an approved timesheet is reopened and the employee changes the reported progress afterward, since progress is only credited once (via `kpi_progress_applied_at`) and never re-evaluated. A documented Sprint 6 limitation, not a bug.

@@ -2,12 +2,16 @@
 
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\KpiAssignmentController;
+use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\TimeEntryController;
 use App\Http\Controllers\TimesheetController;
 use Illuminate\Support\Facades\Route;
@@ -41,10 +45,13 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('projects', [AdminProjectController::class, 'store']);
         Route::patch('projects/{project}', [AdminProjectController::class, 'update']);
         Route::delete('projects/{project}', [AdminProjectController::class, 'destroy']);
+
+        Route::post('kpis', [AdminKpiController::class, 'store']);
     });
 
     Route::get('projects', [ProjectController::class, 'index']);
     Route::get('clients', [ClientController::class, 'index']);
+    Route::get('kpis', [KpiController::class, 'index']);
 
     Route::get('time-entries', [TimeEntryController::class, 'index']);
     Route::get('time-entries/summary', [TimeEntryController::class, 'summary']);
@@ -66,4 +73,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
+    Route::get('kpi-assignments/mine', [KpiAssignmentController::class, 'mine']);
+    Route::get('kpi-assignments/team', [KpiAssignmentController::class, 'team']);
+    Route::post('kpi-assignments', [KpiAssignmentController::class, 'store']);
+    Route::delete('kpi-assignments/{kpiAssignment}', [KpiAssignmentController::class, 'destroy']);
+
+    Route::get('team-members', [TeamMemberController::class, 'index']);
 });

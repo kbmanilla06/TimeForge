@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesKpiAssignment;
 use App\Models\TimeEntry;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,6 +10,8 @@ use Illuminate\Support\Carbon;
 
 class UpdateTimeEntryRequest extends FormRequest
 {
+    use ValidatesKpiAssignment;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -38,23 +41,24 @@ class UpdateTimeEntryRequest extends FormRequest
             'reference_links.*' => ['string', 'max:2048'],
             'deliverables' => ['nullable', 'array'],
             'deliverables.*' => ['string', 'max:255'],
+            ...$this->kpiAssignmentRules(),
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->filled('start_time') || ! $this->filled('end_time')) {
-                return;
+            if ($this->filled('start_time') && $this->filled('end_time')) {
+                $start = Carbon::parse($this->input('start_time'));
+                $end = Carbon::parse($this->input('end_time'));
+                $timeEntry = $this->route('timeEntry');
+
+                if (TimeEntry::hasOverlap($this->user()->id, $start, $end, $timeEntry?->id)) {
+                    $validator->errors()->add('start_time', 'This time entry overlaps with an existing entry.');
+                }
             }
 
-            $start = Carbon::parse($this->input('start_time'));
-            $end = Carbon::parse($this->input('end_time'));
-            $timeEntry = $this->route('timeEntry');
-
-            if (TimeEntry::hasOverlap($this->user()->id, $start, $end, $timeEntry?->id)) {
-                $validator->errors()->add('start_time', 'This time entry overlaps with an existing entry.');
-            }
+            $this->validateKpiAssignmentVisibility($validator);
         });
     }
 }

@@ -12,8 +12,12 @@ export function AppLayout() {
             <Link to="/">Home</Link>
             <Link to="/time-tracking">Time Tracking</Link>
             <Link to="/notifications">Notifications</Link>
+            <Link to="/my-kpis">My KPIs</Link>
             {(user?.role === 'supervisor' || user?.role === 'admin') && (
-              <Link to="/team-timesheets">Team Timesheets</Link>
+              <>
+                <Link to="/team-timesheets">Team Timesheets</Link>
+                <Link to="/team-kpis">Team KPIs</Link>
+              </>
             )}
             {user?.role === 'admin' && (
               <>
@@ -21,6 +25,7 @@ export function AppLayout() {
                 <Link to="/admin/departments">Manage Departments</Link>
                 <Link to="/admin/clients">Manage Clients</Link>
                 <Link to="/admin/projects">Manage Projects</Link>
+                <Link to="/admin/kpis">Manage KPIs</Link>
               </>
             )}
           </div>

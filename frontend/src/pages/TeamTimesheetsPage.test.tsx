@@ -28,6 +28,8 @@ const submittedTimesheet = {
       client_id: null,
       department_id: null,
       timesheet_id: 1,
+      kpi_assignment_id: null,
+      kpi_progress_value: null,
       date: '2026-01-14',
       start_time: '2026-01-14 09:00:00',
       end_time: '2026-01-14 10:00:00',

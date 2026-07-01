@@ -6,12 +6,15 @@ import { SupervisorRoute } from './components/SupervisorRoute'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { TeamKpisPage } from './pages/TeamKpisPage'
 import { TeamTimesheetsPage } from './pages/TeamTimesheetsPage'
 import { TimeTrackingPage } from './pages/TimeTrackingPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
+import { KpisPage } from './pages/admin/KpisPage'
 import { ProjectsPage } from './pages/admin/ProjectsPage'
 import { UserFormPage } from './pages/admin/UserFormPage'
 import { UsersPage } from './pages/admin/UsersPage'
@@ -28,9 +31,11 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/time-tracking" element={<TimeTrackingPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/my-kpis" element={<MyKpisPage />} />
 
           <Route element={<SupervisorRoute />}>
             <Route path="/team-timesheets" element={<TeamTimesheetsPage />} />
+            <Route path="/team-kpis" element={<TeamKpisPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>
@@ -40,6 +45,7 @@ function App() {
             <Route path="/admin/departments" element={<DepartmentsPage />} />
             <Route path="/admin/clients" element={<ClientsPage />} />
             <Route path="/admin/projects" element={<ProjectsPage />} />
+            <Route path="/admin/kpis" element={<KpisPage />} />
           </Route>
         </Route>
       </Route>

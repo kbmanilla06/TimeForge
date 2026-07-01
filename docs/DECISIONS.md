@@ -227,6 +227,20 @@ Approved alongside the Sprint 5 (Smart Timesheet Submission And Supervisor Appro
 - **HR/Finance visibility:** Deferred until the payroll/reporting sprint.
 - **One-timesheet-per-day rule:** Enforced — one `Timesheet` row per `(user_id, date)`.
 
+## Sprint 6 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 6 (KPI Management Foundation) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_06.md` and must be preserved unless explicitly changed.
+
+- **KPI fields:** `name`, optional `target_value`, optional `unit` for MVP. No fixed KPI type catalog.
+- **KPI assignment model:** A `kpi_assignments` row belongs to exactly one KPI and targets either one user or one department, never both. Each assignment tracks independent `progress_value`.
+- **Time entry KPI reference:** Time entries reference a specific `kpi_assignment_id`, not a raw KPI, so progress attribution is unambiguous when a KPI is assigned to both an individual and their department.
+- **Progress credit timing:** KPI progress is credited once, when the containing timesheet is approved — not on submit, reject, or revision-request.
+- **Idempotency / reopen behavior:** A `kpi_progress_applied_at` marker on the time entry tracks whether its progress has already been applied, preventing double-counting if a timesheet is reopened and re-approved.
+- **No automatic reversal:** Approved KPI progress is not automatically reversed if the timesheet is later reopened, even if the entry's reported value is edited afterward. Documented as an MVP limitation, in the same spirit as Sprint 5's "rejected is terminal" caveat.
+- **Period resets:** None in MVP. KPI progress is an all-time running total.
+- **Visibility:** Mirrors Sprint 5 exactly — Employees see their own assignments/progress, Supervisors see their department's, Admins see all.
+- **Dashboards:** Not built in Sprint 6. Plain numeric progress only; charts/visualizations belong to the future Productivity Dashboards sprint (PRD §7.7).
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

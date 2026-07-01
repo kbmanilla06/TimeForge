@@ -2,12 +2,14 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../lib/apiClient'
+import * as kpiApi from '../lib/kpiApi'
 import * as timeEntryApi from '../lib/timeEntryApi'
 import * as timesheetApi from '../lib/timesheetApi'
 import { TimeTrackingPage } from './TimeTrackingPage'
 
 vi.mock('../lib/timeEntryApi')
 vi.mock('../lib/timesheetApi')
+vi.mock('../lib/kpiApi')
 
 const baseSummary = {
   today_minutes: 60,
@@ -32,6 +34,7 @@ describe('TimeTrackingPage', () => {
     vi.mocked(timeEntryApi.listClientsForSelf).mockResolvedValue([{ id: 1, name: 'Acme Corp' }])
     vi.mocked(timeEntryApi.getSummary).mockResolvedValue(baseSummary)
     vi.mocked(timesheetApi.listMyTimesheets).mockResolvedValue([])
+    vi.mocked(kpiApi.listMyAssignments).mockResolvedValue([])
   })
 
   it('renders the summary totals and existing entries', async () => {
@@ -43,6 +46,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: null,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         task_status: null,
         date: '2026-01-14',
         start_time: '2026-01-14 09:00:00',
@@ -73,6 +78,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: null,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         task_status: null,
         date: '2026-01-14',
         start_time: new Date().toISOString(),
@@ -102,6 +109,8 @@ describe('TimeTrackingPage', () => {
       client_id: null,
       department_id: null,
       timesheet_id: null,
+      kpi_assignment_id: null,
+      kpi_progress_value: null,
       task_status: null,
       date: '2026-01-14',
       start_time: new Date().toISOString(),
@@ -131,6 +140,8 @@ describe('TimeTrackingPage', () => {
         description: 'Starting now.',
         project_id: null,
         client_id: null,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
       })
     })
   })
@@ -179,6 +190,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: null,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         task_status: null,
         date: '2026-01-14',
         start_time: new Date().toISOString(),
@@ -209,6 +222,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: null,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         date: '2026-01-14',
         start_time: '2026-01-14 09:00:00',
         end_time: '2026-01-14 10:00:00',
@@ -253,6 +268,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: 1,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         date: '2026-01-14',
         start_time: '2026-01-14 09:00:00',
         end_time: '2026-01-14 10:00:00',
@@ -296,6 +313,8 @@ describe('TimeTrackingPage', () => {
         client_id: null,
         department_id: null,
         timesheet_id: 1,
+        kpi_assignment_id: null,
+        kpi_progress_value: null,
         date: '2026-01-14',
         start_time: '2026-01-14 09:00:00',
         end_time: '2026-01-14 10:00:00',
@@ -336,5 +355,83 @@ describe('TimeTrackingPage', () => {
 
     expect(await screen.findByText(/Please add more detail\./)).toBeInTheDocument()
     expect(screen.getByText(/Sam Supervisor/)).toBeInTheDocument()
+  })
+
+  it('creates a manual entry linked to a selected KPI assignment with a progress value', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([])
+    vi.mocked(kpiApi.listMyAssignments).mockResolvedValue([
+      {
+        id: 9,
+        kpi_id: 4,
+        user_id: 1,
+        department_id: null,
+        progress_value: 0,
+        kpi: { id: 4, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 2 },
+      },
+    ])
+    vi.mocked(timeEntryApi.createTimeEntry).mockResolvedValue({
+      id: 10,
+      user_id: 1,
+      project_id: null,
+      client_id: null,
+      department_id: null,
+      timesheet_id: null,
+      kpi_assignment_id: 9,
+      kpi_progress_value: 2,
+      task_status: null,
+      date: '2026-01-14',
+      start_time: '2026-01-14T09:00:00',
+      end_time: '2026-01-14T10:00:00',
+      duration_minutes: 60,
+      task: 'Fix bugs',
+      work_category: 'Development',
+      description: 'Fixed some bugs.',
+      reference_links: null,
+      deliverables: null,
+    })
+
+    render(<TimeTrackingPage />)
+    await screen.findByRole('button', { name: 'Add Entry' })
+    const form = manualEntrySection()
+
+    await user.type(form.getByLabelText('Start'), '2026-01-14T09:00')
+    await user.type(form.getByLabelText('End'), '2026-01-14T10:00')
+    await user.type(form.getByPlaceholderText('Task'), 'Fix bugs')
+    await user.type(form.getByPlaceholderText('Work category'), 'Development')
+    await user.type(form.getByPlaceholderText('Description'), 'Fixed some bugs.')
+
+    const dateInputs = document.querySelectorAll('input[type="date"]')
+    await user.type(dateInputs[0] as HTMLInputElement, '2026-01-14')
+
+    await user.selectOptions(form.getByDisplayValue('— No KPI —'), '9')
+    await user.type(form.getByPlaceholderText('KPI progress (e.g. 2)'), '2')
+    await user.click(form.getByRole('button', { name: 'Add Entry' }))
+
+    await waitFor(() => {
+      expect(timeEntryApi.createTimeEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ kpi_assignment_id: 9, kpi_progress_value: 2 }),
+      )
+    })
+  })
+
+  it('disables the KPI progress input until a KPI assignment is selected', async () => {
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([])
+    vi.mocked(kpiApi.listMyAssignments).mockResolvedValue([
+      {
+        id: 9,
+        kpi_id: 4,
+        user_id: 1,
+        department_id: null,
+        progress_value: 0,
+        kpi: { id: 4, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 2 },
+      },
+    ])
+
+    render(<TimeTrackingPage />)
+    await screen.findByRole('button', { name: 'Add Entry' })
+    const form = manualEntrySection()
+
+    expect(form.getByPlaceholderText('KPI progress (e.g. 2)')).toBeDisabled()
   })
 })

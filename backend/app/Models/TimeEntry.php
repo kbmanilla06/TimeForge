@@ -19,6 +19,7 @@ class TimeEntry extends Model
         'client_id',
         'department_id',
         'timesheet_id',
+        'kpi_assignment_id',
         'date',
         'start_time',
         'end_time',
@@ -28,6 +29,7 @@ class TimeEntry extends Model
         'description',
         'reference_links',
         'deliverables',
+        'kpi_progress_value',
     ];
 
     protected function casts(): array
@@ -38,6 +40,7 @@ class TimeEntry extends Model
             'end_time' => 'datetime',
             'reference_links' => 'array',
             'deliverables' => 'array',
+            'kpi_progress_applied_at' => 'datetime',
         ];
     }
 
@@ -73,6 +76,11 @@ class TimeEntry extends Model
     public function timesheet(): BelongsTo
     {
         return $this->belongsTo(Timesheet::class);
+    }
+
+    public function kpiAssignment(): BelongsTo
+    {
+        return $this->belongsTo(KpiAssignment::class);
     }
 
     /**
