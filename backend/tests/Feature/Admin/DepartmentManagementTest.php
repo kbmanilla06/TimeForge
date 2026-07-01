@@ -30,7 +30,8 @@ class DepartmentManagementTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/admin/departments')
             ->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.users_count', 0);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->patchJson("/api/admin/departments/{$departmentId}", ['name' => 'Engineering & Product'])
@@ -40,6 +41,26 @@ class DepartmentManagementTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->deleteJson("/api/admin/departments/{$departmentId}")
             ->assertStatus(204);
+    }
+
+    public function test_department_index_reports_accurate_user_counts(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $token = $this->tokenFor($admin);
+
+        $engineering = Department::factory()->create();
+        $marketing = Department::factory()->create();
+        User::factory()->count(2)->create(['department_id' => $engineering->id]);
+        User::factory()->create(['department_id' => $marketing->id]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/admin/departments')
+            ->assertOk();
+
+        $counts = collect($response->json())->pluck('users_count', 'id');
+
+        $this->assertSame(2, $counts[$engineering->id]);
+        $this->assertSame(1, $counts[$marketing->id]);
     }
 
     public function test_non_admin_roles_are_forbidden_from_department_endpoints(): void

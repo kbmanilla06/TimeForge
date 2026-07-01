@@ -183,6 +183,14 @@ Approved alongside the Sprint 1 (Authentication And Role Foundation) plan. These
 - **Team/department model:** A single `departments` table. For MVP, a Supervisor's "team" means every user who shares the same `department_id` as that Supervisor. No separate teams table.
 - **Sanctum authentication style:** Token-based Sanctum authentication for MVP, because the backend and frontend are separate applications and the deployment target is not yet final. Cookie-based SPA (stateful) authentication may be revisited if frontend and backend are later deployed under one domain.
 
+## Sprint 2 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 2 (Admin User And Department Management UI) plan. These resolve the implementation-level gaps flagged in `sprints/SPRINT_02.md` and must be preserved unless explicitly changed.
+
+- **Department user count:** Add `withCount('users')` to the existing `Admin\DepartmentController::index()` query only, so the UI can warn before deleting a department with assigned users. No new endpoint, no new business rule.
+- **Frontend test runner:** Vitest + React Testing Library, for Sprint 2 and going forward — Vite-native, fits the existing React/TypeScript stack.
+- **User edit scope:** The Admin edit form may update only `name`, `email`, `role`, and `department_id`, matching the existing `UpdateUserRequest`. Status changes remain separate Activate/Deactivate actions. No admin-triggered password reset for other users in Sprint 2.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

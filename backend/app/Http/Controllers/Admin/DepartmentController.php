@@ -14,7 +14,7 @@ class DepartmentController extends Controller
     {
         $this->authorize('viewAny', Department::class);
 
-        return response()->json(Department::all());
+        return response()->json(Department::withCount('users')->get());
     }
 
     public function store(StoreDepartmentRequest $request): JsonResponse
