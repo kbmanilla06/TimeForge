@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../lib/apiClient'
+import * as download from '../lib/download'
 import * as kpiApi from '../lib/kpiApi'
 import * as timeEntryApi from '../lib/timeEntryApi'
 import * as timesheetApi from '../lib/timesheetApi'
@@ -10,6 +11,7 @@ import { TimeTrackingPage } from './TimeTrackingPage'
 vi.mock('../lib/timeEntryApi')
 vi.mock('../lib/timesheetApi')
 vi.mock('../lib/kpiApi')
+vi.mock('../lib/download')
 
 const baseSummary = {
   today_minutes: 60,
@@ -433,5 +435,105 @@ describe('TimeTrackingPage', () => {
     const form = manualEntrySection()
 
     expect(form.getByPlaceholderText('KPI progress (e.g. 2)')).toBeDisabled()
+  })
+
+  const pdfAttachment = {
+    id: 21,
+    time_entry_id: 11,
+    original_name: 'receipt.pdf',
+    mime_type: 'application/pdf',
+    size_bytes: 2048,
+    uploaded_by: 1,
+    created_at: '2026-01-14T10:00:00Z',
+  }
+
+  function attachableEntry(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 11,
+      user_id: 1,
+      project_id: null,
+      client_id: null,
+      department_id: null,
+      timesheet_id: null,
+      kpi_assignment_id: null,
+      kpi_progress_value: null,
+      task_status: null,
+      date: '2026-01-14',
+      start_time: '2026-01-14 09:00:00',
+      end_time: '2026-01-14 10:00:00',
+      duration_minutes: 60,
+      task: 'Attachable work',
+      work_category: 'Development',
+      description: 'Has files.',
+      reference_links: null,
+      deliverables: null,
+      attachments: [],
+      ...overrides,
+    }
+  }
+
+  it('uploads an attachment to an editable entry and lists it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([attachableEntry()])
+    vi.mocked(timeEntryApi.uploadAttachment).mockResolvedValue(pdfAttachment)
+
+    render(<TimeTrackingPage />)
+    await screen.findByText('Attach file')
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(fileInput, new File(['%PDF-1.4'], 'receipt.pdf', { type: 'application/pdf' }))
+
+    expect(await screen.findByRole('button', { name: 'receipt.pdf' })).toBeInTheDocument()
+    expect(screen.getByText('(2 KB)')).toBeInTheDocument()
+    expect(timeEntryApi.uploadAttachment).toHaveBeenCalledWith(11, expect.any(File))
+  })
+
+  it('downloads an attachment using its original filename', async () => {
+    const user = userEvent.setup()
+    const blob = new Blob(['pdf-bytes'])
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      attachableEntry({ attachments: [pdfAttachment] }),
+    ])
+    vi.mocked(timeEntryApi.downloadAttachment).mockResolvedValue(blob)
+
+    render(<TimeTrackingPage />)
+    await user.click(await screen.findByRole('button', { name: 'receipt.pdf' }))
+
+    await waitFor(() => {
+      expect(timeEntryApi.downloadAttachment).toHaveBeenCalledWith(11, 21)
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'receipt.pdf')
+    })
+  })
+
+  it('removes an attachment from an editable entry', async () => {
+    const user = userEvent.setup()
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      attachableEntry({ attachments: [pdfAttachment] }),
+    ])
+    vi.mocked(timeEntryApi.deleteAttachment).mockResolvedValue(null)
+
+    render(<TimeTrackingPage />)
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+
+    await waitFor(() => {
+      expect(timeEntryApi.deleteAttachment).toHaveBeenCalledWith(11, 21)
+    })
+    expect(screen.queryByRole('button', { name: 'receipt.pdf' })).not.toBeInTheDocument()
+  })
+
+  it('hides attach and remove controls once the entry is locked, but keeps download', async () => {
+    vi.mocked(timeEntryApi.listTimeEntries).mockResolvedValue([
+      attachableEntry({
+        timesheet_id: 1,
+        timesheet: { id: 1, status: 'submitted' },
+        attachments: [pdfAttachment],
+      }),
+    ])
+
+    render(<TimeTrackingPage />)
+
+    expect(await screen.findByRole('button', { name: 'receipt.pdf' })).toBeInTheDocument()
+    expect(screen.queryByText('Attach file')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
   })
 })

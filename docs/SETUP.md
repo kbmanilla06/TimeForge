@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), Sprint 11 (AI Integration Foundation, stub provider only), and Sprint 12 (AI Analysis Suite, stub provider only). No other business modules (attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), Sprint 11 (AI Integration Foundation, stub provider only), Sprint 12 (AI Analysis Suite, stub provider only), and Sprint 13 (Time Entry Attachments Foundation). Every PRD business module now exists.
 
 ## Prerequisites
 
@@ -184,6 +184,18 @@ Uses the same Employee/Supervisor/Admin/HR-Finance set, logged time, and daily s
 9. Log in as the Employee; open "Productivity Trend"; verify each of the six periods' approved/overtime/pending numbers and the period-to-period deltas against the Payroll/Time Tracking figures; confirm another user's trend returns 403 via the API.
 10. Log in as the Admin; confirm all seven tabs are present and all four Sprint 12 types generate successfully for any subject.
 
+## Testing Time Entry Attachments Manually
+
+Uses the same Employee/Supervisor/Admin/HR-Finance set from the earlier manual tests.
+
+1. As the Employee, on "Time Tracking", use "Attach file" on an editable entry to add a PDF and a PNG; confirm both appear with name and size, download intact via their links, and that a `.txt` file or one over 10MB is rejected with a clear message.
+2. Submit that day's timesheet; confirm "Attach file" and "Remove" disappear while the download links remain, and that direct `POST`/`DELETE` calls to `/api/time-entries/{id}/attachments/...` return 403.
+3. As the Supervisor, open the submitted timesheet in "Team Timesheets"; download the attachments from the entry list; request revision; as the Employee, confirm the attachment controls are back, replace a file, and resubmit.
+4. As a Supervisor from a different department and as HR/Finance, confirm the download endpoint returns 403 (and nothing renders in their views).
+5. As the Admin, download any attachment; reopen an approved timesheet and confirm the owner can modify attachments again.
+6. Delete an attachment while editable, then delete a whole entry that still has attachments; confirm the files are gone from `storage/app/private/time-entry-attachments/` in both cases.
+7. Confirm an attachment URL under a different entry id returns 404, and that no API response anywhere contains a storage path.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -253,3 +265,5 @@ These are intentionally out of scope so far and must not be assumed when their s
 - No Admin "AI configurations" UI exists yet (PRD §6.4) — AI configuration is the single `AI_PROVIDER` env value until a real provider makes a settings screen meaningful.
 - Payroll validation is facts-only per Sprint 12 decisions: missing hourly rates, period totals, pending/rejected hours, unsubmitted days, open timers, and the largest approved day. No anomaly thresholds, risk scores, compliance labels, or business judgments exist — real validation rules would need sponsor definitions first.
 - Productivity trend analysis covers a fixed window of six consecutive semi-monthly payroll periods; KPI performance analysis is department-scoped (no personal-subject KPI narrative yet); payroll validation rows are organization-shaped (`ai_outputs` with both subject foreign keys null). All per Sprint 12 decisions.
+- No attachment malware scanning — an accepted Sprint 13 MVP risk with compensating controls (extension + server-detected MIME allowlist, 10MB cap, private non-web-served storage with hashed names, authorized download-only access), to be revisited at deployment/security hardening. Attachments are retained indefinitely as audit evidence; no purge jobs or retention scheduler exist.
+- Attachments exist on time entries only (PRD §7.1), on the private local disk only (an S3 move is a filesystem-disk config change), with no previews/thumbnails, no versioning, and no per-entry count cap (none is defined anywhere; the 10MB/file limit and API throttling bound abuse). HR/Finance cannot download raw time-entry attachments — consistent with the standing raw-records rule. All per Sprint 13 decisions.

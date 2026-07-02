@@ -1,6 +1,12 @@
 import type { Client, Project } from '../types/admin'
-import type { StartTimerPayload, TimeEntry, TimeEntryFormPayload, TimeEntrySummary } from '../types/timeEntry'
-import { apiFetch } from './apiClient'
+import type {
+  StartTimerPayload,
+  TimeEntry,
+  TimeEntryAttachment,
+  TimeEntryFormPayload,
+  TimeEntrySummary,
+} from '../types/timeEntry'
+import { apiFetch, apiFetchBlob, apiFetchUpload } from './apiClient'
 
 export function listTimeEntries(): Promise<TimeEntry[]> {
   return apiFetch<TimeEntry[]>('/time-entries')
@@ -20,6 +26,20 @@ export function updateTimeEntry(id: number, payload: TimeEntryFormPayload): Prom
 
 export function deleteTimeEntry(id: number): Promise<null> {
   return apiFetch<null>(`/time-entries/${id}`, { method: 'DELETE' })
+}
+
+export function uploadAttachment(entryId: number, file: File): Promise<TimeEntryAttachment> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiFetchUpload<TimeEntryAttachment>(`/time-entries/${entryId}/attachments`, formData)
+}
+
+export function downloadAttachment(entryId: number, attachmentId: number): Promise<Blob> {
+  return apiFetchBlob(`/time-entries/${entryId}/attachments/${attachmentId}/download`)
+}
+
+export function deleteAttachment(entryId: number, attachmentId: number): Promise<null> {
+  return apiFetch<null>(`/time-entries/${entryId}/attachments/${attachmentId}`, { method: 'DELETE' })
 }
 
 export function startTimer(payload: StartTimerPayload): Promise<TimeEntry> {

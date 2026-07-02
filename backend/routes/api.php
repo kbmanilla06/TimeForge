@@ -17,6 +17,7 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TeamHoursReportController;
 use App\Http\Controllers\TeamMemberController;
+use App\Http\Controllers\TimeEntryAttachmentController;
 use App\Http\Controllers\TimeEntryController;
 use App\Http\Controllers\TimesheetController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +67,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::patch('time-entries/{timeEntry}', [TimeEntryController::class, 'update']);
     Route::patch('time-entries/{timeEntry}/stop', [TimeEntryController::class, 'stopTimer']);
     Route::delete('time-entries/{timeEntry}', [TimeEntryController::class, 'destroy']);
+
+    Route::post('time-entries/{timeEntry}/attachments', [TimeEntryAttachmentController::class, 'store']);
+    Route::get('time-entries/{timeEntry}/attachments/{attachment}/download', [TimeEntryAttachmentController::class, 'download'])
+        ->scopeBindings();
+    Route::delete('time-entries/{timeEntry}/attachments/{attachment}', [TimeEntryAttachmentController::class, 'destroy'])
+        ->scopeBindings();
 
     Route::get('timesheets', [TimesheetController::class, 'index']);
     Route::get('timesheets/team', [TimesheetController::class, 'teamIndex']);

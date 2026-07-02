@@ -1,8 +1,8 @@
 # TimeForge Clarification Questions
 
-Sections A-P have been answered and approved as MVP decisions. The full decision text is the source of truth in `docs/DECISIONS.md`; this file is preserved for traceability between each original question and its approved answer.
+All sections (A-R) are now answered and approved — Sections A-P in the MVP decision round (with P.3-P.4 resolved at Sprint 13), Section Q at Sprint 10. The full decision text is the source of truth in `docs/DECISIONS.md`; this file is preserved for traceability between each original question and its approved answer.
 
-Section Q remains open. Any question marked **OPEN** must be answered before its related sprint begins. Per the approved general policy (Section R), Claude Code must ask before implementing anything still undefined rather than inventing a rule.
+Per the approved general policy (Section R), any future requirement that surfaces undefined must still be asked about before implementation rather than invented.
 
 ## A. Business And SaaS Model — RESOLVED (MVP)
 
@@ -201,16 +201,16 @@ Section Q remains open. Any question marked **OPEN** must be answered before its
 
 Resolved alongside the Sprint 3 (Client And Project Management Foundation) plan; see `docs/DECISIONS.md` "Sprint 3 Implementation Decisions (Approved)".
 
-## P. Attachments And File Handling — RESOLVED (MVP, mostly)
+## P. Attachments And File Handling — RESOLVED (MVP; questions 3-4 resolved at Sprint 13)
 
 1. What file types are permitted for time entry attachments and deliverables?
    **Answer:** PDF, PNG, JPG, JPEG, DOCX, XLSX only.
 2. Is there a maximum file size per attachment?
    **Answer:** 10MB per file.
 3. Should attachments be scanned for malware before storage?
-   **Still OPEN.** Not answered. Ask before implementing.
+   **Answer (Sprint 13):** No malware scanning for MVP. Accepted as a documented risk with compensating controls: extension allowlist, server-detected MIME validation, 10MB per-file limit, private non-web-served storage, hashed server-generated filenames, and authorized download-only access. Revisit at deployment/security hardening.
 4. How long should attachments and reference files be retained?
-   **Still OPEN.** Not answered. Ask before implementing.
+   **Answer (Sprint 13):** Indefinitely for MVP, as audit evidence — the same retention as every other business record. No purge jobs or retention scheduler; the owner may delete an attachment manually only while its time entry is still editable.
 5. Should attachment storage be local disk, or a cloud object store (e.g., S3-compatible)?
    **Answer:** Local storage for MVP. Admin can revise this later.
 

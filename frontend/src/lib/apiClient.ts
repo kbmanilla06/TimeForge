@@ -61,6 +61,34 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 }
 
 /**
+ * For multipart file uploads (Sprint 13 attachments). Identical to
+ * apiFetch except the body is FormData and no Content-Type header is
+ * set — the browser supplies the multipart boundary itself.
+ */
+export async function apiFetchUpload<T>(path: string, formData: FormData): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' }
+
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API_URL}/api${path}`, { method: 'POST', headers, body: formData })
+
+  const data = response.status === 204 ? null : await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      (data?.message as string) ?? 'Something went wrong.',
+      data?.errors as Record<string, string[]> | undefined,
+    )
+  }
+
+  return data as T
+}
+
+/**
  * For authenticated binary downloads (PDF/Excel exports). Resolves to a
  * Blob on success; on failure, attempts to parse a JSON error body (the
  * backend's abort() responses are JSON even though a successful response

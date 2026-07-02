@@ -48,4 +48,21 @@ class TimeEntryPolicy
     {
         return $timeEntry->user_id === $user->id && ! $timeEntry->isLocked();
     }
+
+    /**
+     * Sprint 13 download matrix: the owner, the owner's own-department
+     * Supervisor (who reviews the timesheet this entry belongs to), and
+     * Admin. HR/Finance never reaches raw entry attachments, consistent
+     * with the standing raw-records rule (Sprints 5/8).
+     */
+    public function downloadAttachment(User $user, TimeEntry $timeEntry): bool
+    {
+        if ($user->isAdmin() || $timeEntry->user_id === $user->id) {
+            return true;
+        }
+
+        return $user->isSupervisor()
+            && $user->department_id !== null
+            && $user->department_id === $timeEntry->user->department_id;
+    }
 }

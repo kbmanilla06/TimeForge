@@ -6,6 +6,7 @@ use App\Enums\TimesheetStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 class TimeEntry extends Model
@@ -51,6 +52,12 @@ class TimeEntry extends Model
                 ? $timeEntry->start_time->diffInMinutes($timeEntry->end_time)
                 : null;
         });
+
+        // Delete attachments through Eloquent (not the DB cascade) so each
+        // one's own deleting hook removes its stored file — no orphans.
+        static::deleting(function (TimeEntry $timeEntry): void {
+            $timeEntry->attachments()->get()->each->delete();
+        });
     }
 
     public function user(): BelongsTo
@@ -81,6 +88,11 @@ class TimeEntry extends Model
     public function kpiAssignment(): BelongsTo
     {
         return $this->belongsTo(KpiAssignment::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TimeEntryAttachment::class);
     }
 
     /**

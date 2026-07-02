@@ -1,8 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { ApiError } from '../lib/apiClient'
+import { downloadBlob } from '../lib/download'
 import {
   createTimeEntry,
+  deleteAttachment,
   deleteTimeEntry,
+  downloadAttachment,
   getSummary,
   listClientsForSelf,
   listProjectsForSelf,
@@ -10,12 +13,19 @@ import {
   startTimer,
   stopTimer,
   updateTimeEntry,
+  uploadAttachment,
 } from '../lib/timeEntryApi'
 import { listMyAssignments } from '../lib/kpiApi'
 import { listMyTimesheets, submitTimesheet } from '../lib/timesheetApi'
 import type { Client, Project } from '../types/admin'
 import type { KpiAssignment } from '../types/kpi'
-import { isTimeEntryLocked, type TimeEntry, type TimeEntryFormPayload, type TimeEntrySummary } from '../types/timeEntry'
+import {
+  isTimeEntryLocked,
+  type TimeEntry,
+  type TimeEntryAttachment,
+  type TimeEntryFormPayload,
+  type TimeEntrySummary,
+} from '../types/timeEntry'
 import type { Timesheet } from '../types/timesheet'
 
 const EMPTY_FORM = {
@@ -43,6 +53,10 @@ function formatMinutes(minutes: number | null): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   return `${hours}h ${mins}m`
+}
+
+function formatFileSize(sizeBytes: number): string {
+  return `${Math.max(1, Math.round(sizeBytes / 1024))} KB`
 }
 
 function formatElapsed(totalSeconds: number): string {
@@ -82,6 +96,8 @@ export function TimeTrackingPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadingEntryId, setUploadingEntryId] = useState<number | null>(null)
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
 
   const [timerTask, setTimerTask] = useState('')
   const [timerCategory, setTimerCategory] = useState('')
@@ -94,6 +110,56 @@ export function TimeTrackingPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   const runningEntry = entries.find((entry) => entry.end_time === null) ?? null
+
+  async function handleUploadAttachment(entry: TimeEntry, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setUploadingEntryId(entry.id)
+    setAttachmentError(null)
+    try {
+      const attachment = await uploadAttachment(entry.id, file)
+      setEntries((current) =>
+        current.map((item) =>
+          item.id === entry.id ? { ...item, attachments: [...(item.attachments ?? []), attachment] } : item,
+        ),
+      )
+    } catch (err) {
+      setAttachmentError(
+        err instanceof ApiError
+          ? (err.errors?.file?.[0] ?? err.message)
+          : 'Unable to upload the attachment.',
+      )
+    } finally {
+      setUploadingEntryId(null)
+    }
+  }
+
+  async function handleDownloadAttachment(entry: TimeEntry, attachment: TimeEntryAttachment) {
+    setAttachmentError(null)
+    try {
+      downloadBlob(await downloadAttachment(entry.id, attachment.id), attachment.original_name)
+    } catch (err) {
+      setAttachmentError(err instanceof ApiError ? err.message : 'Unable to download the attachment.')
+    }
+  }
+
+  async function handleDeleteAttachment(entry: TimeEntry, attachment: TimeEntryAttachment) {
+    setAttachmentError(null)
+    try {
+      await deleteAttachment(entry.id, attachment.id)
+      setEntries((current) =>
+        current.map((item) =>
+          item.id === entry.id
+            ? { ...item, attachments: (item.attachments ?? []).filter((a) => a.id !== attachment.id) }
+            : item,
+        ),
+      )
+    } catch (err) {
+      setAttachmentError(err instanceof ApiError ? err.message : 'Unable to remove the attachment.')
+    }
+  }
 
   useEffect(() => {
     void loadAll()
@@ -553,6 +619,7 @@ export function TimeTrackingPage() {
 
       <section className="mt-6 space-y-6">
         <h2 className="text-lg font-medium text-slate-900">My Time Entries</h2>
+        {attachmentError && <p className="text-sm text-red-600">{attachmentError}</p>}
 
         {groupByDate(entries).map(([date, dateEntries]) => {
           const timesheet = timesheets.find((t) => t.date === date)
@@ -607,33 +674,81 @@ export function TimeTrackingPage() {
                     const disabled = !entry.end_time || locked
 
                     return (
-                      <tr key={entry.id} className="border-b border-slate-100">
-                        <td className="py-2">
-                          {entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}
-                        </td>
-                        <td className="py-2">{entry.project?.name ?? '—'}</td>
-                        <td className="py-2">{entry.task}</td>
-                        <td className="space-x-2 py-2">
-                          <button
-                            type="button"
-                            onClick={() => startEditing(entry)}
-                            disabled={disabled}
-                            title={locked ? 'Locked — this timesheet has been submitted' : undefined}
-                            className="text-slate-900 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(entry)}
-                            disabled={disabled}
-                            title={locked ? 'Locked — this timesheet has been submitted' : undefined}
-                            className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
+                      <Fragment key={entry.id}>
+                        <tr className="border-b border-slate-100">
+                          <td className="py-2">
+                            {entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}
+                          </td>
+                          <td className="py-2">{entry.project?.name ?? '—'}</td>
+                          <td className="py-2">{entry.task}</td>
+                          <td className="space-x-2 py-2">
+                            <button
+                              type="button"
+                              onClick={() => startEditing(entry)}
+                              disabled={disabled}
+                              title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                              className="text-slate-900 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(entry)}
+                              disabled={disabled}
+                              title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                              className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                        <tr className="border-b border-slate-100">
+                          <td colSpan={4} className="pb-2 text-xs">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-slate-500">Attachments:</span>
+                              {(entry.attachments ?? []).map((attachment) => (
+                                <span
+                                  key={attachment.id}
+                                  className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-0.5"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleDownloadAttachment(entry, attachment)}
+                                    className="text-slate-900 underline"
+                                  >
+                                    {attachment.original_name}
+                                  </button>
+                                  <span className="text-slate-400">({formatFileSize(attachment.size_bytes)})</span>
+                                  {!locked && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteAttachment(entry, attachment)}
+                                      className="text-red-600 underline"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </span>
+                              ))}
+                              {(entry.attachments ?? []).length === 0 && (
+                                <span className="text-slate-400">none</span>
+                              )}
+                              {!locked && (
+                                <label className="cursor-pointer text-slate-900 underline">
+                                  {uploadingEntryId === entry.id ? 'Uploading…' : 'Attach file'}
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx"
+                                    className="hidden"
+                                    disabled={uploadingEntryId !== null}
+                                    onChange={(e) => void handleUploadAttachment(entry, e)}
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      </Fragment>
                     )
                   })}
                 </tbody>

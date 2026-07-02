@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { ApiError } from '../lib/apiClient'
 import { downloadBlob } from '../lib/download'
 import { exportTeamHoursExcel, exportTeamHoursPdf } from '../lib/reportsApi'
+import { downloadAttachment } from '../lib/timeEntryApi'
 import {
   approveTimesheet,
   listTeamTimesheets,
@@ -10,6 +11,7 @@ import {
   reopenTimesheet,
   requestRevision,
 } from '../lib/timesheetApi'
+import type { TimeEntry, TimeEntryAttachment } from '../types/timeEntry'
 import type { Timesheet } from '../types/timesheet'
 
 function formatMinutes(minutes: number | null): string {
@@ -38,6 +40,15 @@ export function TeamTimesheetsPage() {
       setError(err instanceof ApiError ? err.message : 'Unable to load team timesheets.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function handleAttachmentDownload(entry: TimeEntry, attachment: TimeEntryAttachment) {
+    setError(null)
+    try {
+      downloadBlob(await downloadAttachment(entry.id, attachment.id), attachment.original_name)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to download the attachment.')
     }
   }
 
@@ -160,6 +171,16 @@ export function TeamTimesheetsPage() {
               {(timesheet.time_entries ?? []).map((entry) => (
                 <li key={entry.id}>
                   {entry.task} — {formatMinutes(entry.duration_minutes)}
+                  {(entry.attachments ?? []).map((attachment) => (
+                    <button
+                      key={attachment.id}
+                      type="button"
+                      onClick={() => void handleAttachmentDownload(entry, attachment)}
+                      className="ml-2 text-slate-900 underline"
+                    >
+                      {attachment.original_name}
+                    </button>
+                  ))}
                 </li>
               ))}
             </ul>

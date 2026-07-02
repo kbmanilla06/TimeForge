@@ -3,12 +3,14 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as download from '../lib/download'
 import * as reportsApi from '../lib/reportsApi'
+import * as timeEntryApi from '../lib/timeEntryApi'
 import * as timesheetApi from '../lib/timesheetApi'
 import { TeamTimesheetsPage } from './TeamTimesheetsPage'
 
 vi.mock('../lib/timesheetApi')
 vi.mock('../lib/reportsApi')
 vi.mock('../lib/download')
+vi.mock('../lib/timeEntryApi')
 
 const mockUseAuth = vi.fn()
 vi.mock('../context/AuthContext', () => ({
@@ -164,5 +166,44 @@ describe('TeamTimesheetsPage', () => {
       expect(reportsApi.exportTeamHoursExcel).toHaveBeenCalled()
       expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'team-hours-report.xlsx')
     })
+  })
+
+  it('lists entry attachments as download-only links', async () => {
+    const user = userEvent.setup()
+    const blob = new Blob(['pdf-bytes'])
+    vi.mocked(timeEntryApi.downloadAttachment).mockResolvedValue(blob)
+    vi.mocked(timesheetApi.listTeamTimesheets).mockResolvedValue([
+      {
+        ...submittedTimesheet,
+        time_entries: [
+          {
+            ...submittedTimesheet.time_entries[0],
+            attachments: [
+              {
+                id: 21,
+                time_entry_id: 10,
+                original_name: 'receipt.pdf',
+                mime_type: 'application/pdf',
+                size_bytes: 2048,
+                uploaded_by: 2,
+                created_at: '2026-01-14T10:00:00Z',
+              },
+            ],
+          },
+        ],
+      },
+    ])
+
+    render(<TeamTimesheetsPage />)
+
+    await user.click(await screen.findByRole('button', { name: 'receipt.pdf' }))
+
+    await waitFor(() => {
+      expect(timeEntryApi.downloadAttachment).toHaveBeenCalledWith(10, 21)
+      expect(download.downloadBlob).toHaveBeenCalledWith(blob, 'receipt.pdf')
+    })
+    // Reviewers get download only — no upload or removal controls.
+    expect(screen.queryByText('Attach file')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
   })
 })

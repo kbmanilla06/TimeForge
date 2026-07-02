@@ -169,7 +169,7 @@ These decisions were approved as the MVP scope on 2026-07-01. Full question-to-a
 - Permitted file types: PDF, PNG, JPG, JPEG, DOCX, XLSX.
 - Maximum file size: 10MB per file.
 - Storage: local disk for MVP, behind an abstraction that can later support cloud storage.
-- Malware scanning and retention period are NOT yet decided — see Decisions Still Required.
+- Malware scanning and retention period were resolved with the Sprint 13 plan — see "Sprint 13 Implementation Decisions (Approved)".
 
 ### General Policy
 
@@ -314,13 +314,21 @@ Approved alongside the Sprint 12 (AI Analysis Suite) plan. These resolve the fou
 - **Trend window:** Productivity trend analysis covers the six consecutive semi-monthly payroll periods ending with the reference date's period.
 - **Payroll validation content:** Facts only — missing hourly rates, period totals, pending/rejected hours, unsubmitted days, open timers, and largest approved day. No anomaly thresholds, risk scores, compliance labels, or business judgments are invented.
 
+## Sprint 13 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 13 (Time Entry Attachments Foundation) plan. These resolve `docs/QUESTIONS.md` Section P questions 3-4 (previously OPEN, now RESOLVED — see that section) plus the storage, permission, and lifecycle gaps flagged in `sprints/SPRINT_13.md`, and must be preserved unless explicitly changed.
+
+- **Malware scanning:** Not implemented in Sprint 13. Accepted as an MVP risk with compensating controls: extension allowlist, server-detected MIME validation, 10MB per-file limit, private non-web-served storage, hashed server-generated filenames, and authorized download-only access. Malware scanning is revisited at deployment/security hardening.
+- **Retention period:** Attachments are retained indefinitely for MVP as audit evidence. No purge jobs or retention scheduler in Sprint 13.
+- **Storage behavior:** Attachments are stored on Laravel's private local filesystem disk behind the filesystem abstraction, under server-generated paths (`time-entry-attachments/{timeEntryId}/{hash}`). The original filename is stored in the database only. Physical storage paths are never exposed to clients.
+- **Download permissions:** The owner can download their own time-entry attachments; Supervisors can download attachments for users in their own department; Admins can download all. HR/Finance cannot download raw time-entry attachments in Sprint 13.
+- **Lifecycle:** Attachment modification follows `TimeEntry::isLocked()` — upload/delete are allowed only while the time entry is editable; attachments freeze when the entry is submitted/approved/rejected; they become editable again only when the timesheet is revision-requested or reopened; deleting a time entry deletes attachment rows and stored files; no attachment versioning in MVP.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:
 
-- Attachment malware scanning requirement.
-- Attachment/reference file retention period.
-- Deployment target and production hosting details.
+- Deployment target and production hosting details (including the malware-scanning revisit deferred by the Sprint 13 decisions).
 - AI provider selection and external data privacy rules (Sprint 11 is stub-only per its approved decisions; this item now gates only the future swap to a real external provider).
 
 Full question text and traceability: `docs/QUESTIONS.md`.

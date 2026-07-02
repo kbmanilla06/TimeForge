@@ -24,6 +24,17 @@ export interface TimeEntry {
   client?: Client | null
   department?: Department | null
   timesheet?: { id: number; status: TimesheetStatus } | null
+  attachments?: TimeEntryAttachment[]
+}
+
+export interface TimeEntryAttachment {
+  id: number
+  time_entry_id: number
+  original_name: string
+  mime_type: string
+  size_bytes: number
+  uploaded_by: number
+  created_at: string
 }
 
 export function isTimeEntryLocked(entry: TimeEntry): boolean {

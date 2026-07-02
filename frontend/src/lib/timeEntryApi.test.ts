@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createTimeEntry,
+  deleteAttachment,
   deleteTimeEntry,
+  downloadAttachment,
   getSummary,
   listClientsForSelf,
   listProjectsForSelf,
@@ -9,6 +11,7 @@ import {
   startTimer,
   stopTimer,
   updateTimeEntry,
+  uploadAttachment,
 } from './timeEntryApi'
 
 function mockFetchOnce(body: unknown, status = 200) {
@@ -138,5 +141,45 @@ describe('timeEntryApi', () => {
 
     await listClientsForSelf()
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/api/clients'), expect.anything())
+  })
+
+  it('uploadAttachment posts FormData containing the file to the attachments endpoint', async () => {
+    const fetchMock = mockFetchOnce({ id: 21, original_name: 'receipt.pdf' }, 201)
+    const file = new File(['%PDF-1.4'], 'receipt.pdf', { type: 'application/pdf' })
+
+    const result = await uploadAttachment(7, file)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/time-entries/7/attachments'),
+      expect.objectContaining({ method: 'POST', body: expect.any(FormData) }),
+    )
+    const body = fetchMock.mock.calls[0][1].body as FormData
+    expect(body.get('file')).toBe(file)
+    expect(result).toEqual({ id: 21, original_name: 'receipt.pdf' })
+  })
+
+  it('downloadAttachment fetches the scoped download endpoint and resolves a blob', async () => {
+    const blob = new Blob(['pdf-bytes'])
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, blob: async () => blob })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await downloadAttachment(7, 21)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/time-entries/7/attachments/21/download'),
+      expect.objectContaining({ method: 'GET' }),
+    )
+    expect(result).toBe(blob)
+  })
+
+  it('deleteAttachment calls DELETE on the scoped attachment', async () => {
+    const fetchMock = mockFetchOnce(null, 204)
+
+    await deleteAttachment(7, 21)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/time-entries/7/attachments/21'),
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })

@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Notification;
 
 class TimesheetController extends Controller
 {
-    private const RELATIONS = ['timeEntries.project', 'timeEntries.client', 'comments.author'];
+    private const RELATIONS = ['timeEntries.project', 'timeEntries.client', 'timeEntries.attachments', 'comments.author'];
 
     public function index(Request $request): JsonResponse
     {
