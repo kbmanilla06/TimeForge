@@ -13,7 +13,7 @@ vi.mock('../lib/download')
 vi.mock('../lib/timeEntryApi')
 
 const mockUseAuth = vi.fn()
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 

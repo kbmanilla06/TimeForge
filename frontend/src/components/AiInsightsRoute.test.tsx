@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { AiInsightsRoute } from './AiInsightsRoute'
 
 const mockUseAuth = vi.fn()
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 

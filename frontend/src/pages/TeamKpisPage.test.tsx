@@ -7,7 +7,7 @@ import { TeamKpisPage } from './TeamKpisPage'
 vi.mock('../lib/kpiApi')
 
 const mockUseAuth = vi.fn()
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 

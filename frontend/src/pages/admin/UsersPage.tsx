@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import { activateUser, deactivateUser, listUsers } from '../../lib/adminApi'
 import { ApiError } from '../../lib/apiClient'
 import type { AdminUser } from '../../types/admin'

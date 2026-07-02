@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), Sprint 11 (AI Integration Foundation, stub provider only), Sprint 12 (AI Analysis Suite, stub provider only), and Sprint 13 (Time Entry Attachments Foundation). Every PRD business module now exists.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), Sprint 11 (AI Integration Foundation, stub provider only), Sprint 12 (AI Analysis Suite, stub provider only), Sprint 13 (Time Entry Attachments Foundation), and Sprint 14 (Final QA And Handoff — rate limiting, demo seeder, documentation set). Every PRD business module now exists; the handoff documentation index is in `README.md`.
 
 ## Prerequisites
 
@@ -35,6 +35,14 @@ After migrating, seed the database to create the one bootstrap account (see "See
 ```bash
 php artisan db:seed
 ```
+
+For demos and manual QA there is an optional, **dev/demo-only** dataset covering every module (two departments, one user per role, two payroll periods of reviewed time, KPIs, scrums with a recurring blocker — credentials in `docs/DEMO.md`). It is deliberately not part of the default seed:
+
+```bash
+php artisan db:seed --class=DemoDataSeeder
+```
+
+Sprint 14 added rate limiting: the public auth endpoints (`/api/login`, `/api/forgot-password`, `/api/reset-password`) allow 5 requests/minute per email+IP and authenticated API traffic 60 requests/minute per user — worth knowing if you script against the API (HTTP 429 beyond the limit).
 
 ### Frontend (`frontend/`)
 
@@ -232,7 +240,7 @@ npm run test
 
 ## Known Deferred Items
 
-These are intentionally out of scope so far and must not be assumed when their sprint is reached — see `docs/QUESTIONS.md` Section Q, and the flagged sub-items in Section P:
+These are intentionally out of scope, each backed by a recorded decision in `docs/DECISIONS.md` (every question in `docs/QUESTIONS.md` Sections A-R is now resolved). A handoff-facing summary lives in `README.md` → Known Limitations:
 
 - Attachment malware scanning and retention period. Attachment upload/storage itself is not implemented yet (Sprint 4 deferred it entirely — see `docs/DECISIONS.md` Sprint 4 decisions).
 - Docker Desktop installation and container validation (`docker compose up`).
@@ -267,3 +275,5 @@ These are intentionally out of scope so far and must not be assumed when their s
 - Productivity trend analysis covers a fixed window of six consecutive semi-monthly payroll periods; KPI performance analysis is department-scoped (no personal-subject KPI narrative yet); payroll validation rows are organization-shaped (`ai_outputs` with both subject foreign keys null). All per Sprint 12 decisions.
 - No attachment malware scanning — an accepted Sprint 13 MVP risk with compensating controls (extension + server-detected MIME allowlist, 10MB cap, private non-web-served storage with hashed names, authorized download-only access), to be revisited at deployment/security hardening. Attachments are retained indefinitely as audit evidence; no purge jobs or retention scheduler exist.
 - Attachments exist on time entries only (PRD §7.1), on the private local disk only (an S3 move is a filesystem-disk config change), with no previews/thumbnails, no versioning, and no per-entry count cap (none is defined anywhere; the 10MB/file limit and API throttling bound abuse). HR/Finance cannot download raw time-entry attachments — consistent with the standing raw-records rule. All per Sprint 13 decisions.
+- The frontend ships one >500kB JavaScript chunk (recharts); code-splitting is a future polish item, not a functional issue (noted by the Sprint 14 performance review).
+- `hourly_rate` is serialized only by the Admin user-management endpoints (Sprint 14 security fix); every other response — including `/api/me` and supervisor-facing timesheet views — omits it by model-level hiding.

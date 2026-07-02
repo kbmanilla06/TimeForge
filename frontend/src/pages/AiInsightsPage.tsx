@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { listDepartments } from '../lib/adminApi'
 import { generateAiOutput, listAiOutputs } from '../lib/aiApi'
 import { ApiError } from '../lib/apiClient'

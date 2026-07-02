@@ -12,7 +12,7 @@ vi.mock('../lib/kpiApi')
 vi.mock('../lib/adminApi')
 
 const mockUseAuth = vi.fn()
-vi.mock('../context/AuthContext', () => ({
+vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 

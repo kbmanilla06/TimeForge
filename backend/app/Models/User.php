@@ -16,7 +16,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate'])]
-#[Hidden(['password', 'remember_token'])]
+// hourly_rate is payroll data (Admin/HR-Finance only per Sprint 8): hidden
+// from every serialization by default; only the Admin user-management
+// responses opt back in via makeVisible. Server-side payroll math reads
+// the attribute directly and is unaffected.
+#[Hidden(['password', 'remember_token', 'hourly_rate'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */

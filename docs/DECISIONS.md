@@ -324,6 +324,15 @@ Approved alongside the Sprint 13 (Time Entry Attachments Foundation) plan. These
 - **Download permissions:** The owner can download their own time-entry attachments; Supervisors can download attachments for users in their own department; Admins can download all. HR/Finance cannot download raw time-entry attachments in Sprint 13.
 - **Lifecycle:** Attachment modification follows `TimeEntry::isLocked()` — upload/delete are allowed only while the time entry is editable; attachments freeze when the entry is submitted/approved/rejected; they become editable again only when the timesheet is revision-requested or reopened; deleting a time entry deletes attachment rows and stored files; no attachment versioning in MVP.
 
+## Sprint 14 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 14 (Final QA, Documentation, Demo And Deployment Readiness) plan. These resolve the four Clarification Questions in `sprints/SPRINT_14.md` and must be preserved unless explicitly changed. Sprint 14 adds no new business features, modules, endpoints, migrations, dependencies, dashboards, AI capabilities, export types, attachment features, or UX redesigns.
+
+- **Docker/MySQL validation:** If Docker Desktop is available during Sprint 14, the full Docker/MySQL validation and manual regression run end-to-end. If it remains unavailable, a complete validated runbook ships instead and Docker/MySQL execution is recorded as the single remaining, externally blocked known limitation.
+- **Demo seeder:** A dev-only `DemoDataSeeder` is added: two departments; one user per role with documented demo credentials; clients and projects; KPIs with progress; two payroll periods of time entries covering every relevant timesheet state, an overtime example, and one unrated employee; and daily scrum entries with a recurring blocker. It is excluded from production/default seeding and documented as dev/demo only.
+- **Documentation set:** `README.md` is refreshed, and the following are added/updated: `docs/ROUTES.md`, `docs/DATABASE.md`, `docs/QA_CHECKLIST.md`, `docs/DEMO.md`, `docs/USER_GUIDE.md`, a Known Limitations section, and a `docs/SETUP.md` accuracy pass.
+- **Hardening budget:** Sprint 14 code changes are limited to rate limiting with tests, extracting `useAuth` to remove the remaining lint warning, completing `.env.example`, and P0-only bug fixes found during regression — each reported before fixing.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

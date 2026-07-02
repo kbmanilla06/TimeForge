@@ -5,7 +5,11 @@ namespace App\Providers;
 use App\Ai\AiProvider;
 use App\Ai\StubAiProvider;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
@@ -40,6 +44,19 @@ class AppServiceProvider extends ServiceProvider
             $email = urlencode($notifiable->getEmailForPasswordReset());
 
             return rtrim(config('app.frontend_url'), '/')."/reset-password/{$token}?email={$email}";
+        });
+
+        // Sprint 14 hardening: no rate limiting existed before this sprint.
+        // "auth" guards the public credential endpoints against brute force,
+        // keyed per email+IP so one target can't be hammered and one IP
+        // can't spray. "api" is a per-user ceiling far above legitimate
+        // SPA usage.
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by(Str::lower((string) $request->input('email')).'|'.$request->ip());
+        });
+
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?? $request->ip());
         });
     }
 }

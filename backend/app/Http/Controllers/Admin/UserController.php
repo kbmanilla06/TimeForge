@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        return response()->json(User::with('department')->get());
+        return response()->json(User::with('department')->get()->each->makeVisible('hourly_rate'));
     }
 
     public function store(StoreUserRequest $request): JsonResponse
@@ -25,14 +25,14 @@ class UserController extends Controller
             'status' => UserStatus::Pending,
         ]);
 
-        return response()->json($user, 201);
+        return response()->json($user->makeVisible('hourly_rate'), 201);
     }
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
         $user->update($request->validated());
 
-        return response()->json($user->fresh('department'));
+        return response()->json($user->fresh('department')->makeVisible('hourly_rate'));
     }
 
     public function activate(User $user): JsonResponse
@@ -41,7 +41,7 @@ class UserController extends Controller
 
         $user->update(['status' => UserStatus::Active]);
 
-        return response()->json($user);
+        return response()->json($user->makeVisible('hourly_rate'));
     }
 
     public function deactivate(User $user): JsonResponse
@@ -50,6 +50,6 @@ class UserController extends Controller
 
         $user->update(['status' => UserStatus::Deactivated]);
 
-        return response()->json($user);
+        return response()->json($user->makeVisible('hourly_rate'));
     }
 }

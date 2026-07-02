@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { ApiError } from '../lib/apiClient'
 import { createAssignment, deleteAssignment, listKpis, listTeamAssignments, listTeamMembers } from '../lib/kpiApi'
 import type { Kpi, KpiAssignment, TeamMember } from '../types/kpi'
