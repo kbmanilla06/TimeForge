@@ -145,4 +145,101 @@ describe('AiInsightsPage', () => {
 
     expect(await screen.findByText('Unable to load AI outputs.')).toBeInTheDocument()
   })
+
+  it('lets an employee query their own productivity trend', async () => {
+    const user = userEvent.setup()
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: 'Jane Employee', role: 'employee', department_id: null },
+    })
+
+    render(<AiInsightsPage />)
+    await user.click(await screen.findByRole('button', { name: 'Productivity Trend' }))
+
+    await waitFor(() => {
+      expect(aiApi.listAiOutputs).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'productivity_trend_analysis', user_id: 1 }),
+      )
+    })
+    expect(screen.queryByRole('button', { name: 'Payroll Validation' })).not.toBeInTheDocument()
+  })
+
+  it('shows hr_finance only the Payroll Validation tab with an organization-wide query', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 4, name: 'Hana Finance', role: 'hr_finance', department_id: null },
+    })
+
+    render(<AiInsightsPage />)
+
+    expect(await screen.findByRole('button', { name: 'Payroll Validation' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Daily Summary' })).not.toBeInTheDocument()
+    expect(screen.getByText('Subject: entire organization')).toBeInTheDocument()
+    expect(kpiApi.listTeamMembers).not.toHaveBeenCalled()
+
+    await waitFor(() => {
+      expect(aiApi.listAiOutputs).toHaveBeenCalled()
+    })
+    const queryArg = vi.mocked(aiApi.listAiOutputs).mock.calls[0][0]
+    expect(queryArg.type).toBe('payroll_validation')
+    expect(queryArg).not.toHaveProperty('user_id')
+    expect(queryArg).not.toHaveProperty('department_id')
+  })
+
+  it('lets a supervisor open KPI Analysis and Recommendations for their own department', async () => {
+    const user = userEvent.setup()
+    mockUseAuth.mockReturnValue({
+      user: { id: 2, name: 'Sam Supervisor', role: 'supervisor', department_id: 5 },
+    })
+    vi.mocked(kpiApi.listTeamMembers).mockResolvedValue([
+      { id: 2, name: 'Sam Supervisor', department_id: 5 },
+    ])
+
+    render(<AiInsightsPage />)
+    await user.click(await screen.findByRole('button', { name: 'KPI Analysis' }))
+
+    await waitFor(() => {
+      expect(aiApi.listAiOutputs).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'kpi_performance_analysis', department_id: 5 }),
+      )
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Recommendations' }))
+
+    await waitFor(() => {
+      expect(aiApi.listAiOutputs).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'supervisor_recommendations', department_id: 5 }),
+      )
+    })
+    expect(screen.queryByRole('button', { name: 'Payroll Validation' })).not.toBeInTheDocument()
+  })
+
+  it('shows an admin all seven tabs including an organization-wide Payroll Validation', async () => {
+    const user = userEvent.setup()
+    mockUseAuth.mockReturnValue({
+      user: { id: 3, name: 'Ada Admin', role: 'admin', department_id: null },
+    })
+    vi.mocked(adminApi.listDepartments).mockResolvedValue([{ id: 7, name: 'Engineering' }])
+
+    render(<AiInsightsPage />)
+
+    for (const label of [
+      'Daily Summary',
+      'Weekly Report',
+      'Productivity Trend',
+      'Recurring Blockers',
+      'KPI Analysis',
+      'Recommendations',
+      'Payroll Validation',
+    ]) {
+      expect(await screen.findByRole('button', { name: label })).toBeInTheDocument()
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Payroll Validation' }))
+
+    await waitFor(() => {
+      expect(aiApi.listAiOutputs).toHaveBeenCalledWith({
+        type: 'payroll_validation',
+        date: expect.any(String),
+      })
+    })
+  })
 })

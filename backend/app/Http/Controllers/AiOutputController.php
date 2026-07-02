@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Ai\AiSummaryService;
 use App\Enums\AiOutputType;
+use App\Enums\AiSubjectShape;
 use App\Http\Requests\AiOutputRequest;
 use App\Models\AiOutput;
 use App\Models\Department;
@@ -29,6 +30,12 @@ class AiOutputController extends Controller
             ->where('type', $type->value)
             ->when($subjectUser, fn ($query) => $query->where('user_id', $subjectUser->id))
             ->when($subjectDepartment, fn ($query) => $query->where('department_id', $subjectDepartment->id))
+            // Organization-shaped outputs are the rows with no subject at
+            // all — filtered explicitly, per the approved Sprint 12 decision.
+            ->when(
+                $subjectUser === null && $subjectDepartment === null,
+                fn ($query) => $query->whereNull('user_id')->whereNull('department_id')
+            )
             ->where('period_start', $periodStart->toDateString())
             ->where('period_end', $periodEnd->toDateString())
             ->orderByDesc('created_at')
@@ -67,24 +74,36 @@ class AiOutputController extends Controller
         $type = AiOutputType::from($request->validated('type'));
         [$periodStart, $periodEnd] = $type->resolvePeriod(Carbon::parse($request->validated('date')));
 
-        $subjectUser = $type->subjectIsUser() ? User::findOrFail($request->validated('user_id')) : null;
-        $subjectDepartment = $type->subjectIsUser() ? null : Department::findOrFail($request->validated('department_id'));
+        $shape = $type->subjectShape();
+        $subjectUser = $shape === AiSubjectShape::User ? User::findOrFail($request->validated('user_id')) : null;
+        $subjectDepartment = $shape === AiSubjectShape::Department
+            ? Department::findOrFail($request->validated('department_id'))
+            : null;
 
-        $this->authorizeAccess($request->user(), $subjectUser, $subjectDepartment);
+        $this->authorizeAccess($request->user(), $type, $subjectUser, $subjectDepartment);
 
         return [$type, $subjectUser, $subjectDepartment, $periodStart, $periodEnd];
     }
 
     /**
-     * Sprint 11 permission matrix: Employees reach only their own
-     * summaries; Supervisors their own department's members and their own
-     * department's blocker report; Admins everything; HR/Finance nothing
-     * (their AI entry point — payroll validation — is a later sprint).
+     * Sprint 11/12 permission matrix: payroll validation is Admin and
+     * HR/Finance only (mirroring Sprint 8 payroll visibility), and it is
+     * HR/Finance's only AI capability. Otherwise: Employees reach only
+     * their own user-shaped outputs; Supervisors their own department's
+     * members and their own department's reports; Admins everything.
      */
-    private function authorizeAccess(User $requester, ?User $subjectUser, ?Department $subjectDepartment): void
+    private function authorizeAccess(User $requester, AiOutputType $type, ?User $subjectUser, ?Department $subjectDepartment): void
     {
+        if ($type === AiOutputType::PayrollValidation) {
+            if ($requester->isAdmin() || $requester->isHrFinance()) {
+                return;
+            }
+
+            abort(403, 'Only Admin and HR/Finance may run payroll validation.');
+        }
+
         if ($requester->isHrFinance()) {
-            abort(403, 'HR/Finance does not have AI Insights access in this sprint.');
+            abort(403, 'HR/Finance AI access is limited to payroll validation.');
         }
 
         if ($requester->isAdmin()) {
@@ -109,7 +128,7 @@ class AiOutputController extends Controller
             return;
         }
 
-        abort(403, 'Only this department\'s Supervisor or an Admin may view its blocker report.');
+        abort(403, 'Only this department\'s Supervisor or an Admin may view its AI reports.');
     }
 
     /**

@@ -46,8 +46,16 @@ describe('AiInsightsRoute', () => {
     expect(screen.getByText('AI Insights Page')).toBeInTheDocument()
   })
 
-  it('redirects hr_finance to home', () => {
+  it('renders the nested route for hr_finance', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'hr_finance' } })
+
+    renderAiInsightsRoute()
+
+    expect(screen.getByText('AI Insights Page')).toBeInTheDocument()
+  })
+
+  it('redirects a user without a recognized role to home', () => {
+    mockUseAuth.mockReturnValue({ user: null })
 
     renderAiInsightsRoute()
 

@@ -11,8 +11,34 @@ import type { TeamMember } from '../types/kpi'
 const TAB_LABELS: Record<AiOutputType, string> = {
   daily_work_summary: 'Daily Summary',
   weekly_productivity_report: 'Weekly Report',
+  productivity_trend_analysis: 'Productivity Trend',
   recurring_blockers: 'Recurring Blockers',
+  kpi_performance_analysis: 'KPI Analysis',
+  supervisor_recommendations: 'Recommendations',
+  payroll_validation: 'Payroll Validation',
 }
+
+const SUBJECT_SHAPES: Record<AiOutputType, 'user' | 'department' | 'organization'> = {
+  daily_work_summary: 'user',
+  weekly_productivity_report: 'user',
+  productivity_trend_analysis: 'user',
+  recurring_blockers: 'department',
+  kpi_performance_analysis: 'department',
+  supervisor_recommendations: 'department',
+  payroll_validation: 'organization',
+}
+
+const USER_TABS: AiOutputType[] = [
+  'daily_work_summary',
+  'weekly_productivity_report',
+  'productivity_trend_analysis',
+]
+
+const DEPARTMENT_TABS: AiOutputType[] = [
+  'recurring_blockers',
+  'kpi_performance_analysis',
+  'supervisor_recommendations',
+]
 
 function todayLocal(): string {
   const now = new Date()
@@ -21,7 +47,9 @@ function todayLocal(): string {
 
 export function AiInsightsPage() {
   const { user } = useAuth()
-  const [tab, setTab] = useState<AiOutputType>('daily_work_summary')
+  const [tab, setTab] = useState<AiOutputType>(() =>
+    user?.role === 'hr_finance' ? 'payroll_validation' : 'daily_work_summary',
+  )
   const [date, setDate] = useState(todayLocal())
   const [subjectUserId, setSubjectUserId] = useState<number | null>(user?.id ?? null)
   const [subjectDepartmentId, setSubjectDepartmentId] = useState<number | null>(null)
@@ -33,8 +61,6 @@ export function AiInsightsPage() {
   const [error, setError] = useState<string | null>(null)
 
   const canPickSubject = user?.role === 'supervisor' || user?.role === 'admin'
-  const showBlockersTab =
-    user?.role === 'admin' || (user?.role === 'supervisor' && user.department_id !== null)
 
   useEffect(() => {
     if (!user) {
@@ -60,7 +86,13 @@ export function AiInsightsPage() {
       return null
     }
 
-    if (tab === 'recurring_blockers') {
+    const shape = SUBJECT_SHAPES[tab]
+
+    if (shape === 'organization') {
+      return { type: tab, date }
+    }
+
+    if (shape === 'department') {
       const departmentId = user.role === 'admin' ? subjectDepartmentId : user.department_id
       return departmentId ? { type: tab, date, department_id: departmentId } : null
     }
@@ -119,9 +151,16 @@ export function AiInsightsPage() {
     }
   }
 
-  const visibleTabs: AiOutputType[] = showBlockersTab
-    ? ['daily_work_summary', 'weekly_productivity_report', 'recurring_blockers']
-    : ['daily_work_summary', 'weekly_productivity_report']
+  const visibleTabs: AiOutputType[] =
+    user?.role === 'hr_finance'
+      ? ['payroll_validation']
+      : user?.role === 'admin'
+        ? [...USER_TABS, ...DEPARTMENT_TABS, 'payroll_validation']
+        : user?.role === 'supervisor' && user.department_id !== null
+          ? [...USER_TABS, ...DEPARTMENT_TABS]
+          : USER_TABS
+
+  const subjectShape = SUBJECT_SHAPES[tab]
 
   const subjectOptions: TeamMember[] =
     members.length > 0
@@ -159,7 +198,7 @@ export function AiInsightsPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-2">
-        {tab !== 'recurring_blockers' && canPickSubject && (
+        {subjectShape === 'user' && canPickSubject && (
           <label className="text-sm text-slate-700">
             Employee
             <select
@@ -175,10 +214,10 @@ export function AiInsightsPage() {
             </select>
           </label>
         )}
-        {tab !== 'recurring_blockers' && !canPickSubject && (
+        {subjectShape === 'user' && !canPickSubject && (
           <p className="py-2 text-sm text-slate-500">Subject: yourself</p>
         )}
-        {tab === 'recurring_blockers' && user?.role === 'admin' && (
+        {subjectShape === 'department' && user?.role === 'admin' && (
           <label className="text-sm text-slate-700">
             Department
             <select
@@ -196,8 +235,11 @@ export function AiInsightsPage() {
             </select>
           </label>
         )}
-        {tab === 'recurring_blockers' && user?.role === 'supervisor' && (
+        {subjectShape === 'department' && user?.role === 'supervisor' && (
           <p className="py-2 text-sm text-slate-500">Subject: your department</p>
+        )}
+        {subjectShape === 'organization' && (
+          <p className="py-2 text-sm text-slate-500">Subject: entire organization</p>
         )}
         <input
           type="date"

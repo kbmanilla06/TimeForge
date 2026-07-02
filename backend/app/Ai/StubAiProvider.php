@@ -30,7 +30,240 @@ final class StubAiProvider implements AiProvider
             AiOutputType::DailyWorkSummary => $this->dailyWorkSummary($sourceData),
             AiOutputType::WeeklyProductivityReport => $this->weeklyProductivityReport($sourceData),
             AiOutputType::RecurringBlockers => $this->recurringBlockers($sourceData),
+            AiOutputType::KpiPerformanceAnalysis => $this->kpiPerformanceAnalysis($sourceData),
+            AiOutputType::PayrollValidation => $this->payrollValidation($sourceData),
+            AiOutputType::SupervisorRecommendations => $this->supervisorRecommendations($sourceData),
+            AiOutputType::ProductivityTrendAnalysis => $this->productivityTrendAnalysis($sourceData),
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function kpiPerformanceAnalysis(array $data): string
+    {
+        $lines = [
+            sprintf('KPI performance analysis for %s, %s to %s.', $data['department_name'], $data['period_start'], $data['period_end']),
+            '',
+        ];
+
+        $total = count($data['rated']) + count($data['untargeted']);
+
+        if ($total === 0) {
+            $lines[] = 'No KPI assignments are in scope for this department.';
+            $lines[] = self::FOOTER;
+
+            return implode("\n", $lines);
+        }
+
+        $lines[] = sprintf(
+            'In scope: %s (%d with a numeric target).',
+            $this->pluralize($total, 'KPI assignment', 'KPI assignments'),
+            count($data['rated']),
+        );
+
+        if ($data['rated'] !== []) {
+            $lines[] = 'Completion rates (highest first):';
+
+            foreach ($data['rated'] as $row) {
+                $lines[] = sprintf(
+                    '- %s — %s: %s/%s%s (%s%%); +%s credited this period.',
+                    $row['kpi_name'],
+                    $row['assignee'],
+                    $this->number($row['progress']),
+                    $this->number($row['target']),
+                    $row['unit'] !== null ? ' '.$row['unit'] : '',
+                    $this->number($row['completion_rate']),
+                    $this->number($row['period_credited']),
+                );
+            }
+        }
+
+        if ($data['untargeted'] !== []) {
+            $lines[] = 'Assignments without a numeric target:';
+
+            foreach ($data['untargeted'] as $row) {
+                $lines[] = sprintf(
+                    '- %s — %s: progress %s%s; +%s credited this period.',
+                    $row['kpi_name'],
+                    $row['assignee'],
+                    $this->number($row['progress']),
+                    $row['unit'] !== null ? ' '.$row['unit'] : '',
+                    $this->number($row['period_credited']),
+                );
+            }
+        }
+
+        $lines[] = $data['zero_progress'] === []
+            ? 'Every assignment in scope has recorded progress.'
+            : 'Assignments with zero recorded progress: '.implode('; ', $data['zero_progress']).'.';
+        $lines[] = self::FOOTER;
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function payrollValidation(array $data): string
+    {
+        $lines = [
+            sprintf('Payroll validation for the organization, %s to %s.', $data['period_start'], $data['period_end']),
+            '',
+            sprintf(
+                'Period totals: %s regular, %s overtime, estimated payroll %s, across %s.',
+                $this->minutes($data['total_regular_minutes']),
+                $this->minutes($data['total_overtime_minutes']),
+                $this->money($data['total_estimated_payroll']),
+                $this->pluralize($data['active_employee_count'], 'active employee', 'active employees'),
+            ),
+            $data['employees_missing_rate'] === []
+                ? 'Every employee with approved hours has an hourly rate.'
+                : 'Employees with approved hours but no hourly rate: '.implode(', ', $data['employees_missing_rate']).'.',
+            sprintf(
+                'Hours not payroll-ready: %s pending review, %s rejected.',
+                $this->minutes($data['pending_minutes']),
+                $this->minutes($data['rejected_minutes']),
+            ),
+            $data['unsubmitted_day_count'] === 0
+                ? 'Every logged day in the period has a timesheet.'
+                : sprintf(
+                    'Days with logged time but no timesheet: %d (%s).',
+                    $data['unsubmitted_day_count'],
+                    implode(', ', $data['employees_with_unsubmitted_days']),
+                ),
+            $data['open_timer_count'] === 0
+                ? 'No timers were left running in the period.'
+                : sprintf(
+                    'Open timers left running in the period: %d (%s).',
+                    $data['open_timer_count'],
+                    implode(', ', $data['employees_with_open_timers']),
+                ),
+            $data['largest_approved_day'] === null
+                ? 'No approved days exist in this period.'
+                : sprintf(
+                    'Largest single approved day: %s on %s with %s.',
+                    $data['largest_approved_day']['name'],
+                    $data['largest_approved_day']['date'],
+                    $this->minutes($data['largest_approved_day']['minutes']),
+                ),
+            self::FOOTER,
+        ];
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function supervisorRecommendations(array $data): string
+    {
+        $recommendations = [];
+
+        if ($data['pending_review_count'] > 0) {
+            $recommendations[] = sprintf(
+                'Review %s awaiting a decision; the oldest is dated %s.',
+                $this->pluralize($data['pending_review_count'], 'submitted timesheet', 'submitted timesheets'),
+                $data['oldest_pending_date'],
+            );
+        }
+
+        if ($data['revision_requested_count'] > 0) {
+            $recommendations[] = sprintf(
+                '%s awaiting employee resubmission after a revision request.',
+                $this->pluralize($data['revision_requested_count'], 'timesheet is', 'timesheets are'),
+            );
+        }
+
+        foreach ($data['recurring_blockers'] as $blocker) {
+            $recommendations[] = sprintf(
+                'Address the recurring blocker "%s" (%s in this period).',
+                $blocker['text'],
+                $this->pluralize($blocker['occurrences'], 'occurrence', 'occurrences'),
+            );
+        }
+
+        if ($data['members_with_no_logged_time'] !== []) {
+            $recommendations[] = 'Check in with members who logged no time this period: '
+                .implode(', ', $data['members_with_no_logged_time']).'.';
+        }
+
+        if ($data['unsubmitted_day_count'] > 0) {
+            $recommendations[] = sprintf(
+                '%s no submitted timesheet; affected: %s.',
+                $this->pluralize($data['unsubmitted_day_count'], 'logged day has', 'logged days have'),
+                implode(', ', $data['members_with_unsubmitted_days']),
+            );
+        }
+
+        if ($data['kpis_without_target'] !== []) {
+            $recommendations[] = 'Set a numeric target for: '.implode('; ', $data['kpis_without_target']).'.';
+        }
+
+        if ($data['kpis_with_zero_progress'] !== []) {
+            $recommendations[] = 'Follow up on KPI assignments with zero recorded progress: '
+                .implode('; ', $data['kpis_with_zero_progress']).'.';
+        }
+
+        $lines = [
+            sprintf('Supervisor recommendations for %s, %s to %s.', $data['department_name'], $data['period_start'], $data['period_end']),
+            '',
+        ];
+
+        if ($recommendations === []) {
+            $lines[] = 'No recommendations — nothing in this period needs attention.';
+        } else {
+            foreach ($recommendations as $index => $recommendation) {
+                $lines[] = ($index + 1).'. '.$recommendation;
+            }
+        }
+
+        $lines[] = self::FOOTER;
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function productivityTrendAnalysis(array $data): string
+    {
+        $lines = [
+            sprintf(
+                'Productivity trend analysis for %s, %s to %s (%s).',
+                $data['user_name'],
+                $data['window_start'],
+                $data['window_end'],
+                $this->pluralize(count($data['periods']), 'payroll period', 'payroll periods'),
+            ),
+            '',
+        ];
+
+        foreach ($data['periods'] as $period) {
+            $line = sprintf(
+                '- %s to %s: %s approved (%s overtime, %s pending), %s',
+                $period['period_start'],
+                $period['period_end'],
+                $this->minutes($period['approved_minutes']),
+                $this->minutes($period['overtime_minutes']),
+                $this->minutes($period['pending_minutes']),
+                $this->pluralize($period['attendance_days'], 'attendance day', 'attendance days'),
+            );
+
+            $lines[] = $period['change_from_previous_minutes'] === null
+                ? $line.'.'
+                : $line.sprintf('; change from previous period: %s.', $this->signedMinutes($period['change_from_previous_minutes']));
+        }
+
+        $lines[] = sprintf(
+            'Net change across the window: %s approved (first period %s, latest period %s).',
+            $this->signedMinutes($data['net_change_minutes']),
+            $this->minutes($data['first_period_approved_minutes']),
+            $this->minutes($data['last_period_approved_minutes']),
+        );
+        $lines[] = self::FOOTER;
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -222,6 +455,16 @@ final class StubAiProvider implements AiProvider
     private function minutes(int $minutes): string
     {
         return sprintf('%dh %02dm', intdiv($minutes, 60), $minutes % 60);
+    }
+
+    private function signedMinutes(int $minutes): string
+    {
+        return ($minutes < 0 ? '-' : '+').$this->minutes(abs($minutes));
+    }
+
+    private function money(float $amount): string
+    {
+        return sprintf('%.2f', $amount);
     }
 
     private function number(float|int $value): string

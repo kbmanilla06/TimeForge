@@ -1,4 +1,11 @@
-export type AiOutputType = 'daily_work_summary' | 'weekly_productivity_report' | 'recurring_blockers'
+export type AiOutputType =
+  | 'daily_work_summary'
+  | 'weekly_productivity_report'
+  | 'productivity_trend_analysis'
+  | 'recurring_blockers'
+  | 'kpi_performance_analysis'
+  | 'supervisor_recommendations'
+  | 'payroll_validation'
 
 export interface AiOutput {
   id: number

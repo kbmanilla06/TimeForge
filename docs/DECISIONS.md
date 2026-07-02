@@ -305,6 +305,15 @@ Approved alongside the Sprint 11 (AI Integration Foundation) plan. These resolve
 - **Permission matrix:** Employees can generate/view their own AI summaries. Supervisors can generate/view their own department's summaries and department blocker reports. Admins can generate/view all. HR/Finance has no AI access in Sprint 11.
 - **Prompt storage and audit:** Append-only `ai_outputs` records storing the source-data JSON snapshot, provider, prompt_version, generator user, subject/period metadata, and the generated output. Regeneration appends a new row. Prior AI outputs are never overwritten or deleted.
 
+## Sprint 12 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 12 (AI Analysis Suite) plan. These resolve the four Clarification Questions in `sprints/SPRINT_12.md` and must be preserved unless explicitly changed. All Sprint 11 AI safety rules are explicitly carried forward: stub provider only, no external AI calls, no credentials, synchronous Generate/Regenerate only, append-only `ai_outputs`, source-data snapshots, AI-generated labeling, and no queues or scheduled jobs.
+
+- **AI subject shapes:** KPI performance analysis and supervisor recommendations are department-scoped. Payroll validation is organization-wide, stored with both subject foreign keys null. Productivity trend analysis is user-scoped. The Sprint 11 subject helper is refactored only as needed to support user, department, and organization-wide subject shapes. No new schema.
+- **Permission matrix:** Payroll validation is Admin and HR/Finance only, mirroring Sprint 8 payroll visibility. HR/Finance gains AI Insights access only for payroll validation and must receive 403 on all other AI output types. Other roles receive 403 on payroll validation unless explicitly allowed. All Sprint 11 matrix rules otherwise stand unchanged.
+- **Trend window:** Productivity trend analysis covers the six consecutive semi-monthly payroll periods ending with the reference date's period.
+- **Payroll validation content:** Facts only — missing hourly rates, period totals, pending/rejected hours, unsubmitted days, open timers, and largest approved day. No anomaly thresholds, risk scores, compliance labels, or business judgments are invented.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

@@ -3,7 +3,11 @@
 namespace App\Ai;
 
 use App\Ai\SourceData\DailyWorkSummaryGatherer;
+use App\Ai\SourceData\KpiPerformanceAnalysisGatherer;
+use App\Ai\SourceData\PayrollValidationGatherer;
+use App\Ai\SourceData\ProductivityTrendAnalysisGatherer;
 use App\Ai\SourceData\RecurringBlockersGatherer;
+use App\Ai\SourceData\SupervisorRecommendationsGatherer;
 use App\Ai\SourceData\WeeklyProductivityReportGatherer;
 use App\Enums\AiOutputType;
 use App\Models\AiOutput;
@@ -23,7 +27,7 @@ final class AiSummaryService
 
     public function generate(
         AiOutputType $type,
-        User|Department $subject,
+        User|Department|null $subject,
         Carbon $periodStart,
         Carbon $periodEnd,
         User $generator
@@ -47,12 +51,16 @@ final class AiSummaryService
     /**
      * @return array<string, mixed>
      */
-    private function gather(AiOutputType $type, User|Department $subject, Carbon $periodStart, Carbon $periodEnd): array
+    private function gather(AiOutputType $type, User|Department|null $subject, Carbon $periodStart, Carbon $periodEnd): array
     {
         return match ($type) {
             AiOutputType::DailyWorkSummary => (new DailyWorkSummaryGatherer)->gather($subject, $periodStart),
             AiOutputType::WeeklyProductivityReport => (new WeeklyProductivityReportGatherer)->gather($subject, $periodStart, $periodEnd),
             AiOutputType::RecurringBlockers => (new RecurringBlockersGatherer)->gather($subject, $periodStart, $periodEnd),
+            AiOutputType::KpiPerformanceAnalysis => (new KpiPerformanceAnalysisGatherer)->gather($subject, $periodStart, $periodEnd),
+            AiOutputType::PayrollValidation => (new PayrollValidationGatherer)->gather($periodStart, $periodEnd),
+            AiOutputType::SupervisorRecommendations => (new SupervisorRecommendationsGatherer)->gather($subject, $periodStart, $periodEnd),
+            AiOutputType::ProductivityTrendAnalysis => (new ProductivityTrendAnalysisGatherer)->gather($subject, $periodStart, $periodEnd),
         };
     }
 }

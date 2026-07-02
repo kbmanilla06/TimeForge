@@ -120,7 +120,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument()
   })
 
-  it('shows AI Insights to employee, supervisor, and admin but not hr_finance', () => {
+  it('shows AI Insights to every authenticated role (hr_finance gained access in Sprint 12)', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
     const { unmount } = renderLayout()
     expect(screen.getByText('AI Insights')).toBeInTheDocument()
@@ -138,6 +138,6 @@ describe('AppLayout', () => {
 
     mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
     renderLayout()
-    expect(screen.queryByText('AI Insights')).not.toBeInTheDocument()
+    expect(screen.getByText('AI Insights')).toBeInTheDocument()
   })
 })
