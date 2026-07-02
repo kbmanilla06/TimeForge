@@ -295,6 +295,16 @@ Approved alongside the Sprint 10 (Dashboard And Analytics Foundation) plan. Thes
 - **Payroll summary visibility:** Payroll summary appears only for Admin and HR/Finance. It is omitted entirely from Supervisor dashboard responses.
 - **Dashboard export:** No export button on the dashboard in Sprint 10. Sprint 9 already covers exports.
 
+## Sprint 11 Implementation Decisions (Approved)
+
+Approved alongside the Sprint 11 (AI Integration Foundation) plan. These resolve the five Clarification Questions in `sprints/SPRINT_11.md` — including the PRD §11 "AI prompt storage and audit rules" gap — and must be preserved unless explicitly changed.
+
+- **AI provider:** Sprint 11 is stub-only. No external AI providers, API credentials, HTTP clients, or network calls anywhere in the AI layer. Real provider selection and external data privacy rules remain deferred (see Decisions Still Required) and now gate only the future swap to a real external provider, not this foundation.
+- **Capability scope:** Sprint 11 implements only daily work summaries, weekly productivity reports, and recurring blocker identification. KPI performance analysis, payroll validation, supervisor recommendations, and productivity trend analysis are deferred to a later sprint.
+- **Automatic generation semantics:** On-demand synchronous Generate/Regenerate only. No scheduled jobs, queues, Horizon workers, or automatic background generation in Sprint 11.
+- **Permission matrix:** Employees can generate/view their own AI summaries. Supervisors can generate/view their own department's summaries and department blocker reports. Admins can generate/view all. HR/Finance has no AI access in Sprint 11.
+- **Prompt storage and audit:** Append-only `ai_outputs` records storing the source-data JSON snapshot, provider, prompt_version, generator user, subject/period metadata, and the generated output. Regeneration appends a new row. Prior AI outputs are never overwritten or deleted.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:
@@ -302,7 +312,7 @@ The following remain open and must be resolved before their related sprint begin
 - Attachment malware scanning requirement.
 - Attachment/reference file retention period.
 - Deployment target and production hosting details.
-- AI provider selection and external data privacy rules.
+- AI provider selection and external data privacy rules (Sprint 11 is stub-only per its approved decisions; this item now gates only the future swap to a real external provider).
 
 Full question text and traceability: `docs/QUESTIONS.md`.
 

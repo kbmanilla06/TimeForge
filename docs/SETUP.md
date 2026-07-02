@@ -1,6 +1,6 @@
 # TimeForge Local Development Setup
 
-This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), and Sprint 10 (Dashboard And Analytics Foundation). No other business modules (AI, attachments) exist yet.
+This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), and Sprint 11 (AI Integration Foundation, stub provider only). No other business modules (attachments) exist yet.
 
 ## Prerequisites
 
@@ -169,6 +169,18 @@ Uses the same Employee/Supervisor/Admin/HR-Finance set and logged time from the 
 6. Log in as an Employee; confirm no "Dashboard" nav link appears, and `GET /api/dashboard` returns 403 if called directly.
 7. Log in as the Admin; confirm they see the same organization-wide view HR/Finance sees, including the Payroll Summary card.
 
+## Testing AI Insights Manually
+
+Uses the same Employee/Supervisor/Admin/HR-Finance set, logged time, and daily scrum entries from the earlier manual tests. No AI credentials or internet access are needed — the stub provider is fully local.
+
+1. Log in as the Employee; open "AI Insights"; on "Daily Summary", pick a day with logged time and click Generate. Verify every number, task, project name, timesheet status, scrum detail, and KPI value in the text against the raw records, and confirm the output carries an "AI-generated" badge with provider `stub`, a timestamp, and the generator's name.
+2. Click Regenerate; confirm a new version appears and the previous one moves under "Previous generations" (nothing is overwritten or deleted).
+3. Still as the Employee: confirm the subject is fixed to "yourself", no "Recurring Blockers" tab exists, and `POST /api/ai-outputs` with another user's `user_id` returns 403.
+4. Log in as the Supervisor; generate a "Weekly Report" for a department employee; confirm the approved/overtime/pending numbers match that week's Time Tracking/Payroll figures; confirm a cross-department `user_id` via the API returns 403.
+5. As the Supervisor, open "Recurring Blockers" for a period where the same blocker text appears in scrum entries on two or more distinct days (log them first if needed); confirm the blocker is listed with its occurrence count, dates, and employee names, and that a one-off blocker is not listed as recurring.
+6. Log in as the Admin; confirm all three types can be generated for any employee and any department.
+7. Log in as HR/Finance; confirm no "AI Insights" nav link appears, and both `GET` and `POST /api/ai-outputs` return 403 if called directly.
+
 ## Option B: Run Everything Via Docker (Once Docker Desktop Is Installed)
 
 ```bash
@@ -230,3 +242,9 @@ These are intentionally out of scope so far and must not be assumed when their s
 - No real-time push or scheduled background refresh for the Dashboard — data is recomputed on page load and via a manual "Refresh" button only, per Sprint 10 decisions.
 - No export button on the Dashboard, no new database migrations, and no `billable` schema field — billable/non-billable is inferred from whether a time entry has a linked project/client, an heuristic with no prior precedent in the schema. All explicitly scoped by Sprint 10 decisions.
 - "Employee productivity" and "department performance" use simple, literal definitions (approved hours; approved hours plus average KPI completion) rather than any weighted scoring formula, since none is defined anywhere in the PRD or decisions.
+- Only three AI capabilities exist (daily work summaries, weekly productivity reports, recurring blocker identification). KPI performance analysis, payroll validation, supervisor recommendations, and productivity trend analysis are deferred to a later sprint, per Sprint 11 decisions.
+- The AI layer is stub-only: `AI_PROVIDER` supports only `stub` (any other value throws at boot), and there are no external AI providers, credentials, HTTP clients, or network calls anywhere in `app/Ai/`. Real provider selection and external data privacy rules remain open — see `docs/DECISIONS.md` Decisions Still Required.
+- AI generation is on-demand and synchronous only (Generate/Regenerate buttons). No scheduled jobs, queues, Horizon workers, or background generation, per Sprint 11's approved reading of "automatic daily work summaries".
+- HR/Finance has no AI Insights access in Sprint 11; their natural AI entry point (payroll validation) is deferred with the other analysis capabilities.
+- AI outputs are append-only: regeneration inserts a new `ai_outputs` row carrying the full source-data JSON snapshot, provider, and prompt version; no update or delete endpoint exists. "Recurring blocker" matching is mechanical text normalization (trimmed, whitespace-collapsed, case-insensitive, on 2+ distinct days) — paraphrased blockers are not grouped; a real provider could improve that later.
+- No Admin "AI configurations" UI exists yet (PRD §6.4) — AI configuration is the single `AI_PROVIDER` env value until a real provider makes a settings screen meaningful.

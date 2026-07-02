@@ -119,4 +119,25 @@ describe('AppLayout', () => {
     renderLayout()
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument()
   })
+
+  it('shows AI Insights to employee, supervisor, and admin but not hr_finance', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    const { unmount } = renderLayout()
+    expect(screen.getByText('AI Insights')).toBeInTheDocument()
+    unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
+    const supervisorRender = renderLayout()
+    expect(supervisorRender.getByText('AI Insights')).toBeInTheDocument()
+    supervisorRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
+    const adminRender = renderLayout()
+    expect(adminRender.getByText('AI Insights')).toBeInTheDocument()
+    adminRender.unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
+    renderLayout()
+    expect(screen.queryByText('AI Insights')).not.toBeInTheDocument()
+  })
 })

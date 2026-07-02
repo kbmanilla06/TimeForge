@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router-dom'
 import { AdminRoute } from './components/AdminRoute'
+import { AiInsightsRoute } from './components/AiInsightsRoute'
 import { AppLayout } from './components/AppLayout'
 import { DashboardRoute } from './components/DashboardRoute'
 import { PayrollRoute } from './components/PayrollRoute'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SupervisorRoute } from './components/SupervisorRoute'
+import { AiInsightsPage } from './pages/AiInsightsPage'
 import { DailyScrumPage } from './pages/DailyScrumPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
@@ -52,6 +54,10 @@ function App() {
 
           <Route element={<DashboardRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+
+          <Route element={<AiInsightsRoute />}>
+            <Route path="/ai-insights" element={<AiInsightsPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AiOutputController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DailyScrumController;
@@ -99,4 +100,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('team-hours-report/export/excel', [TeamHoursReportController::class, 'exportExcel']);
 
     Route::get('dashboard', [DashboardController::class, 'index']);
+
+    Route::get('ai-outputs', [AiOutputController::class, 'index']);
+    Route::post('ai-outputs', [AiOutputController::class, 'store']);
 });

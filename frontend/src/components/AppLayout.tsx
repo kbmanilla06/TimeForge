@@ -14,6 +14,9 @@ export function AppLayout() {
             <Link to="/notifications">Notifications</Link>
             <Link to="/my-kpis">My KPIs</Link>
             <Link to="/daily-scrum">Daily Scrum</Link>
+            {(user?.role === 'employee' || user?.role === 'supervisor' || user?.role === 'admin') && (
+              <Link to="/ai-insights">AI Insights</Link>
+            )}
             {(user?.role === 'supervisor' || user?.role === 'admin') && (
               <>
                 <Link to="/team-timesheets">Team Timesheets</Link>
