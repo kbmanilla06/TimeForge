@@ -28,8 +28,13 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-    Route::get('/register/departments', [RegistrationController::class, 'departments']);
     Route::post('/register', [RegistrationController::class, 'store']);
+});
+
+// Sprint 19: a harmless public read (no credential, no brute-forceable
+// input) — deliberately not sharing the "auth" anti-brute-force bucket.
+Route::middleware('throttle:lookup')->group(function () {
+    Route::get('/register/departments', [RegistrationController::class, 'departments']);
 });
 
 Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function () {

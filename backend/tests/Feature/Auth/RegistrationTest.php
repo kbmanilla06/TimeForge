@@ -150,6 +150,37 @@ class RegistrationTest extends TestCase
         );
     }
 
+    /**
+     * Sprint 19 hardening: before this fix, GET /register/departments
+     * shared the "auth" limiter's email+IP bucket. With no email input it
+     * always keyed to ''|{ip}, so six page loads in a minute could 429 a
+     * legitimate applicant before they ever submitted the form. It now
+     * has its own generous per-IP "lookup" limiter.
+     */
+    public function test_departments_endpoint_is_not_rate_limited_by_the_auth_bucket(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->getJson('/api/register/departments')->assertOk();
+        }
+    }
+
+    public function test_hammering_the_departments_endpoint_does_not_exhaust_the_registration_rate_limit(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->getJson('/api/register/departments');
+        }
+
+        // The real anti-brute-force protection on /register itself is
+        // untouched by this fix: still exactly 5 before a 429.
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/register', $this->validPayload())->assertStatus(
+                $i === 0 ? 201 : 422, // first succeeds, rest fail on unique-email
+            );
+        }
+
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(429);
+    }
+
     public function test_registration_is_rate_limited_after_five_per_minute(): void
     {
         // The "auth" limiter is keyed per email+IP (Sprint 14), so repeated

@@ -58,5 +58,18 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?? $request->ip());
         });
+
+        // Sprint 19 hardening: GET /register/departments carries no email
+        // input, so under the "auth" limiter's email+IP key it collapsed to
+        // a single ''|{ip} bucket shared by every no-email request from
+        // that IP — a legitimate applicant reloading the registration page
+        // could exhaust the same budget that protects login/register
+        // against brute force. This endpoint is a harmless public read (no
+        // credential, no PII beyond department names), so it gets its own
+        // generous per-IP ceiling instead of sharing the anti-brute-force
+        // bucket.
+        RateLimiter::for('lookup', function (Request $request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
     }
 }
