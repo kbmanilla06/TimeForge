@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import { useProfilePictureUrl } from '../hooks/useProfilePictureUrl'
 import { useSidebarBadges } from '../hooks/useSidebarBadges'
 import { NotificationCenter } from './NotificationCenter'
+import { Avatar } from './ui/Avatar'
 import { ToastStack, type ToastItem } from './ui/Toast'
 import type { AppNotification } from '../types/notification'
 
@@ -58,6 +60,7 @@ export function AppLayout() {
   const [isNavOpen, setIsNavOpen] = useState(false)
   const closeNav = () => setIsNavOpen(false)
   const badgeCounts = useSidebarBadges()
+  const { url: pictureUrl } = useProfilePictureUrl()
 
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const dismissToast = (id: string) => setToasts((prev) => prev.filter((toast) => toast.id !== id))
@@ -165,8 +168,17 @@ export function AppLayout() {
         </nav>
 
         <div className="border-t border-line px-5 py-4">
-          <p className="truncate text-sm font-medium text-ink">{user?.name}</p>
-          <p className="mt-0.5 text-xs text-muted">{user?.role}</p>
+          <Link
+            to="/profile"
+            onClick={closeNav}
+            className="flex items-center gap-3 rounded-lg -mx-1 px-1 py-1 transition-colors hover:bg-field"
+          >
+            <Avatar name={user?.name ?? ''} pictureUrl={pictureUrl} size="sm" />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium text-ink">{user?.name}</span>
+              <span className="mt-0.5 block truncate text-xs text-muted">{user?.position || user?.role}</span>
+            </span>
+          </Link>
           <button
             type="button"
             onClick={() => logout()}

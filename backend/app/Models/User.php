@@ -23,8 +23,11 @@ use Laravel\Sanctum\HasApiTokens;
 // hourly_rate is payroll data (Admin/HR-Finance only per Sprint 8): hidden
 // from every serialization by default; only the Admin user-management
 // responses opt back in via makeVisible. Server-side payroll math reads
-// the attribute directly and is unaffected.
-#[Hidden(['password', 'remember_token', 'hourly_rate'])]
+// the attribute directly and is unaffected. profile_picture_path is a raw
+// private-disk path (Sprint 24) — never exposed, same rule as
+// TimeEntryAttachment::path; served only through the authenticated
+// streaming endpoint.
+#[Hidden(['password', 'remember_token', 'hourly_rate', 'profile_picture_path'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */

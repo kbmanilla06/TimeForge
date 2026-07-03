@@ -19,6 +19,12 @@ vi.mock('../lib/notificationApi', () => ({
 
 vi.mock('../lib/sidebarBadgeApi')
 
+// useProfilePictureUrl fetches on mount — mocked so it doesn't hit the
+// real API in tests that aren't about the profile picture specifically.
+vi.mock('../lib/profileApi', () => ({
+  getProfilePictureBlob: () => Promise.resolve(null),
+}))
+
 function renderLayout() {
   return render(
     <MemoryRouter initialEntries={['/']}>
@@ -177,5 +183,26 @@ describe('AppLayout', () => {
     renderLayout()
 
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument()
+  })
+
+  it('shows position (falling back to role when unset) in the footer, linking to Profile Settings', () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: 'employee', name: 'Bob Employee', position: 'Backend Engineer' },
+      logout: vi.fn(),
+    })
+
+    renderLayout()
+
+    expect(screen.getByText('Backend Engineer')).toBeInTheDocument()
+    expect(screen.queryByText('employee')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Bob Employee/ })).toHaveAttribute('href', '/profile')
+  })
+
+  it('falls back to showing the role when no position is set', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob Employee', position: null }, logout: vi.fn() })
+
+    renderLayout()
+
+    expect(screen.getByText('employee')).toBeInTheDocument()
   })
 })

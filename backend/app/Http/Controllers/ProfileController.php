@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UpdateProfilePictureRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+/**
+ * Self-only (Sprint 24): every action operates on $request->user(), never
+ * a route-bound {user}. Admin's edit-any-user path stays entirely
+ * separate in Admin\UserController.
+ */
+class ProfileController extends Controller
+{
+    public function update(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return response()->json($user->fresh());
+    }
+
+    public function uploadPicture(UpdateProfilePictureRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->profile_picture_path) {
+            Storage::disk('local')->delete($user->profile_picture_path);
+        }
+
+        $path = $request->file('file')->store('profile-pictures/'.$user->id, 'local');
+        $user->update(['profile_picture_path' => $path]);
+
+        return response()->json(['message' => 'Profile picture updated.']);
+    }
+
+    public function showPicture(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+
+        if (! $user->profile_picture_path) {
+            abort(404, 'No profile picture set.');
+        }
+
+        return Storage::disk('local')->response($user->profile_picture_path);
+    }
+
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The provided password is incorrect.'],
+            ]);
+        }
+
+        $user->update(['password' => $validated['password']]);
+
+        return response()->json(['message' => 'Password updated.']);
+    }
+}

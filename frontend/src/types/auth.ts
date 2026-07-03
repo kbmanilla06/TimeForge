@@ -17,6 +17,7 @@ export interface User {
   department_id: number | null
   department?: UserDepartment | null
   position?: string | null
+  contact_number?: string | null
 }
 
 export interface LoginResponse {

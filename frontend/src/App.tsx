@@ -15,6 +15,7 @@ import { LandingPage } from './pages/LandingPage'
 import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { PayrollPage } from './pages/PayrollPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
@@ -40,6 +41,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/time-tracking" element={<TimeTrackingPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/my-kpis" element={<MyKpisPage />} />

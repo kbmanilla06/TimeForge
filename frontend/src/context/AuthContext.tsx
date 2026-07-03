@@ -19,6 +19,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, [])
 
+  async function refreshUser() {
+    if (!getToken()) return
+    const response = await apiFetch<MeResponse>('/me')
+    setUser(response.user)
+  }
+
   async function login(email: string, password: string) {
     const response = await apiFetch<LoginResponse>('/login', {
       method: 'POST',
@@ -39,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

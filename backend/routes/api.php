@@ -17,6 +17,7 @@ use App\Http\Controllers\KpiAssignmentController;
 use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SidebarBadgeController;
 use App\Http\Controllers\TeamHoursReportController;
@@ -43,6 +44,11 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/sidebar-counts', [SidebarBadgeController::class, 'index']);
+
+    Route::patch('profile', [ProfileController::class, 'update']);
+    Route::post('profile/picture', [ProfileController::class, 'uploadPicture']);
+    Route::get('profile/picture', [ProfileController::class, 'showPicture']);
+    Route::patch('profile/password', [ProfileController::class, 'changePassword']);
 
     Route::get('attendance/today', [AttendanceController::class, 'today']);
     Route::post('attendance/time-in', [AttendanceController::class, 'timeIn']);
