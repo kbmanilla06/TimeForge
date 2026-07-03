@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use App\Enums\AccountRequestStatus;
+use Database\Factories\AccountRequestFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AccountRequest extends Model
 {
+    /** @use HasFactory<AccountRequestFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'status',

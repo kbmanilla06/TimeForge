@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountRequestController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
@@ -41,6 +42,10 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::patch('users/{user}/activate', [UserController::class, 'activate']);
         Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate']);
+
+        Route::get('account-requests', [AccountRequestController::class, 'index']);
+        Route::patch('account-requests/{accountRequest}/approve', [AccountRequestController::class, 'approve']);
+        Route::patch('account-requests/{accountRequest}/reject', [AccountRequestController::class, 'reject']);
 
         Route::get('departments', [DepartmentController::class, 'index']);
         Route::post('departments', [DepartmentController::class, 'store']);

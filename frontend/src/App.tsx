@@ -21,6 +21,7 @@ import { TeamKpisPage } from './pages/TeamKpisPage'
 import { TeamScrumPage } from './pages/TeamScrumPage'
 import { TeamTimesheetsPage } from './pages/TeamTimesheetsPage'
 import { TimeTrackingPage } from './pages/TimeTrackingPage'
+import { AccountRequestsPage } from './pages/admin/AccountRequestsPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
 import { KpisPage } from './pages/admin/KpisPage'
@@ -66,6 +67,7 @@ function App() {
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/users/new" element={<UserFormPage />} />
             <Route path="/admin/users/:userId/edit" element={<UserFormPage />} />
+            <Route path="/admin/account-requests" element={<AccountRequestsPage />} />
             <Route path="/admin/departments" element={<DepartmentsPage />} />
             <Route path="/admin/clients" element={<ClientsPage />} />
             <Route path="/admin/projects" element={<ProjectsPage />} />

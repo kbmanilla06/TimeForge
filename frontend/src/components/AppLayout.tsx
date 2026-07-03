@@ -127,6 +127,9 @@ export function AppLayout() {
               <NavItem to="/admin/users" onNavigate={closeNav}>
                 Manage Users
               </NavItem>
+              <NavItem to="/admin/account-requests" onNavigate={closeNav}>
+                Account Approvals
+              </NavItem>
               <NavItem to="/admin/departments" onNavigate={closeNav}>
                 Manage Departments
               </NavItem>
