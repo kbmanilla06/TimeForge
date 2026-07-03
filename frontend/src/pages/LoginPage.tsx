@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { ApiError } from '../lib/apiClient'
+import { AuthLayout, authButtonClass, authInputClass, authLabelClass } from '../components/AuthLayout'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -27,54 +28,52 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Sign in to TimeForge</h1>
-
+    <AuthLayout title="Sign In" subtitle="Enter your credentials to access your account.">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Email
+          <label htmlFor="email" className={authLabelClass}>
+            Email Address
           </label>
           <input
             id="email"
             type="email"
             required
+            placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className={authLabelClass}>
+              Password
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-[#1876f2] hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"
             required
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        <button type="submit" disabled={isSubmitting} className={authButtonClass}>
+          {isSubmitting ? 'Signing in…' : 'Log In'}
         </button>
-
-        <p className="text-center text-sm text-slate-500">
-          <Link to="/forgot-password" className="underline">
-            Forgot your password?
-          </Link>
-        </p>
       </form>
-    </main>
+    </AuthLayout>
   )
 }

@@ -1,7 +1,14 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ApiError, apiFetch } from '../lib/apiClient'
 import type { ApiMessageResponse } from '../types/auth'
+import {
+  AuthLayout,
+  BackToSignInLink,
+  authButtonClass,
+  authInputClass,
+  authLabelClass,
+} from '../components/AuthLayout'
 
 export function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()
@@ -38,68 +45,61 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Set a new password</h1>
-
+    <AuthLayout title="Change Password" subtitle="Set a new password for your account.">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Email
+          <label htmlFor="email" className={authLabelClass}>
+            Email address
           </label>
           <input
             id="email"
             type="email"
             required
+            placeholder="you@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="password" className={authLabelClass}>
             New password
           </label>
           <input
             id="password"
             type="password"
             required
+            placeholder="Password..."
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
         <div>
-          <label htmlFor="password_confirmation" className="block text-sm font-medium text-slate-700">
-            Confirm new password
+          <label htmlFor="password_confirmation" className={authLabelClass}>
+            Confirm password
           </label>
           <input
             id="password_confirmation"
             type="password"
             required
+            placeholder="Password..."
             value={passwordConfirmation}
             onChange={(e) => setPasswordConfirmation(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? 'Resetting…' : 'Reset password'}
+        <button type="submit" disabled={isSubmitting} className={authButtonClass}>
+          {isSubmitting ? 'Changing…' : 'Change Password'}
         </button>
-
-        <p className="text-center text-sm text-slate-500">
-          <Link to="/login" className="underline">
-            Back to sign in
-          </Link>
-        </p>
       </form>
-    </main>
+
+      <BackToSignInLink />
+    </AuthLayout>
   )
 }

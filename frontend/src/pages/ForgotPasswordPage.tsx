@@ -1,7 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { ApiError, apiFetch } from '../lib/apiClient'
 import type { ApiMessageResponse } from '../types/auth'
+import {
+  AuthLayout,
+  BackToSignInLink,
+  authButtonClass,
+  authInputClass,
+  authLabelClass,
+} from '../components/AuthLayout'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -29,41 +35,35 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold text-slate-900">Reset your password</h1>
-
+    <AuthLayout
+      title="Reset your password"
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
         {message && <p className="text-sm text-green-600">{message}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Email
+          <label htmlFor="email" className={authLabelClass}>
+            Email address
           </label>
           <input
             id="email"
             type="email"
             required
+            placeholder="you@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={authInputClass}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <button type="submit" disabled={isSubmitting} className={authButtonClass}>
           {isSubmitting ? 'Sending…' : 'Send reset link'}
         </button>
-
-        <p className="text-center text-sm text-slate-500">
-          <Link to="/login" className="underline">
-            Back to sign in
-          </Link>
-        </p>
       </form>
-    </main>
+
+      <BackToSignInLink />
+    </AuthLayout>
   )
 }
