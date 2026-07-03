@@ -63,6 +63,48 @@ class DepartmentManagementTest extends TestCase
         $this->assertSame(1, $counts[$marketing->id]);
     }
 
+    public function test_admin_can_set_a_multi_paragraph_department_description(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $department = Department::factory()->create();
+        $description = "Paragraph one about the department.\n\nParagraph two with more detail.";
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/departments/{$department->id}", [
+                'name' => $department->name,
+                'description' => $description,
+            ]);
+
+        $response->assertOk()->assertJsonPath('description', $description);
+        $this->assertSame($description, $department->fresh()->description);
+    }
+
+    public function test_department_description_is_optional(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $department = Department::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/departments/{$department->id}", ['name' => $department->name])
+            ->assertOk()
+            ->assertJsonPath('description', null);
+    }
+
+    public function test_non_admin_cannot_set_a_department_description(): void
+    {
+        $supervisor = User::factory()->role(UserRole::Supervisor)->create();
+        $department = Department::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($supervisor))
+            ->patchJson("/api/admin/departments/{$department->id}", [
+                'name' => $department->name,
+                'description' => 'Should not be allowed.',
+            ])
+            ->assertStatus(403);
+
+        $this->assertNull($department->fresh()->description);
+    }
+
     public function test_non_admin_roles_are_forbidden_from_department_endpoints(): void
     {
         $supervisor = User::factory()->role(UserRole::Supervisor)->create();

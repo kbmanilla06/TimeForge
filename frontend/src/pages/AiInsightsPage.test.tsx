@@ -122,7 +122,7 @@ describe('AiInsightsPage', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 3, name: 'Ada Admin', role: 'admin', department_id: null },
     })
-    vi.mocked(adminApi.listDepartments).mockResolvedValue([{ id: 7, name: 'Engineering' }])
+    vi.mocked(adminApi.listDepartments).mockResolvedValue([{ id: 7, name: 'Engineering', description: null }])
 
     render(<AiInsightsPage />)
     await user.click(await screen.findByRole('button', { name: 'Recurring Blockers' }))
@@ -217,7 +217,7 @@ describe('AiInsightsPage', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 3, name: 'Ada Admin', role: 'admin', department_id: null },
     })
-    vi.mocked(adminApi.listDepartments).mockResolvedValue([{ id: 7, name: 'Engineering' }])
+    vi.mocked(adminApi.listDepartments).mockResolvedValue([{ id: 7, name: 'Engineering', description: null }])
 
     render(<AiInsightsPage />)
 

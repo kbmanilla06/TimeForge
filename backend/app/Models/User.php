@@ -18,7 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
     'name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate',
-    'employee_id', 'position', 'contact_number',
+    'employee_id', 'position', 'contact_number', 'profile_picture_path',
 ])]
 // hourly_rate is payroll data (Admin/HR-Finance only per Sprint 8): hidden
 // from every serialization by default; only the Admin user-management

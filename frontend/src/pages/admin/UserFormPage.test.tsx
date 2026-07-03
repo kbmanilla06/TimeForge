@@ -24,7 +24,7 @@ describe('UserFormPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(adminApi.listDepartments).mockResolvedValue([
-      { id: 1, name: 'Engineering', users_count: 1 },
+      { id: 1, name: 'Engineering', description: null, users_count: 1 },
     ])
   })
 

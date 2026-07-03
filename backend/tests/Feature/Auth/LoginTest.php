@@ -82,6 +82,42 @@ class LoginTest extends TestCase
         $response->assertOk()->assertJsonPath('user.id', $user->id);
     }
 
+    /**
+     * Sprint 21: /me and /login now eager-load the user's department (name
+     * + description) so the Home dashboard doesn't need a second request.
+     */
+    public function test_me_and_login_include_the_users_department_with_its_description(): void
+    {
+        $department = \App\Models\Department::factory()->create([
+            'name' => 'Engineering',
+            'description' => 'Builds the product.',
+        ]);
+        $user = User::factory()->create(['password' => 'password', 'department_id' => $department->id]);
+
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertOk()
+            ->assertJsonPath('user.department.name', 'Engineering')
+            ->assertJsonPath('user.department.description', 'Builds the product.');
+
+        $token = $user->createToken('api')->plainTextToken;
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('user.department.name', 'Engineering')
+            ->assertJsonPath('user.department.description', 'Builds the product.');
+    }
+
+    public function test_me_department_is_null_when_the_user_has_no_department(): void
+    {
+        $user = User::factory()->create(['department_id' => null]);
+        $token = $user->createToken('api')->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonPath('user.department', null);
+    }
+
     public function test_user_can_log_out(): void
     {
         $user = User::factory()->create();

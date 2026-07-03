@@ -3,6 +3,7 @@ import type { Role, User } from './auth'
 export interface Department {
   id: number
   name: string
+  description: string | null
   users_count?: number
 }
 
@@ -33,6 +34,7 @@ export interface CreateDepartmentPayload {
 
 export interface UpdateDepartmentPayload {
   name: string
+  description?: string | null
 }
 
 export interface Client {

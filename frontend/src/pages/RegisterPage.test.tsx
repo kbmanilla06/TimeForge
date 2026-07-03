@@ -20,8 +20,8 @@ describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(registrationApi.listPublicDepartments).mockResolvedValue([
-      { id: 1, name: 'Engineering' },
-      { id: 2, name: 'Marketing' },
+      { id: 1, name: 'Engineering', description: null },
+      { id: 2, name: 'Marketing', description: null },
     ])
   })
 

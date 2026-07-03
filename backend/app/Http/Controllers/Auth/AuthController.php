@@ -38,7 +38,7 @@ class AuthController extends Controller
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->load('department'),
             'token' => $token,
         ]);
     }
@@ -52,7 +52,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $request->user()]);
+        return response()->json(['user' => $request->user()->load('department')]);
     }
 
     public function forgotPassword(Request $request): JsonResponse
