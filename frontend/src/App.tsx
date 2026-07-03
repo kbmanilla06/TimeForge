@@ -11,10 +11,11 @@ import { DailyScrumPage } from './pages/DailyScrumPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
-import { LoginPage } from './pages/LoginPage'
+import { LandingPage } from './pages/LandingPage'
 import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { PayrollPage } from './pages/PayrollPage'
+import { RegisterPlaceholderPage } from './pages/RegisterPlaceholderPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
 import { TeamScrumPage } from './pages/TeamScrumPage'
@@ -30,7 +31,8 @@ import { UsersPage } from './pages/admin/UsersPage'
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LandingPage />} />
+      <Route path="/register" element={<RegisterPlaceholderPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
