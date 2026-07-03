@@ -18,6 +18,7 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SidebarBadgeController;
 use App\Http\Controllers\TeamHoursReportController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\TimeEntryAttachmentController;
@@ -41,6 +42,7 @@ Route::middleware('throttle:lookup')->group(function () {
 Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/sidebar-counts', [SidebarBadgeController::class, 'index']);
 
     Route::get('attendance/today', [AttendanceController::class, 'today']);
     Route::post('attendance/time-in', [AttendanceController::class, 'timeIn']);
@@ -106,6 +108,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
     Route::patch('timesheets/{timesheet}/reopen', [TimesheetController::class, 'reopen']);
 
     Route::get('notifications', [NotificationController::class, 'index']);
+    Route::patch('notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markRead']);
 
     Route::get('kpi-assignments/mine', [KpiAssignmentController::class, 'mine']);

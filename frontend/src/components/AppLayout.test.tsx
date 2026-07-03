@@ -1,12 +1,23 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as sidebarBadgeApi from '../lib/sidebarBadgeApi'
 import { AppLayout } from './AppLayout'
 
 const mockUseAuth = vi.fn()
 vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
+
+// NotificationCenter fetches on mount — mocked so it doesn't hit the real
+// API in tests that aren't about notifications specifically.
+vi.mock('../lib/notificationApi', () => ({
+  listNotifications: () => Promise.resolve([]),
+  markNotificationRead: vi.fn(),
+  markAllNotificationsRead: vi.fn(),
+}))
+
+vi.mock('../lib/sidebarBadgeApi')
 
 function renderLayout() {
   return render(
@@ -21,6 +32,10 @@ function renderLayout() {
 }
 
 describe('AppLayout', () => {
+  beforeEach(() => {
+    vi.mocked(sidebarBadgeApi.getSidebarBadgeCounts).mockResolvedValue({ notifications: 0 })
+  })
+
   it('shows admin nav links for admin users', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
 
@@ -139,5 +154,28 @@ describe('AppLayout', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
     renderLayout()
     expect(screen.getByText('AI Insights')).toBeInTheDocument()
+  })
+
+  it("shows an unread-count badge on a nav item once the sidebar-counts poll resolves", async () => {
+    vi.mocked(sidebarBadgeApi.getSidebarBadgeCounts).mockResolvedValue({
+      notifications: 0,
+      team_timesheets: 3,
+      team_scrum: 1,
+    })
+    mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
+
+    renderLayout()
+
+    await waitFor(() => expect(sidebarBadgeApi.getSidebarBadgeCounts).toHaveBeenCalled())
+    expect(await screen.findByText('3')).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
+  })
+
+  it('renders the notification bell in the sidebar for every authenticated role', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+
+    renderLayout()
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument()
   })
 })

@@ -73,4 +73,44 @@ describe('NotificationsPage', () => {
       expect(notificationApi.markNotificationRead).toHaveBeenCalledWith('n1')
     })
   })
+
+  it('shows Mark all read only when there are unread notifications, and calls the bulk endpoint', async () => {
+    const user = userEvent.setup()
+    vi.mocked(notificationApi.listNotifications).mockResolvedValue([
+      {
+        id: 'n1',
+        type: 'App\\Notifications\\TimesheetApproved',
+        data: { message: 'Unread one.' },
+        read_at: null,
+        created_at: '2026-01-14T10:00:00Z',
+      },
+    ])
+    vi.mocked(notificationApi.markAllNotificationsRead).mockResolvedValue({ message: 'All notifications marked as read.' })
+
+    render(<NotificationsPage />)
+    await screen.findByText('Unread one.')
+
+    await user.click(screen.getByRole('button', { name: 'Mark all read' }))
+
+    await waitFor(() => {
+      expect(notificationApi.markAllNotificationsRead).toHaveBeenCalled()
+    })
+  })
+
+  it('hides Mark all read when every notification is already read', async () => {
+    vi.mocked(notificationApi.listNotifications).mockResolvedValue([
+      {
+        id: 'n2',
+        type: 'App\\Notifications\\TimesheetApproved',
+        data: { message: 'Already read.' },
+        read_at: '2026-01-14T11:00:00Z',
+        created_at: '2026-01-14T10:00:00Z',
+      },
+    ])
+
+    render(<NotificationsPage />)
+    await screen.findByText('Already read.')
+
+    expect(screen.queryByRole('button', { name: 'Mark all read' })).not.toBeInTheDocument()
+  })
 })

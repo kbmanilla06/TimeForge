@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../lib/apiClient'
-import { listNotifications, markNotificationRead } from '../lib/notificationApi'
+import { listNotifications, markAllNotificationsRead, markNotificationRead } from '../lib/notificationApi'
 import type { AppNotification } from '../types/notification'
 import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
 import { PageHeader } from '../components/ui/PageHeader'
 import { EmptyState, LoadingState } from '../components/ui/states'
 
@@ -37,6 +38,18 @@ export function NotificationsPage() {
     }
   }
 
+  async function handleMarkAllRead() {
+    setError(null)
+    try {
+      await markAllNotificationsRead()
+      await load()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to mark all notifications as read.')
+    }
+  }
+
+  const hasUnread = notifications.some((notification) => !notification.read_at)
+
   if (isLoading) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
@@ -47,7 +60,17 @@ export function NotificationsPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
-      <PageHeader title="Notifications" subtitle="Updates about your timesheets and reviews." />
+      <PageHeader
+        title="Notifications"
+        subtitle="Updates about your timesheets and reviews."
+        actions={
+          hasUnread && (
+            <Button variant="secondary" onClick={handleMarkAllRead}>
+              Mark all read
+            </Button>
+          )
+        }
+      />
 
       {error && (
         <Alert tone="error" className="mb-4">

@@ -1,6 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import { useSidebarBadges } from '../hooks/useSidebarBadges'
+import { NotificationCenter } from './NotificationCenter'
+import { ToastStack, type ToastItem } from './ui/Toast'
+import type { AppNotification } from '../types/notification'
 
 function NavGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -17,11 +21,13 @@ function NavItem({
   to,
   end,
   onNavigate,
+  badge,
   children,
 }: {
   to: string
   end?: boolean
   onNavigate: () => void
+  badge?: number
   children: ReactNode
 }) {
   return (
@@ -30,14 +36,19 @@ function NavItem({
       end={end}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `block rounded-lg px-3 py-2 text-sm transition-colors ${
+        `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
           isActive
             ? 'bg-primary/10 font-medium text-primary'
             : 'text-muted hover:bg-field hover:text-ink'
         }`
       }
     >
-      {children}
+      <span>{children}</span>
+      {!!badge && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 px-1.5 text-xs font-semibold text-primary">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </NavLink>
   )
 }
@@ -46,6 +57,12 @@ export function AppLayout() {
   const { user, logout } = useAuth()
   const [isNavOpen, setIsNavOpen] = useState(false)
   const closeNav = () => setIsNavOpen(false)
+  const badgeCounts = useSidebarBadges()
+
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const dismissToast = (id: string) => setToasts((prev) => prev.filter((toast) => toast.id !== id))
+  const handleNewNotification = (notification: AppNotification) =>
+    setToasts((prev) => (prev.some((t) => t.id === notification.id) ? prev : [...prev, { id: notification.id, message: notification.data.message }]))
 
   const isSupervisorOrAdmin = user?.role === 'supervisor' || user?.role === 'admin'
   const canSeePayroll = user?.role === 'admin' || user?.role === 'hr_finance'
@@ -67,8 +84,9 @@ export function AppLayout() {
           isNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="border-b border-line px-5 py-4">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <span className="text-lg font-bold tracking-tight text-ink">TimeForge</span>
+          <NotificationCenter onNewNotification={handleNewNotification} />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
@@ -79,7 +97,7 @@ export function AppLayout() {
             <NavItem to="/time-tracking" onNavigate={closeNav}>
               Time Tracking
             </NavItem>
-            <NavItem to="/notifications" onNavigate={closeNav}>
+            <NavItem to="/notifications" onNavigate={closeNav} badge={badgeCounts?.notifications}>
               Notifications
             </NavItem>
             <NavItem to="/my-kpis" onNavigate={closeNav}>
@@ -95,13 +113,13 @@ export function AppLayout() {
 
           {isSupervisorOrAdmin && (
             <NavGroup label="Team">
-              <NavItem to="/team-timesheets" onNavigate={closeNav}>
+              <NavItem to="/team-timesheets" onNavigate={closeNav} badge={badgeCounts?.team_timesheets}>
                 Team Timesheets
               </NavItem>
               <NavItem to="/team-kpis" onNavigate={closeNav}>
                 Team KPIs
               </NavItem>
-              <NavItem to="/team-scrum" onNavigate={closeNav}>
+              <NavItem to="/team-scrum" onNavigate={closeNav} badge={badgeCounts?.team_scrum}>
                 Team Scrum
               </NavItem>
             </NavGroup>
@@ -127,7 +145,7 @@ export function AppLayout() {
               <NavItem to="/admin/users" onNavigate={closeNav}>
                 Manage Users
               </NavItem>
-              <NavItem to="/admin/account-requests" onNavigate={closeNav}>
+              <NavItem to="/admin/account-requests" onNavigate={closeNav} badge={badgeCounts?.account_approvals}>
                 Account Approvals
               </NavItem>
               <NavItem to="/admin/departments" onNavigate={closeNav}>
@@ -187,6 +205,8 @@ export function AppLayout() {
 
         <Outlet />
       </div>
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

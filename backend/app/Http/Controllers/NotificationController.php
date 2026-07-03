@@ -9,7 +9,17 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        return response()->json($request->user()->notifications()->latest()->get());
+        $validated = $request->validate([
+            'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = $request->user()->notifications()->latest();
+
+        if (! empty($validated['limit'])) {
+            $query->limit($validated['limit']);
+        }
+
+        return response()->json($query->get());
     }
 
     public function markRead(Request $request, string $notification): JsonResponse
@@ -18,5 +28,12 @@ class NotificationController extends Controller
         $model->markAsRead();
 
         return response()->json($model->fresh());
+    }
+
+    public function markAllRead(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return response()->json(['message' => 'All notifications marked as read.']);
     }
 }
