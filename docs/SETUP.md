@@ -82,6 +82,24 @@ Once MySQL is reachable (Option B, or a locally installed MySQL) and both apps a
 12. Log out via the nav bar; confirm you're redirected to `/login`.
 13. Log in as a non-admin user and confirm navigating directly to `/admin/users`, `/admin/clients`, or `/admin/projects` redirects you back to `/`.
 
+## Testing Account Registration And Approval Manually
+
+Covers the post-MVP auth/onboarding enhancement (Sprints 15–19): the landing page, self-service registration, the pending-approval gate, and the Admin approval workflow. Requires a department to already exist (create one via Manage Departments first, per the walkthrough above).
+
+1. Log out (or open a private/incognito window) and visit `http://localhost:5173/login`. Confirm the full landing page renders — hero headline, an embedded sign-in form, a features grid, a benefits list, a static dashboard-preview graphic (labeled "Illustrative preview"), and a footer — not a bare login box.
+2. In the embedded form, click the eye icon next to Password; confirm it toggles between hidden and visible text. Click "Create Account".
+3. Fill in First Name, Last Name, pick a real Department from the dropdown, an email not already in use, and a password (watch the strength indicator change as you type), confirm the password, and check "I agree to the Terms and Conditions." Leave Middle Name, Employee ID, Position, and Contact Number blank. Submit.
+4. Confirm a "Registration Received" panel replaces the form (not a redirect) and mentions administrator approval.
+5. Try logging in with the new account's credentials immediately; confirm it's rejected with "Your account is not active yet."
+6. Check `storage/logs/laravel.log` (or `docker compose exec app tail -f storage/logs/laravel.log`) for two new emails: "Registration Received" (to the applicant) and "New Account Request" (to the seeded Admin, naming the applicant and their department).
+7. Log in as the seeded Admin; confirm "Account Approvals" appears in the sidebar's Administration group. Open it; confirm the new request appears with the applicant's name, email, department, and any optional details you provided.
+8. Use the search box to find the request by typing part of the applicant's name, then by email; confirm both work. Use the status filter to show only "Submitted".
+9. Click Approve. Confirm the row's status updates to `approved` with your name and a timestamp. Check the log for an "Account Approved" email. Log in as the applicant; confirm it now succeeds.
+10. Repeat steps 1–4 with a second email address, but this time click Reject on the new request, entering an optional remark first. Confirm the status becomes `rejected` with your remark visible, and that this applicant still cannot log in. Check the log for an "Account Request Update" email containing your remark.
+11. Go to Manage Users; confirm the rejected applicant shows status `deactivated` — the same status a deactivated employee would have. Click the existing Activate button on that row; confirm it works exactly as it always has (this proves the approval workflow didn't change pre-existing Activate/Deactivate behavior).
+12. Try clicking Approve or Reject again on either already-decided request (e.g., via a second browser tab still showing the old state); confirm it's rejected rather than silently reapplied.
+13. On the login page, submit "Forgot your password?" once with a real seeded email and once with a made-up one; confirm both show the exact same message. Check the log — only the real email produces a reset-link email.
+
 ## Testing Time Tracking Manually
 
 Every authenticated role (not just Admin) has access to the "Time Tracking" nav link and page:
@@ -253,6 +271,10 @@ These are intentionally out of scope, each backed by a recorded decision in `doc
 - Email notifications now exist for the auth/onboarding flow only (Sprint 18: registration received, new-request admin alert, approval, rejection, plus the pre-existing password reset) — every other module (Timesheets, Daily Scrum, KPIs) remains in-app-only via the "Notifications" list page. No nav notification bell/badge anywhere yet.
 - Email verification (a click-to-confirm step before an Admin reviews a registration) was explicitly considered and deferred in Sprint 18 — the Admin's manual review already serves as the identity check, and `MAIL_MAILER=log` has no real inbox delivery to verify against yet. `email_verified_at` exists on `users` and Laravel's `MustVerifyEmail` is available if a future sprint wants it.
 - Mail queuing was explicitly considered and deferred in Sprint 18 — `QUEUE_CONNECTION=redis` is reachable but no queue worker runs by default; all mail sends synchronously, same as every other notification in the app.
+- CAPTCHA/reCAPTCHA on registration was evaluated and explicitly not implemented in Sprint 19 — no external service keys were introduced. The admin-approval gate is the primary anti-abuse control: a bot can register unlimited times and still never gain access without a human Admin approving each one. Revisit only if real registration abuse is observed.
+- Password policy is currently Laravel's bare default (8-character minimum, no complexity or breach-check rule) — Sprint 19 flagged raising this as recommended but left it undecided, since the seeded demo password (`password`, 8 characters) and every QA doc referencing it would need to change too. See `docs/DECISIONS.md` → Decisions Still Required.
+- No explicit `config/cors.php` allowed-origins allowlist has been published — CORS runs on Laravel's framework defaults. Sprint 19 flagged this as defense-in-depth, not urgent, given the app's stateless Bearer-token (non-cookie) auth architecture. See `docs/DECISIONS.md` → Decisions Still Required.
+- Any protected API route (not specific to auth/onboarding — reproduced identically on the pre-existing `/api/dashboard`) returns an HTTP 500 instead of 401 if a request omits the `Accept: application/json` header, because Laravel's default `Authenticate` middleware tries to build a redirect to a named `login` web route that doesn't exist in this API-only app. The real frontend and every automated test always send that header, so this never triggers in normal use; severity is further bounded by `APP_DEBUG=false` in production. Found and recorded, not fixed, during the Sprint 20 QA pass (`docs/QA_RUN_2026-07-03.md`) — the fix would touch global exception handling used by every module, out of scope for an auth-only enhancement.
 - Rejected timesheets are currently terminal (no owner resubmission path) — only "Request Revision" reopens entries for editing. This is a faithful implementation of the approved decisions but a known usability gap worth revisiting if it proves too restrictive in practice.
 - KPI Productivity Dashboards (charts, real-time visualizations) — Sprint 6 only exposes plain numeric progress; see `docs/DECISIONS.md` Sprint 6 decisions.
 - KPI role-based and project-based assignment, periodic KPI resets, and automatic KPI-progress reversal on timesheet reopen — all explicitly deferred by Sprint 6 decisions.

@@ -13,7 +13,8 @@ Prepared for StartupLab Business Center & AI Consulting Services OPC. Requiremen
 - **Payroll Preparation** — semi-monthly periods, daily overtime beyond 8h at a configurable multiplier, per-employee estimates; PDF/Excel exports; a separate rate-free Team Hours Report for supervisors.
 - **Dashboard** — role-scoped, live-computed: hours, productivity, department performance, KPI completion, attendance trends, billable split, project allocation, payroll summary (Admin/HR only).
 - **AI Insights** — daily/weekly summaries, productivity trends, recurring-blocker detection, KPI analysis, supervisor recommendations, payroll validation. Provider-agnostic architecture running a **local deterministic stub**: zero external calls, zero credentials, append-only outputs with full source-data audit snapshots, everything labeled AI-generated.
-- **Security** — four roles enforced server-side (policies + middleware, 403-tested), Sanctum token auth, admin-approved account activation, login/API rate limiting, payroll data hidden from non-payroll roles, attachment paths never exposed.
+- **Account Onboarding** — a landing page with an integrated sign-in form; self-service Create Account with a live department picker, password-strength meter, and terms agreement; every new account starts Pending and cannot log in until an Admin reviews it from a searchable, filterable Account Approvals queue (approve/reject with an optional remark); email notifications for registration, admin review, approval, and rejection (local log-driver by default, no external mail provider required).
+- **Security** — four roles enforced server-side (policies + middleware, 403-tested), Sanctum token auth, admin-approved account activation (via direct creation or self-registration), login/registration/API rate limiting, anti-enumeration password reset, payroll data hidden from non-payroll roles, attachment paths never exposed.
 
 ## Tech Stack
 
@@ -23,8 +24,8 @@ Laravel 13 (PHP 8.5, MySQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind 
 
 | Path | Contents |
 | --- | --- |
-| `backend/` | Laravel API (app, migrations, seeders, 177 tests) |
-| `frontend/` | React SPA (pages, role guards, API clients, 161 tests) |
+| `backend/` | Laravel API (app, migrations, seeders, 211 tests) |
+| `frontend/` | React SPA (pages, role guards, API clients, 186 tests) |
 | `docs/` | PRD, decisions, questions, setup, routes, database, QA checklist, user guide, demo script |
 | `sprints/` | The per-sprint plans and records (Sprint 0–14) — the project's history |
 | `docker-compose.yml`, `docker/` | Local container stack (see Docker status below) |
@@ -51,8 +52,8 @@ npm run dev                              # http://localhost:5173
 **Validation:**
 
 ```bash
-cd backend && php artisan test          # 177 tests, no DB required (SQLite in-memory)
-cd frontend && npm run build && npm run lint && npm run test   # 161 tests, zero lint warnings
+cd backend && php artisan test          # 211 tests, no DB required (SQLite in-memory)
+cd frontend && npm run build && npm run lint && npm run test   # 186 tests, zero lint warnings
 ```
 
 ## Demo
@@ -77,13 +78,16 @@ cd frontend && npm run build && npm run lint && npm run test   # 161 tests, zero
 
 The deliberate MVP boundaries, each backed by a recorded decision (details: `docs/SETUP.md` Known Deferred Items, `docs/DECISIONS.md`):
 
-- **Docker/MySQL end-to-end has never run** on the dev machine (Docker Desktop uninstalled) — the one remaining verification gap; automated suites cover everything on SQLite. Runbook: `docs/QA_CHECKLIST.md` Phase 0.
+- **Docker/MySQL end-to-end has now run** (2026-07-03) — see `docs/QA_RUN_2026-07-03.md` for the full log, including the post-MVP auth/onboarding enhancement (Sprints 15–19) exercised live against the real stack.
 - **AI is a local stub** — real provider selection + external data-privacy rules are the last open product decision; the swap is config/binding, not architecture.
 - **No malware scanning on uploads** (accepted risk with compensating controls: type/content validation, size cap, private storage, authorized download-only) — revisit at deployment hardening. Attachments retained indefinitely as audit evidence.
-- **Everything is synchronous** — no queues/Horizon workers, scheduled jobs, or email notifications yet (in-app only); exports generate on request.
+- **Email is log-driver only** (`MAIL_MAILER=log`) — registration, admin-review, approval, rejection, and password-reset emails all write to `storage/logs/laravel.log` rather than being delivered anywhere; no external mail provider is configured or required. Mail also sends synchronously — `QUEUE_CONNECTION=redis` is reachable, but no queue worker runs by default, so queuing is deferred rather than silently broken. Business-module events (Timesheets, Daily Scrum, KPIs) remain in-app-only via the Notifications page, no email.
+- **No CAPTCHA on registration** — evaluated (Turnstile/reCAPTCHA v3/hCaptcha) and deliberately not added; the admin-approval gate is the primary anti-abuse control, since no self-registered account can gain access without a human Admin approving it.
+- **No email verification before admin review** — evaluated and deferred; the Admin's manual review already serves as the identity check.
 - Single company, one role per user, no leave/holidays, taxes or deductions (payroll = estimates), no multi-tenancy — all explicit MVP scope decisions.
 - Rejected timesheets are terminal for the employee (only Admin reopen); KPI progress is never auto-reversed after reopen; recurring-blocker matching is exact-text, not semantic.
 - Frontend ships one >500kB chunk (Recharts) — a candidate for code-splitting, not a functional issue.
+- Any protected API route without an `Accept: application/json` header (no real client sends requests this way — the SPA always does) returns a verbose 500 instead of a 401; pre-existing app-wide Laravel behavior, not introduced by or specific to the auth/onboarding enhancement, and bounded by `APP_DEBUG=false` in production. See `docs/QA_RUN_2026-07-03.md` for detail.
 
 ## Production Notes (before any deployment)
 

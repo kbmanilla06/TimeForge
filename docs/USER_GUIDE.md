@@ -1,9 +1,10 @@
 # TimeForge User Guide
 
-A role-by-role guide to the TimeForge MVP. Log in with your email and password at the app URL (development: http://localhost:5173). New accounts must be activated by a System Administrator before first login. Your navigation bar shows only the pages your role can use.
+A role-by-role guide to the TimeForge MVP. Log in with your email and password at the app URL (development: http://localhost:5173) — the landing page has a sign-in form built right into it. New accounts, whether created by a System Administrator or requested through Create Account, must be approved before first login. Your navigation bar shows only the pages your role can use.
 
 ## Everyone
 
+- **Don't have an account yet?** Click *Create Account* from the login page, fill in your name, department, and email, set a password, and agree to the terms. Your request goes to a System Administrator for review — you'll get an email once it's decided, and you can't log in until it's approved. If you'd rather not wait, ask an Administrator to create your account directly instead; both paths lead to the same place.
 - **Home** greets you with your name and role.
 - **Notifications** lists in-app events about your timesheets (submitted, approved, rejected, revision requested, reopened); mark items read as you go.
 - **AI Insights** content is always labeled *AI-generated* and is derived entirely from data already stored in TimeForge — regenerating keeps previous versions.
@@ -54,7 +55,9 @@ Note: HR/Finance sees computed figures and reports, not raw timesheets, work-log
 
 Everything above, organization-wide, plus:
 
-**Manage Users.** Create accounts (initial password set by you; new accounts start *pending* until you Activate), edit role/department, set hourly rates, deactivate.
+**Manage Users.** Create accounts directly (initial password set by you; new accounts start *pending* until you Activate), edit role/department, set hourly rates, deactivate.
+
+**Account Approvals.** Review requests submitted through *Create Account* — search by name or email, filter by status, see the applicant's full details, and Approve (they can log in immediately) or Reject (optionally with a remark; their account is deactivated, same as any other deactivated user — reactivate them from Manage Users if the decision changes). Every decision is timestamped and keeps its history.
 
 **Manage Departments / Clients / Projects / KPIs.** Full CRUD; deletions warn about affected records.
 
@@ -65,6 +68,6 @@ Everything above, organization-wide, plus:
 ## Good To Know (MVP Boundaries)
 
 - The AI provider is a local, deterministic stub — useful, honest summaries of stored data; no external AI service is contacted and no credentials exist.
-- Email notifications, scheduled jobs, leave/holiday handling, and multi-company support are out of scope for the MVP.
+- Email exists for account registration/approval/rejection and password reset only (sent via a local log file in this environment, not a real inbox); every other module's notifications stay in-app only. Scheduled jobs, leave/holiday handling, and multi-company support remain out of scope for the MVP.
 - Login and password endpoints are rate-limited (5/minute); the API allows 60 requests/minute per user.
 - Full setup and per-module walkthroughs: `docs/SETUP.md`; demo dataset and script: `docs/DEMO.md`.

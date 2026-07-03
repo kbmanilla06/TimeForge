@@ -1,14 +1,21 @@
 # TimeForge Route And Feature Inventory
 
-As of Sprint 14 (feature-complete MVP). Generated from `php artisan route:list` and verified against controllers, policies, and feature tests. All `/api/*` routes return JSON. Rate limits (Sprint 14): public auth endpoints 5 requests/minute per email+IP; all authenticated endpoints 60 requests/minute per user.
+As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancement). Generated from `php artisan route:list` and verified against controllers, policies, and feature tests. All `/api/*` routes return JSON. Rate limits: public auth endpoints (login/register/password) 5 requests/minute per email+IP (Sprint 14; extended to `/register` in Sprint 16); the public department lookup 30 requests/minute per IP (Sprint 19, deliberately separate from the anti-brute-force bucket); all authenticated endpoints 60 requests/minute per user.
 
 ## Public Endpoints (`throttle:auth`)
 
 | Method | Path | Access | Sprint |
 | --- | --- | --- | --- |
 | POST | `/api/login` | Public (active accounts only can log in) | 1 |
-| POST | `/api/forgot-password` | Public | 1 |
+| POST | `/api/forgot-password` | Public — always returns an identical response regardless of whether the email exists (Sprint 18 anti-enumeration hardening) | 1, 18 |
 | POST | `/api/reset-password` | Public | 1 |
+| POST | `/api/register` | Public — creates `role=employee`, `status=pending` regardless of request input; never issues a token | 16 |
+
+## Public Endpoints (`throttle:lookup`)
+
+| Method | Path | Access | Sprint |
+| --- | --- | --- | --- |
+| GET | `/api/register/departments` | Public — id + name only, for the registration form's department picker | 16, 19 |
 
 ## Session (`auth:sanctum` + `active` + `throttle:api`)
 
@@ -22,11 +29,19 @@ As of Sprint 14 (feature-complete MVP). Generated from `php artisan route:list` 
 | Method | Path | Access | Sprint |
 | --- | --- | --- | --- |
 | GET/POST | `/api/admin/users`, PATCH `/api/admin/users/{user}` | Admin only | 1-2 |
-| PATCH | `/api/admin/users/{user}/activate`, `/deactivate` | Admin only | 1-2 |
+| PATCH | `/api/admin/users/{user}/activate`, `/deactivate` | Admin only — unchanged by the Sprint 17 approval workflow; also the mechanism that reactivates a rejected applicant | 1-2 |
 | GET/POST/PATCH/DELETE | `/api/admin/departments[/{department}]` | Admin only | 1-2 |
 | GET/POST/PATCH/DELETE | `/api/admin/clients[/{client}]` | Admin only | 3 |
 | GET/POST/PATCH/DELETE | `/api/admin/projects[/{project}]` | Admin only | 3 |
 | POST | `/api/admin/kpis` | Admin only | 6 |
+
+## Account Approvals (`role:admin`)
+
+| Method | Path | Access | Sprint |
+| --- | --- | --- | --- |
+| GET | `/api/admin/account-requests` | Admin only — optional `search` (name/email) and `status` (submitted/approved/rejected) query params; every status returned by default so past decisions remain visible as history | 17 |
+| PATCH | `/api/admin/account-requests/{accountRequest}/approve` | Admin only — sets the applicant's `users.status=active`; 422 if the request was already decided | 17 |
+| PATCH | `/api/admin/account-requests/{accountRequest}/reject` | Admin only — optional `remarks`; sets the applicant's `users.status=deactivated`; 422 if the request was already decided | 17 |
 
 Admin user responses are the only surface that serializes `hourly_rate` (Sprint 14 security fix).
 

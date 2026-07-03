@@ -1,6 +1,6 @@
 # TimeForge Database Design
 
-As of Sprint 14 (feature-complete MVP). MySQL in development/production; automated tests run the same migrations on SQLite in-memory. All tables use auto-increment `id` primary keys and `created_at`/`updated_at` timestamps unless noted. Single-company MVP by decision — no organization/tenant column anywhere, but no design choice blocks adding one later.
+As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancement). MySQL in development/production; automated tests run the same migrations on SQLite in-memory. All tables use auto-increment `id` primary keys and `created_at`/`updated_at` timestamps unless noted. Single-company MVP by decision — no organization/tenant column anywhere, but no design choice blocks adding one later.
 
 ## Domain Tables
 
@@ -11,14 +11,27 @@ As of Sprint 14 (feature-complete MVP). MySQL in development/production; automat
 
 A Supervisor's "team" = every user sharing their `department_id` (Sprint 1 decision; no separate teams table).
 
-### users (Sprints 1, 8)
+### users (Sprints 1, 8, 16)
 | Column | Notes |
 | --- | --- |
 | name, email (unique), password (hashed) | Sanctum token auth |
-| role | Enum string: `employee`, `supervisor`, `hr_finance`, `admin` — one role per user |
-| status | `pending` (needs admin approval), `active`, `deactivated` |
+| role | Enum string: `employee`, `supervisor`, `hr_finance`, `admin` — one role per user; self-registration (Sprint 16) can never set this to anything but `employee` |
+| status | `pending` (needs admin approval — either an Admin-created account awaiting Activate, or a self-registered one awaiting the Sprint 17 approval workflow), `active`, `deactivated` (also what a *rejected* applicant becomes — no separate `rejected` value) |
 | department_id | Nullable FK → departments |
 | hourly_rate | Nullable decimal — payroll data; hidden from all serialization except Admin user management (Sprint 14) |
+| employee_id, position, contact_number | Nullable strings added in Sprint 16 for the registration form; all optional, no format validation |
+
+### account_requests (Sprints 16, 17)
+| Column | Notes |
+| --- | --- |
+| user_id | Unique FK → users, cascade-deletes with the user |
+| status | `submitted`, `approved`, `rejected` — independent of `users.status`, tracks the *decision*, not current access |
+| terms_accepted_at | Timestamp, set at registration; not nullable |
+| reviewed_by | Nullable FK → users (the deciding Admin) |
+| reviewed_at | Nullable timestamp |
+| rejection_reason | Nullable text — the optional remark an Admin can leave on reject |
+
+Kept deliberately separate from `users`: it's workflow/audit metadata about one request, not an ongoing profile fact. One row per applicant (unique `user_id`) — no resubmission flow exists in MVP.
 
 ### clients (Sprint 3)
 | Column | Notes |
