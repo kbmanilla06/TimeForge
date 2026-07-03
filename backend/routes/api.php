@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AiOutputController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DailyScrumController;
 use App\Http\Controllers\DashboardController;
@@ -26,6 +27,8 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('/register/departments', [RegistrationController::class, 'departments']);
+    Route::post('/register', [RegistrationController::class, 'store']);
 });
 
 Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function () {

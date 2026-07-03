@@ -11,11 +11,15 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate'])]
+#[Fillable([
+    'name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate',
+    'employee_id', 'position', 'contact_number',
+])]
 // hourly_rate is payroll data (Admin/HR-Finance only per Sprint 8): hidden
 // from every serialization by default; only the Admin user-management
 // responses opt back in via makeVisible. Server-side payroll math reads
@@ -64,6 +68,11 @@ class User extends Authenticatable
     public function dailyScrums(): HasMany
     {
         return $this->hasMany(DailyScrum::class);
+    }
+
+    public function accountRequest(): HasOne
+    {
+        return $this->hasOne(AccountRequest::class);
     }
 
     public function isAdmin(): bool

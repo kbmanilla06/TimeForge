@@ -15,7 +15,7 @@ import { LandingPage } from './pages/LandingPage'
 import { MyKpisPage } from './pages/MyKpisPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { PayrollPage } from './pages/PayrollPage'
-import { RegisterPlaceholderPage } from './pages/RegisterPlaceholderPage'
+import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
 import { TeamScrumPage } from './pages/TeamScrumPage'
@@ -32,7 +32,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LandingPage />} />
-      <Route path="/register" element={<RegisterPlaceholderPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
