@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Models\Client;
 use App\Models\DailyScrum;
 use App\Models\Department;
@@ -114,6 +115,7 @@ class DemoDataSeeder extends Seeder
             'name' => $name,
             'password' => 'password',
             'role' => $role,
+            'status' => UserStatus::Active,
             'department_id' => $departmentId,
             'hourly_rate' => $hourlyRate,
         ]);
