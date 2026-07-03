@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+/*
+ * TimeForge design tokens (from the Figma auth direction):
+ * white surfaces, #dae0e7 borders, #1876f2 primary, #f9fafb fields,
+ * enterprise density. Referenced as Tailwind utilities, e.g. bg-primary,
+ * border-line, text-ink, text-muted, bg-field, bg-canvas.
+ */
+@theme {
+  --color-primary: #1876f2;
+  --color-primary-dark: #1565d8;
+  --color-ink: #131820;
+  --color-muted: #65758b;
+  --color-line: #dae0e7;
+  --color-field: #f9fafb;
+  --color-canvas: #f7f9fb;
+
+  --shadow-card: 0px 1px 1px rgba(0, 0, 0, 0.05);
+}

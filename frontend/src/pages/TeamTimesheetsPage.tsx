@@ -13,6 +13,11 @@ import {
 } from '../lib/timesheetApi'
 import type { TimeEntry, TimeEntryAttachment } from '../types/timeEntry'
 import type { Timesheet } from '../types/timesheet'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { Textarea } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { EmptyState, LoadingState } from '../components/ui/states'
 
 function formatMinutes(minutes: number | null): string {
   if (minutes === null) return '—'
@@ -126,48 +131,49 @@ export function TeamTimesheetsPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-4xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Team Timesheets</h1>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
-          >
-            Export Hours PDF
-          </button>
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            disabled={isExporting}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
-          >
-            Export Hours Excel
-          </button>
-        </div>
-      </div>
+    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <PageHeader
+        title="Team Timesheets"
+        subtitle="Review, approve, and comment on your team's submitted days."
+        actions={
+          <>
+            <Button variant="secondary" onClick={handleExportPdf} disabled={isExporting}>
+              Export Hours PDF
+            </Button>
+            <Button variant="secondary" onClick={handleExportExcel} disabled={isExporting}>
+              Export Hours Excel
+            </Button>
+          </>
+        }
+      />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <div className="mt-6 space-y-6">
+      <div className="space-y-4">
         {timesheets.map((timesheet) => (
-          <div key={timesheet.id} className="rounded-md border border-slate-200 p-4">
-            <div className="flex items-center justify-between">
+          <div key={timesheet.id} className="rounded-2xl border border-line bg-white p-5 shadow-card">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="font-medium text-slate-900">
+                <p className="font-medium text-ink">
                   {timesheet.user?.name ?? `User #${timesheet.user_id}`} — {timesheet.date}
                 </p>
-                <p className="text-sm text-slate-500">Status: {timesheet.status}</p>
+                <p className="mt-0.5 text-sm text-muted">Status: {timesheet.status}</p>
               </div>
             </div>
 
-            <ul className="mt-3 space-y-1 text-sm text-slate-700">
+            <ul className="mt-3 space-y-1 text-sm text-ink">
               {(timesheet.time_entries ?? []).map((entry) => (
                 <li key={entry.id}>
                   {entry.task} — {formatMinutes(entry.duration_minutes)}
@@ -176,7 +182,7 @@ export function TeamTimesheetsPage() {
                       key={attachment.id}
                       type="button"
                       onClick={() => void handleAttachmentDownload(entry, attachment)}
-                      className="ml-2 text-slate-900 underline"
+                      className="ml-2 font-medium text-primary hover:underline"
                     >
                       {attachment.original_name}
                     </button>
@@ -186,65 +192,48 @@ export function TeamTimesheetsPage() {
             </ul>
 
             {(timesheet.comments ?? []).length > 0 && (
-              <div className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
+              <div className="mt-3 space-y-1 border-t border-line pt-3 text-sm">
                 {(timesheet.comments ?? []).map((comment) => (
-                  <p key={comment.id} className="text-slate-600">
-                    <span className="font-medium">{comment.author?.name ?? 'Reviewer'}</span> ({comment.action}):{' '}
-                    {comment.comment ?? <em>no comment</em>}
+                  <p key={comment.id} className="text-muted">
+                    <span className="font-medium text-ink">{comment.author?.name ?? 'Reviewer'}</span>{' '}
+                    ({comment.action}): {comment.comment ?? <em>no comment</em>}
                   </p>
                 ))}
               </div>
             )}
 
             {timesheet.status === 'submitted' && (
-              <div className="mt-3 space-y-2">
-                <textarea
+              <div className="mt-4 space-y-3">
+                <Textarea
                   placeholder="Comment (required for reject/request revision)"
                   value={commentFor(timesheet.id)}
                   onChange={(e) => setComments({ ...comments, [timesheet.id]: e.target.value })}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                 />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleApprove(timesheet)}
-                    className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white"
-                  >
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => handleApprove(timesheet)}>
                     Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleReject(timesheet)}
-                    className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-600"
-                  >
+                  </Button>
+                  <Button variant="danger" size="sm" onClick={() => handleReject(timesheet)}>
                     Reject
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRequestRevision(timesheet)}
-                    className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700"
-                  >
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => handleRequestRevision(timesheet)}>
                     Request Revision
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {timesheet.status === 'approved' && user?.role === 'admin' && (
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={() => handleReopen(timesheet)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700"
-                >
+              <div className="mt-4">
+                <Button variant="secondary" size="sm" onClick={() => handleReopen(timesheet)}>
                   Reopen
-                </button>
+                </Button>
               </div>
             )}
           </div>
         ))}
 
-        {timesheets.length === 0 && <p className="text-slate-400">No team timesheets yet.</p>}
+        {timesheets.length === 0 && <EmptyState>No team timesheets yet.</EmptyState>}
       </div>
     </main>
   )

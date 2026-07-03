@@ -4,6 +4,12 @@ import { useAuth } from '../../context/useAuth'
 import { activateUser, deactivateUser, listUsers } from '../../lib/adminApi'
 import { ApiError } from '../../lib/apiClient'
 import type { AdminUser } from '../../types/admin'
+import { Alert } from '../../components/ui/Alert'
+import { StatusBadge } from '../../components/ui/Badge'
+import { ButtonLink } from '../../components/ui/Button'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { LoadingState } from '../../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../../components/ui/Table'
 
 export function UsersPage() {
   const { user: currentUser } = useAuth()
@@ -44,43 +50,49 @@ export function UsersPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Users</h1>
-        <Link to="/admin/users/new" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-          Create User
-        </Link>
-      </div>
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+      <PageHeader
+        title="Users"
+        subtitle="Provision accounts, assign roles and departments."
+        actions={<ButtonLink to="/admin/users/new">Create User</ButtonLink>}
+      />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
       {isLoading ? (
-        <p className="mt-6 text-slate-500">Loading…</p>
+        <LoadingState />
       ) : (
-        <table className="mt-6 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
-              <th className="py-2">Name</th>
-              <th className="py-2">Email</th>
-              <th className="py-2">Role</th>
-              <th className="py-2">Status</th>
-              <th className="py-2">Department</th>
-              <th className="py-2">Actions</th>
-            </tr>
-          </thead>
+        <TableCard>
+          <TableHead>
+            <Th>Name</Th>
+            <Th>Email</Th>
+            <Th>Role</Th>
+            <Th>Status</Th>
+            <Th>Department</Th>
+            <Th>Actions</Th>
+          </TableHead>
           <tbody>
             {users.map((user) => {
               const isSelf = user.id === currentUser?.id
 
               return (
-                <tr key={user.id} className="border-b border-slate-100">
-                  <td className="py-2">{user.name}</td>
-                  <td className="py-2">{user.email}</td>
-                  <td className="py-2">{user.role}</td>
-                  <td className="py-2">{user.status}</td>
-                  <td className="py-2">{user.department?.name ?? '—'}</td>
-                  <td className="space-x-2 py-2">
-                    <Link to={`/admin/users/${user.id}/edit`} className="text-slate-900 underline">
+                <Tr key={user.id}>
+                  <Td className="font-medium text-ink">{user.name}</Td>
+                  <Td className="text-muted">{user.email}</Td>
+                  <Td className="text-muted">{user.role}</Td>
+                  <Td>
+                    <StatusBadge status={user.status} />
+                  </Td>
+                  <Td className="text-muted">{user.department?.name ?? '—'}</Td>
+                  <Td className="space-x-3 whitespace-nowrap">
+                    <Link
+                      to={`/admin/users/${user.id}/edit`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       Edit
                     </Link>
                     {user.status === 'active' ? (
@@ -89,28 +101,32 @@ export function UsersPage() {
                         onClick={() => handleToggleStatus(user)}
                         disabled={isSelf}
                         title={isSelf ? 'You cannot deactivate your own account' : undefined}
-                        className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                        className="font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
                       >
                         Deactivate
                       </button>
                     ) : (
-                      <button type="button" onClick={() => handleToggleStatus(user)} className="text-green-700 underline">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(user)}
+                        className="font-medium text-emerald-700 hover:underline"
+                      >
                         Activate
                       </button>
                     )}
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               )
             })}
             {users.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-4 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
                   No users yet.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </TableCard>
       )}
     </main>
   )

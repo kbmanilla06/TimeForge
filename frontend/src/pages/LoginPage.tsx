@@ -54,7 +54,7 @@ export function LoginPage() {
             </label>
             <Link
               to="/forgot-password"
-              className="text-sm font-medium text-[#1876f2] hover:underline"
+              className="text-sm font-medium text-primary hover:underline"
             >
               Forgot Password?
             </Link>

@@ -27,6 +27,12 @@ import {
   type TimeEntrySummary,
 } from '../types/timeEntry'
 import type { Timesheet } from '../types/timesheet'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { Card, SectionCard } from '../components/ui/Card'
+import { Select, Textarea, TextInput } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { EmptyState, LoadingState } from '../components/ui/states'
 
 const EMPTY_FORM = {
   date: '',
@@ -337,80 +343,75 @@ export function TimeTrackingPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-4xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Time Tracking</h1>
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
+      <PageHeader title="Time Tracking" subtitle="Log your work with a live timer or manual entries." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <section className="mt-6 rounded-md border border-slate-200 p-4">
-        <h2 className="text-lg font-medium text-slate-900">Timer</h2>
-
-        {timerError && <p className="mt-2 text-sm text-red-600">{timerError}</p>}
+      <SectionCard title="Timer">
+        {timerError && (
+          <Alert tone="error" className="mb-3">
+            {timerError}
+          </Alert>
+        )}
 
         {runningEntry ? (
-          <div className="mt-3 flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-2xl text-slate-900">{formatElapsed(elapsedSeconds)}</p>
-              <p className="text-sm text-slate-500">{runningEntry.task}</p>
+              <p className="font-mono text-3xl font-semibold text-ink">{formatElapsed(elapsedSeconds)}</p>
+              <p className="mt-1 text-sm text-muted">{runningEntry.task}</p>
             </div>
-            <button
-              type="button"
-              onClick={handleStopTimer}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white"
-            >
+            <Button variant="danger" onClick={handleStopTimer}>
               Stop
-            </button>
+            </Button>
           </div>
         ) : (
-          <form onSubmit={handleStartTimer} className="mt-3 grid grid-cols-2 gap-2">
-            <input
+          <form onSubmit={handleStartTimer} className="grid gap-3 sm:grid-cols-2">
+            <TextInput
               type="text"
               required
               placeholder="Task"
               value={timerTask}
               onChange={(e) => setTimerTask(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
-            <input
+            <TextInput
               type="text"
               required
               placeholder="Work category"
               value={timerCategory}
               onChange={(e) => setTimerCategory(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
-            <select
-              value={timerProjectId}
-              onChange={(e) => setTimerProjectId(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-            >
+            <Select value={timerProjectId} onChange={(e) => setTimerProjectId(e.target.value)}>
               <option value="">— No project —</option>
               {projects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
               ))}
-            </select>
-            <select
-              value={timerClientId}
-              onChange={(e) => setTimerClientId(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-            >
+            </Select>
+            <Select value={timerClientId} onChange={(e) => setTimerClientId(e.target.value)}>
               <option value="">— No client —</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               value={timerKpiAssignmentId}
               onChange={(e) => setTimerKpiAssignmentId(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             >
               <option value="">— No KPI —</option>
               {assignments.map((assignment) => (
@@ -418,208 +419,183 @@ export function TimeTrackingPage() {
                   {kpiAssignmentLabel(assignment)}
                 </option>
               ))}
-            </select>
-            <input
+            </Select>
+            <TextInput
               type="number"
               min="0"
               placeholder="KPI progress (e.g. 2)"
               value={timerKpiProgressValue}
               onChange={(e) => setTimerKpiProgressValue(e.target.value)}
               disabled={!timerKpiAssignmentId}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
             />
-            <textarea
+            <Textarea
               required
               placeholder="Description"
               value={timerDescription}
               onChange={(e) => setTimerDescription(e.target.value)}
-              className="col-span-2 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="sm:col-span-2"
             />
-            <button
-              type="submit"
-              className="col-span-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-            >
+            <Button type="submit" className="sm:col-span-2">
               Start Timer
-            </button>
+            </Button>
           </form>
         )}
-      </section>
+      </SectionCard>
 
       {summary && (
-        <section className="mt-6 grid grid-cols-4 gap-4 rounded-md border border-slate-200 p-4">
-          <div>
-            <p className="text-xs text-slate-500">Today</p>
-            <p className="text-lg font-semibold text-slate-900">{formatMinutes(summary.today_minutes)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-500">This Week</p>
-            <p className="text-lg font-semibold text-slate-900">{formatMinutes(summary.week_minutes)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-500">This Month</p>
-            <p className="text-lg font-semibold text-slate-900">{formatMinutes(summary.month_minutes)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-500">
+        <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Card className="p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Today</p>
+            <p className="mt-1 text-lg font-semibold text-ink">{formatMinutes(summary.today_minutes)}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">This Week</p>
+            <p className="mt-1 text-lg font-semibold text-ink">{formatMinutes(summary.week_minutes)}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">This Month</p>
+            <p className="mt-1 text-lg font-semibold text-ink">{formatMinutes(summary.month_minutes)}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
               Payroll Period ({summary.payroll_period_start} – {summary.payroll_period_end})
             </p>
-            <p className="text-lg font-semibold text-slate-900">{formatMinutes(summary.payroll_period_minutes)}</p>
-          </div>
-        </section>
+            <p className="mt-1 text-lg font-semibold text-ink">
+              {formatMinutes(summary.payroll_period_minutes)}
+            </p>
+          </Card>
+        </div>
       )}
 
-      <section className="mt-6 rounded-md border border-slate-200 p-4">
-        <h2 className="text-lg font-medium text-slate-900">
-          {editingId ? 'Edit Time Entry' : 'Add Manual Time Entry'}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="mt-3 grid grid-cols-2 gap-2">
-          <input
-            type="date"
-            required
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          <div />
-          <label className="text-xs text-slate-500">
-            Start
-            <input
-              type="datetime-local"
+      <div className="mt-6">
+        <SectionCard title={editingId ? 'Edit Time Entry' : 'Add Manual Time Entry'}>
+          <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
+            <TextInput
+              type="date"
               required
-              value={form.startTime}
-              onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
-          </label>
-          <label className="text-xs text-slate-500">
-            End
-            <input
-              type="datetime-local"
-              required
-              value={form.endTime}
-              onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
-          {formErrors.start_time && (
-            <p className="col-span-2 text-sm text-red-600">{formErrors.start_time[0]}</p>
-          )}
-          {formErrors.end_time && <p className="col-span-2 text-sm text-red-600">{formErrors.end_time[0]}</p>}
-          {formErrors.date && <p className="col-span-2 text-sm text-red-600">{formErrors.date[0]}</p>}
-          {formErrors.kpi_assignment_id && (
-            <p className="col-span-2 text-sm text-red-600">{formErrors.kpi_assignment_id[0]}</p>
-          )}
-
-          <select
-            value={form.projectId}
-            onChange={(e) => setForm({ ...form, projectId: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">— No project —</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={form.clientId}
-            onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">— No client —</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={form.kpiAssignmentId}
-            onChange={(e) => setForm({ ...form, kpiAssignmentId: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">— No KPI —</option>
-            {assignments.map((assignment) => (
-              <option key={assignment.id} value={assignment.id}>
-                {kpiAssignmentLabel(assignment)}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            min="0"
-            placeholder="KPI progress (e.g. 2)"
-            value={form.kpiProgressValue}
-            onChange={(e) => setForm({ ...form, kpiProgressValue: e.target.value })}
-            disabled={!form.kpiAssignmentId}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-50"
-          />
-
-          <input
-            type="text"
-            required
-            placeholder="Task"
-            value={form.task}
-            onChange={(e) => setForm({ ...form, task: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          <input
-            type="text"
-            required
-            placeholder="Work category"
-            value={form.workCategory}
-            onChange={(e) => setForm({ ...form, workCategory: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-
-          <textarea
-            required
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="col-span-2 rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-
-          <textarea
-            placeholder="Reference links (one per line)"
-            value={form.referenceLinks}
-            onChange={(e) => setForm({ ...form, referenceLinks: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          <textarea
-            placeholder="Deliverables (one per line)"
-            value={form.deliverables}
-            onChange={(e) => setForm({ ...form, deliverables: e.target.value })}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-
-          <div className="col-span-2 flex gap-2">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              {isSubmitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Entry'}
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700"
-              >
-                Cancel
-              </button>
+            <div className="hidden sm:block" />
+            <label className="text-xs font-medium text-muted">
+              Start
+              <TextInput
+                type="datetime-local"
+                required
+                value={form.startTime}
+                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                className="mt-1"
+              />
+            </label>
+            <label className="text-xs font-medium text-muted">
+              End
+              <TextInput
+                type="datetime-local"
+                required
+                value={form.endTime}
+                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                className="mt-1"
+              />
+            </label>
+            {formErrors.start_time && (
+              <p className="text-sm text-red-600 sm:col-span-2">{formErrors.start_time[0]}</p>
             )}
-          </div>
-        </form>
-      </section>
+            {formErrors.end_time && (
+              <p className="text-sm text-red-600 sm:col-span-2">{formErrors.end_time[0]}</p>
+            )}
+            {formErrors.date && <p className="text-sm text-red-600 sm:col-span-2">{formErrors.date[0]}</p>}
+            {formErrors.kpi_assignment_id && (
+              <p className="text-sm text-red-600 sm:col-span-2">{formErrors.kpi_assignment_id[0]}</p>
+            )}
 
-      <section className="mt-6 space-y-6">
-        <h2 className="text-lg font-medium text-slate-900">My Time Entries</h2>
-        {attachmentError && <p className="text-sm text-red-600">{attachmentError}</p>}
+            <Select value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })}>
+              <option value="">— No project —</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </Select>
+            <Select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}>
+              <option value="">— No client —</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              value={form.kpiAssignmentId}
+              onChange={(e) => setForm({ ...form, kpiAssignmentId: e.target.value })}
+            >
+              <option value="">— No KPI —</option>
+              {assignments.map((assignment) => (
+                <option key={assignment.id} value={assignment.id}>
+                  {kpiAssignmentLabel(assignment)}
+                </option>
+              ))}
+            </Select>
+            <TextInput
+              type="number"
+              min="0"
+              placeholder="KPI progress (e.g. 2)"
+              value={form.kpiProgressValue}
+              onChange={(e) => setForm({ ...form, kpiProgressValue: e.target.value })}
+              disabled={!form.kpiAssignmentId}
+            />
+
+            <TextInput
+              type="text"
+              required
+              placeholder="Task"
+              value={form.task}
+              onChange={(e) => setForm({ ...form, task: e.target.value })}
+            />
+            <TextInput
+              type="text"
+              required
+              placeholder="Work category"
+              value={form.workCategory}
+              onChange={(e) => setForm({ ...form, workCategory: e.target.value })}
+            />
+
+            <Textarea
+              required
+              placeholder="Description"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="sm:col-span-2"
+            />
+
+            <Textarea
+              placeholder="Reference links (one per line)"
+              value={form.referenceLinks}
+              onChange={(e) => setForm({ ...form, referenceLinks: e.target.value })}
+            />
+            <Textarea
+              placeholder="Deliverables (one per line)"
+              value={form.deliverables}
+              onChange={(e) => setForm({ ...form, deliverables: e.target.value })}
+            />
+
+            <div className="flex gap-2 sm:col-span-2">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Entry'}
+              </Button>
+              {editingId && (
+                <Button variant="secondary" onClick={resetForm}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </form>
+        </SectionCard>
+      </div>
+
+      <section className="mt-6 space-y-4">
+        <h2 className="text-base font-semibold text-ink">My Time Entries</h2>
+        {attachmentError && <Alert tone="error">{attachmentError}</Alert>}
 
         {groupByDate(entries).map(([date, dateEntries]) => {
           const timesheet = timesheets.find((t) => t.date === date)
@@ -627,137 +603,138 @@ export function TimeTrackingPage() {
           const hasRunningEntry = dateEntries.some((entry) => entry.end_time === null)
 
           return (
-            <div key={date} className="rounded-md border border-slate-200 p-4">
-              <div className="flex items-center justify-between">
+            <div key={date} className="rounded-2xl border border-line bg-white p-5 shadow-card">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-slate-900">{date}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="font-medium text-ink">{date}</p>
+                  <p className="mt-0.5 text-sm text-muted">
                     Status: {timesheet ? timesheet.status : 'not submitted'}
                   </p>
                 </div>
                 {canSubmit && (
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
                     onClick={() => handleSubmitTimesheet(date)}
                     disabled={hasRunningEntry}
-                    className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
                     title={hasRunningEntry ? 'Stop the running timer before submitting' : undefined}
                   >
                     Submit Timesheet
-                  </button>
+                  </Button>
                 )}
               </div>
 
               {timesheet && (timesheet.comments ?? []).length > 0 && (
-                <div className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
+                <div className="mt-3 space-y-1 border-t border-line pt-3 text-sm">
                   {(timesheet.comments ?? []).map((comment) => (
-                    <p key={comment.id} className="text-slate-600">
-                      <span className="font-medium">{comment.author?.name ?? 'Reviewer'}</span> ({comment.action}):{' '}
-                      {comment.comment ?? <em>no comment</em>}
+                    <p key={comment.id} className="text-muted">
+                      <span className="font-medium text-ink">{comment.author?.name ?? 'Reviewer'}</span>{' '}
+                      ({comment.action}): {comment.comment ?? <em>no comment</em>}
                     </p>
                   ))}
                 </div>
               )}
 
-              <table className="mt-3 w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="py-2">Duration</th>
-                    <th className="py-2">Project</th>
-                    <th className="py-2">Task</th>
-                    <th className="py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dateEntries.map((entry) => {
-                    const locked = isTimeEntryLocked(entry)
-                    const disabled = !entry.end_time || locked
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
+                      <th className="py-2 pr-4 font-medium">Duration</th>
+                      <th className="py-2 pr-4 font-medium">Project</th>
+                      <th className="py-2 pr-4 font-medium">Task</th>
+                      <th className="py-2 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dateEntries.map((entry) => {
+                      const locked = isTimeEntryLocked(entry)
+                      const disabled = !entry.end_time || locked
 
-                    return (
-                      <Fragment key={entry.id}>
-                        <tr className="border-b border-slate-100">
-                          <td className="py-2">
-                            {entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}
-                          </td>
-                          <td className="py-2">{entry.project?.name ?? '—'}</td>
-                          <td className="py-2">{entry.task}</td>
-                          <td className="space-x-2 py-2">
-                            <button
-                              type="button"
-                              onClick={() => startEditing(entry)}
-                              disabled={disabled}
-                              title={locked ? 'Locked — this timesheet has been submitted' : undefined}
-                              className="text-slate-900 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(entry)}
-                              disabled={disabled}
-                              title={locked ? 'Locked — this timesheet has been submitted' : undefined}
-                              className="text-red-600 underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                        <tr className="border-b border-slate-100">
-                          <td colSpan={4} className="pb-2 text-xs">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-slate-500">Attachments:</span>
-                              {(entry.attachments ?? []).map((attachment) => (
-                                <span
-                                  key={attachment.id}
-                                  className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-0.5"
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDownloadAttachment(entry, attachment)}
-                                    className="text-slate-900 underline"
+                      return (
+                        <Fragment key={entry.id}>
+                          <tr>
+                            <td className="py-2 pr-4">
+                              {entry.end_time ? formatMinutes(entry.duration_minutes) : 'Running…'}
+                            </td>
+                            <td className="py-2 pr-4 text-muted">{entry.project?.name ?? '—'}</td>
+                            <td className="py-2 pr-4">{entry.task}</td>
+                            <td className="space-x-3 whitespace-nowrap py-2">
+                              <button
+                                type="button"
+                                onClick={() => startEditing(entry)}
+                                disabled={disabled}
+                                title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                                className="font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(entry)}
+                                disabled={disabled}
+                                title={locked ? 'Locked — this timesheet has been submitted' : undefined}
+                                className="font-medium text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                          <tr className="border-b border-line/60 last:border-b-0">
+                            <td colSpan={4} className="pb-3 text-xs">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-muted">Attachments:</span>
+                                {(entry.attachments ?? []).map((attachment) => (
+                                  <span
+                                    key={attachment.id}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-field px-2.5 py-1"
                                   >
-                                    {attachment.original_name}
-                                  </button>
-                                  <span className="text-slate-400">({formatFileSize(attachment.size_bytes)})</span>
-                                  {!locked && (
                                     <button
                                       type="button"
-                                      onClick={() => void handleDeleteAttachment(entry, attachment)}
-                                      className="text-red-600 underline"
+                                      onClick={() => void handleDownloadAttachment(entry, attachment)}
+                                      className="font-medium text-primary hover:underline"
                                     >
-                                      Remove
+                                      {attachment.original_name}
                                     </button>
-                                  )}
-                                </span>
-                              ))}
-                              {(entry.attachments ?? []).length === 0 && (
-                                <span className="text-slate-400">none</span>
-                              )}
-                              {!locked && (
-                                <label className="cursor-pointer text-slate-900 underline">
-                                  {uploadingEntryId === entry.id ? 'Uploading…' : 'Attach file'}
-                                  <input
-                                    type="file"
-                                    accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx"
-                                    className="hidden"
-                                    disabled={uploadingEntryId !== null}
-                                    onChange={(e) => void handleUploadAttachment(entry, e)}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      </Fragment>
-                    )
-                  })}
-                </tbody>
-              </table>
+                                    <span className="text-muted">({formatFileSize(attachment.size_bytes)})</span>
+                                    {!locked && (
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeleteAttachment(entry, attachment)}
+                                        className="font-medium text-red-600 hover:underline"
+                                      >
+                                        Remove
+                                      </button>
+                                    )}
+                                  </span>
+                                ))}
+                                {(entry.attachments ?? []).length === 0 && (
+                                  <span className="text-muted">none</span>
+                                )}
+                                {!locked && (
+                                  <label className="cursor-pointer font-medium text-primary hover:underline">
+                                    {uploadingEntryId === entry.id ? 'Uploading…' : 'Attach file'}
+                                    <input
+                                      type="file"
+                                      accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx"
+                                      className="hidden"
+                                      disabled={uploadingEntryId !== null}
+                                      onChange={(e) => void handleUploadAttachment(entry, e)}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        </Fragment>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         })}
 
-        {entries.length === 0 && <p className="text-slate-400">No time entries yet.</p>}
+        {entries.length === 0 && <EmptyState>No time entries yet.</EmptyState>}
       </section>
     </main>
   )

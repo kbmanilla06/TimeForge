@@ -13,6 +13,15 @@ import {
 import { ApiError } from '../lib/apiClient'
 import { getDashboard } from '../lib/dashboardApi'
 import type { DashboardData } from '../types/dashboard'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { Card, SectionCard } from '../components/ui/Card'
+import { TextInput } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingState } from '../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
+
+const CHART_COLOR = '#1876f2'
 
 function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(2)
@@ -20,6 +29,15 @@ function formatHours(minutes: number): string {
 
 function formatCurrency(value: number): string {
   return `$${value.toFixed(2)}`
+}
+
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Card className="p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-ink">{value}</p>
+    </Card>
+  )
 }
 
 export function DashboardPage() {
@@ -54,13 +72,17 @@ export function DashboardPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-6xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   if (!data) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        {error && <Alert tone="error">{error}</Alert>}
       </main>
     )
   }
@@ -81,190 +103,173 @@ export function DashboardPage() {
   }))
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          <>
             <span>{data.scope === 'organization' ? 'Organization-wide' : `Department: ${data.department_name}`}</span>
             {' · '}
             <span>
               Period: {data.period_start} – {data.period_end}
             </span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <TextInput type="date" value={date} onChange={(e) => handleDateChange(e.target.value)} className="w-auto" />
+            <Button variant="secondary" onClick={handleRefresh}>
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <section className="mt-6 grid grid-cols-4 gap-4">
-        <div className="rounded-md border border-slate-200 p-4">
-          <p className="text-xs text-slate-500">Total Hours</p>
-          <p className="text-lg font-semibold text-slate-900">{formatHours(data.total_hours_minutes)}</p>
-        </div>
-        <div className="rounded-md border border-slate-200 p-4">
-          <p className="text-xs text-slate-500">Pending Approvals</p>
-          <p className="text-lg font-semibold text-slate-900">{data.pending_approvals}</p>
-        </div>
-        <div className="rounded-md border border-slate-200 p-4">
-          <p className="text-xs text-slate-500">Billable Hours</p>
-          <p className="text-lg font-semibold text-slate-900">{formatHours(data.billable_minutes)}</p>
-        </div>
-        <div className="rounded-md border border-slate-200 p-4">
-          <p className="text-xs text-slate-500">Non-Billable Hours</p>
-          <p className="text-lg font-semibold text-slate-900">{formatHours(data.non_billable_minutes)}</p>
-        </div>
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile label="Total Hours" value={formatHours(data.total_hours_minutes)} />
+        <StatTile label="Pending Approvals" value={data.pending_approvals} />
+        <StatTile label="Billable Hours" value={formatHours(data.billable_minutes)} />
+        <StatTile label="Non-Billable Hours" value={formatHours(data.non_billable_minutes)} />
       </section>
 
       {data.payroll_summary && (
-        <section className="mt-6 rounded-md border border-slate-200 p-4">
-          <h2 className="text-lg font-medium text-slate-900">Payroll Summary</h2>
-          <div className="mt-3 grid grid-cols-4 gap-4">
+        <SectionCard title="Payroll Summary" className="mt-6">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <div>
-              <p className="text-xs text-slate-500">Estimated Payroll</p>
-              <p className="text-lg font-semibold text-slate-900">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Estimated Payroll</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
                 {formatCurrency(data.payroll_summary.total_estimated_payroll)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Regular Hours</p>
-              <p className="text-lg font-semibold text-slate-900">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Regular Hours</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
                 {formatHours(data.payroll_summary.total_regular_minutes)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Overtime Hours</p>
-              <p className="text-lg font-semibold text-slate-900">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Overtime Hours</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
                 {formatHours(data.payroll_summary.total_overtime_minutes)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Employees With Rate Set</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {data.payroll_summary.employees_with_rate_count} / {data.payroll_summary.employees_with_rate_count + data.payroll_summary.employees_without_rate_count}
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Employees With Rate Set</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {data.payroll_summary.employees_with_rate_count} /{' '}
+                {data.payroll_summary.employees_with_rate_count + data.payroll_summary.employees_without_rate_count}
               </p>
             </div>
           </div>
-        </section>
+        </SectionCard>
       )}
 
-      <section className="mt-6 grid grid-cols-2 gap-4">
-        <div className="rounded-md border border-slate-200 p-4">
-          <h2 className="text-lg font-medium text-slate-900">Department Performance</h2>
-          <div className="mt-3 h-64">
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        <SectionCard title="Department Performance">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#dae0e7" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="hours" fill="#0f172a" name="Approved Hours" />
+                <Bar dataKey="hours" fill={CHART_COLOR} name="Approved Hours" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </SectionCard>
 
-        <div className="rounded-md border border-slate-200 p-4">
-          <h2 className="text-lg font-medium text-slate-900">Project Allocation</h2>
-          <div className="mt-3 h-64">
+        <SectionCard title="Project Allocation">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={projectChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#dae0e7" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="hours" fill="#0f172a" name="Approved Hours" />
+                <Bar dataKey="hours" fill={CHART_COLOR} name="Approved Hours" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          {projectChartData.length === 0 && <p className="mt-2 text-sm text-slate-400">No project hours yet.</p>}
-        </div>
+          {projectChartData.length === 0 && <p className="mt-2 text-sm text-muted">No project hours yet.</p>}
+        </SectionCard>
       </section>
 
-      <section className="mt-6 rounded-md border border-slate-200 p-4">
-        <h2 className="text-lg font-medium text-slate-900">Attendance Trend</h2>
-        <div className="mt-3 h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={attendanceChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Line type="monotone" dataKey="employees" stroke="#0f172a" name="Employees Logging Time" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+      <div className="mt-6">
+        <SectionCard title="Attendance Trend">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attendanceChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#dae0e7" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Line type="monotone" dataKey="employees" stroke={CHART_COLOR} strokeWidth={2} name="Employees Logging Time" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </SectionCard>
+      </div>
 
-      <section className="mt-6 rounded-md border border-slate-200 p-4">
-        <h2 className="text-lg font-medium text-slate-900">KPI Completion Rates</h2>
-        <div className="mt-3 space-y-3">
-          {data.kpi_completion_rates.map((kpi) => (
-            <div key={kpi.kpi_assignment_id}>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-700">
-                  {kpi.kpi_name} — {kpi.assignee}
-                </span>
-                <span className="text-slate-500">
-                  {kpi.progress} / {kpi.target} ({kpi.completion_rate}%)
-                </span>
+      <div className="mt-6">
+        <SectionCard title="KPI Completion Rates">
+          <div className="space-y-3">
+            {data.kpi_completion_rates.map((kpi) => (
+              <div key={kpi.kpi_assignment_id}>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-ink">
+                    {kpi.kpi_name} — {kpi.assignee}
+                  </span>
+                  <span className="text-muted">
+                    {kpi.progress} / {kpi.target} ({kpi.completion_rate}%)
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 rounded-full bg-field">
+                  <div
+                    className="h-2 rounded-full bg-primary"
+                    style={{ width: `${Math.min(kpi.completion_rate, 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-100">
-                <div
-                  className="h-2 rounded-full bg-slate-900"
-                  style={{ width: `${Math.min(kpi.completion_rate, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
-          {data.kpi_completion_rates.length === 0 && (
-            <p className="text-sm text-slate-400">No KPIs with a target assigned yet.</p>
-          )}
-        </div>
-      </section>
+            ))}
+            {data.kpi_completion_rates.length === 0 && (
+              <p className="text-sm text-muted">No KPIs with a target assigned yet.</p>
+            )}
+          </div>
+        </SectionCard>
+      </div>
 
       <section className="mt-6">
-        <h2 className="text-lg font-medium text-slate-900">Employee Productivity</h2>
-        <table className="mt-3 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
-              <th className="py-2">Employee</th>
-              <th className="py-2">Department</th>
-              <th className="py-2">Approved Hours</th>
-            </tr>
-          </thead>
+        <h2 className="mb-3 text-base font-semibold text-ink">Employee Productivity</h2>
+        <TableCard>
+          <TableHead>
+            <Th>Employee</Th>
+            <Th>Department</Th>
+            <Th>Approved Hours</Th>
+          </TableHead>
           <tbody>
             {data.employee_productivity.map((row) => (
-              <tr key={row.user_id} className="border-b border-slate-100">
-                <td className="py-2">{row.name}</td>
-                <td className="py-2">{row.department ?? '—'}</td>
-                <td className="py-2">{formatHours(row.approved_minutes)}</td>
-              </tr>
+              <Tr key={row.user_id}>
+                <Td className="font-medium text-ink">{row.name}</Td>
+                <Td className="text-muted">{row.department ?? '—'}</Td>
+                <Td>{formatHours(row.approved_minutes)}</Td>
+              </Tr>
             ))}
             {data.employee_productivity.length === 0 && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="px-4 py-8 text-center text-muted">
                   No employees in scope.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </TableCard>
       </section>
     </main>
   )

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '../lib/apiClient'
 import { listMyAssignments } from '../lib/kpiApi'
 import type { KpiAssignment } from '../types/kpi'
+import { Alert } from '../components/ui/Alert'
+import { PageHeader } from '../components/ui/PageHeader'
+import { EmptyState, LoadingState } from '../components/ui/states'
 
 export function MyKpisPage() {
   const [assignments, setAssignments] = useState<KpiAssignment[]>([])
@@ -25,30 +28,60 @@ export function MyKpisPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-2xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">My KPIs</h1>
+    <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-6">
+      <PageHeader title="My KPIs" subtitle="Progress credits when your timesheets are approved." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <ul className="mt-6 space-y-3">
-        {assignments.map((assignment) => (
-          <li key={assignment.id} className="rounded-md border border-slate-200 p-4">
-            <p className="font-medium text-slate-900">
-              {assignment.kpi?.name ?? '—'}
-              {assignment.department ? ' (department goal)' : ''}
-            </p>
-            <p className="text-sm text-slate-500">
-              {assignment.progress_value}
-              {assignment.kpi?.target_value != null ? ` / ${assignment.kpi.target_value}` : ''}
-              {assignment.kpi?.unit ? ` ${assignment.kpi.unit}` : ''}
-            </p>
-          </li>
-        ))}
-        {assignments.length === 0 && <p className="text-slate-400">No KPIs assigned yet.</p>}
+      <ul className="space-y-3">
+        {assignments.map((assignment) => {
+          const target = assignment.kpi?.target_value
+          const ratio =
+            target != null && target > 0
+              ? Math.min(assignment.progress_value / target, 1)
+              : null
+
+          return (
+            <li key={assignment.id} className="rounded-2xl border border-line bg-white p-5 shadow-card">
+              <p className="font-medium text-ink">
+                {assignment.kpi?.name ?? '—'}
+                {assignment.department ? ' (department goal)' : ''}
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {assignment.progress_value}
+                {assignment.kpi?.target_value != null ? ` / ${assignment.kpi.target_value}` : ''}
+                {assignment.kpi?.unit ? ` ${assignment.kpi.unit}` : ''}
+              </p>
+              {ratio != null && (
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={target ?? 0}
+                  aria-valuenow={assignment.progress_value}
+                  className="mt-3 h-2 overflow-hidden rounded-full bg-field"
+                >
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${ratio * 100}%` }}
+                  />
+                </div>
+              )}
+            </li>
+          )
+        })}
+        {assignments.length === 0 && <EmptyState>No KPIs assigned yet.</EmptyState>}
       </ul>
     </main>
   )

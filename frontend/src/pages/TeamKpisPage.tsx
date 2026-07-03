@@ -3,6 +3,13 @@ import { useAuth } from '../context/useAuth'
 import { ApiError } from '../lib/apiClient'
 import { createAssignment, deleteAssignment, listKpis, listTeamAssignments, listTeamMembers } from '../lib/kpiApi'
 import type { Kpi, KpiAssignment, TeamMember } from '../types/kpi'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { Select } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingState } from '../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
 
 type TargetType = 'user' | 'department'
 
@@ -76,104 +83,94 @@ export function TeamKpisPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-4xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Team KPIs</h1>
+    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <PageHeader title="Team KPIs" subtitle="Assign KPIs and track your team's reviewed progress." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <form onSubmit={handleAssign} className="mt-6 grid grid-cols-3 gap-2 rounded-md border border-slate-200 p-4">
-        <select
-          required
-          value={kpiId}
-          onChange={(e) => setKpiId(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">— Select KPI —</option>
-          {kpis.map((kpi) => (
-            <option key={kpi.id} value={kpi.id}>
-              {kpi.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={targetType}
-          onChange={(e) => setTargetType(e.target.value as TargetType)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="user">Assign to a person</option>
-          <option value="department">Assign to my department</option>
-        </select>
-        {targetType === 'user' ? (
-          <select
-            required
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">— Select person —</option>
-            {members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.name}
+      <Card className="mb-6 p-5">
+        <form onSubmit={handleAssign} className="grid gap-3 sm:grid-cols-3">
+          <Select required value={kpiId} onChange={(e) => setKpiId(e.target.value)}>
+            <option value="">— Select KPI —</option>
+            {kpis.map((kpi) => (
+              <option key={kpi.id} value={kpi.id}>
+                {kpi.name}
               </option>
             ))}
-          </select>
-        ) : (
-          <div />
-        )}
-        <button
-          type="submit"
-          disabled={isAssigning}
-          className="col-span-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          Assign KPI
-        </button>
-      </form>
+          </Select>
+          <Select value={targetType} onChange={(e) => setTargetType(e.target.value as TargetType)}>
+            <option value="user">Assign to a person</option>
+            <option value="department">Assign to my department</option>
+          </Select>
+          {targetType === 'user' ? (
+            <Select required value={userId} onChange={(e) => setUserId(e.target.value)}>
+              <option value="">— Select person —</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <div className="hidden sm:block" />
+          )}
+          <Button type="submit" disabled={isAssigning} className="sm:col-span-3">
+            Assign KPI
+          </Button>
+        </form>
+      </Card>
 
-      <table className="mt-6 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-slate-500">
-            <th className="py-2">KPI</th>
-            <th className="py-2">Assigned To</th>
-            <th className="py-2">Progress</th>
-            <th className="py-2">Actions</th>
-          </tr>
-        </thead>
+      <TableCard>
+        <TableHead>
+          <Th>KPI</Th>
+          <Th>Assigned To</Th>
+          <Th>Progress</Th>
+          <Th>Actions</Th>
+        </TableHead>
         <tbody>
           {assignments.map((assignment) => (
-            <tr key={assignment.id} className="border-b border-slate-100">
-              <td className="py-2">{assignment.kpi?.name ?? '—'}</td>
-              <td className="py-2">
+            <Tr key={assignment.id}>
+              <Td className="font-medium text-ink">{assignment.kpi?.name ?? '—'}</Td>
+              <Td className="text-muted">
                 {assignment.user?.name ?? (assignment.department ? `${assignment.department.name} (dept.)` : '—')}
-              </td>
-              <td className="py-2">
+              </Td>
+              <Td>
                 {assignment.progress_value}
                 {assignment.kpi?.target_value != null ? ` / ${assignment.kpi.target_value}` : ''}
                 {assignment.kpi?.unit ? ` ${assignment.kpi.unit}` : ''}
-              </td>
-              <td className="py-2">
+              </Td>
+              <Td>
                 <button
                   type="button"
                   onClick={() => handleDelete(assignment)}
-                  className="text-red-600 underline"
+                  className="font-medium text-red-600 hover:underline"
                 >
                   Remove
                 </button>
-              </td>
-            </tr>
+              </Td>
+            </Tr>
           ))}
           {assignments.length === 0 && (
             <tr>
-              <td colSpan={4} className="py-4 text-center text-slate-400">
+              <td colSpan={4} className="px-4 py-8 text-center text-muted">
                 No KPI assignments yet.
               </td>
             </tr>
           )}
         </tbody>
-      </table>
+      </TableCard>
     </main>
   )
 }

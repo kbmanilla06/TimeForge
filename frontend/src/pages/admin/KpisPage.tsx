@@ -2,6 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../../lib/apiClient'
 import { createKpi, listKpis } from '../../lib/kpiApi'
 import type { Kpi } from '../../types/kpi'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
+import { TextInput } from '../../components/ui/fields'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { LoadingState } from '../../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../../components/ui/Table'
 
 export function KpisPage() {
   const [kpis, setKpis] = useState<Kpi[]>([])
@@ -51,72 +57,67 @@ export function KpisPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Manage KPIs</h1>
+    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <PageHeader title="Manage KPIs" subtitle="Define the measurable targets teams work toward." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <form onSubmit={handleCreate} className="mt-6 grid grid-cols-3 gap-2">
-        <input
+      <form onSubmit={handleCreate} className="mb-6 grid gap-2 sm:grid-cols-3">
+        <TextInput
           type="text"
           required
           placeholder="KPI name (e.g. Bugs Resolved)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
-        <input
+        <TextInput
           type="number"
           min="0"
           placeholder="Target (optional)"
           value={targetValue}
           onChange={(e) => setTargetValue(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
-        <input
+        <TextInput
           type="text"
           placeholder="Unit (optional, e.g. bugs)"
           value={unit}
           onChange={(e) => setUnit(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
-        <button
-          type="submit"
-          disabled={isCreating}
-          className="col-span-3 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <Button type="submit" disabled={isCreating} className="sm:col-span-3">
           Add KPI
-        </button>
+        </Button>
       </form>
 
       {isLoading ? (
-        <p className="mt-6 text-slate-500">Loading…</p>
+        <LoadingState />
       ) : (
-        <table className="mt-6 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
-              <th className="py-2">Name</th>
-              <th className="py-2">Target</th>
-              <th className="py-2">Unit</th>
-            </tr>
-          </thead>
+        <TableCard>
+          <TableHead>
+            <Th>Name</Th>
+            <Th>Target</Th>
+            <Th>Unit</Th>
+          </TableHead>
           <tbody>
             {kpis.map((kpi) => (
-              <tr key={kpi.id} className="border-b border-slate-100">
-                <td className="py-2">{kpi.name}</td>
-                <td className="py-2">{kpi.target_value ?? '—'}</td>
-                <td className="py-2">{kpi.unit ?? '—'}</td>
-              </tr>
+              <Tr key={kpi.id}>
+                <Td className="font-medium text-ink">{kpi.name}</Td>
+                <Td className="text-muted">{kpi.target_value ?? '—'}</Td>
+                <Td className="text-muted">{kpi.unit ?? '—'}</Td>
+              </Tr>
             ))}
             {kpis.length === 0 && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="px-4 py-8 text-center text-muted">
                   No KPIs yet.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </TableCard>
       )}
     </main>
   )

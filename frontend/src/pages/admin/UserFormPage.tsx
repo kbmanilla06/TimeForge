@@ -4,8 +4,19 @@ import { createUser, listDepartments, listUsers, updateUser } from '../../lib/ad
 import { ApiError } from '../../lib/apiClient'
 import type { Department } from '../../types/admin'
 import type { Role } from '../../types/auth'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
+import { Card } from '../../components/ui/Card'
+import { Field, Select, TextInput } from '../../components/ui/fields'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { LoadingState } from '../../components/ui/states'
 
 const ROLES: Role[] = ['employee', 'supervisor', 'hr_finance', 'admin']
+
+function FieldError({ messages }: { messages?: string[] }) {
+  if (!messages) return null
+  return <p className="mt-1 text-sm text-red-600">{messages[0]}</p>
+}
 
 export function UserFormPage() {
   const { userId } = useParams<{ userId: string }>()
@@ -90,129 +101,119 @@ export function UserFormPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-lg px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-lg px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">{isEditMode ? 'Edit User' : 'Create User'}</h1>
+    <main className="mx-auto w-full max-w-lg px-4 py-6 sm:px-6">
+      <PageHeader title={isEditMode ? 'Edit User' : 'Create User'} />
 
-      {formError && <p className="mt-4 text-sm text-red-600">{formError}</p>}
+      {formError && (
+        <Alert tone="error" className="mb-4">
+          {formError}
+        </Alert>
+      )}
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name[0]}</p>}
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email[0]}</p>}
-        </div>
-
-        {!isEditMode && (
+      <Card className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-              Initial Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password[0]}</p>}
+            <Field label="Name" htmlFor="name">
+              <TextInput
+                id="name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </Field>
+            <FieldError messages={errors.name} />
           </div>
-        )}
 
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium text-slate-700">
-            Role
-          </label>
-          <select
-            id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value as Role)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role[0]}</p>}
-        </div>
-
-        <div>
-          <label htmlFor="department" className="block text-sm font-medium text-slate-700">
-            Department
-          </label>
-          <select
-            id="department"
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="">— None —</option>
-            {departments.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
-          {errors.department_id && <p className="mt-1 text-sm text-red-600">{errors.department_id[0]}</p>}
-        </div>
-
-        {isEditMode && (
           <div>
-            <label htmlFor="hourlyRate" className="block text-sm font-medium text-slate-700">
-              Hourly Rate
-            </label>
-            <input
-              id="hourlyRate"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="e.g. 20.00"
-              value={hourlyRate}
-              onChange={(e) => setHourlyRate(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-            {errors.hourly_rate && <p className="mt-1 text-sm text-red-600">{errors.hourly_rate[0]}</p>}
+            <Field label="Email" htmlFor="email">
+              <TextInput
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </Field>
+            <FieldError messages={errors.email} />
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? 'Saving…' : isEditMode ? 'Save Changes' : 'Create User'}
-        </button>
-      </form>
+          {!isEditMode && (
+            <div>
+              <Field label="Initial Password" htmlFor="password">
+                <TextInput
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </Field>
+              <FieldError messages={errors.password} />
+            </div>
+          )}
+
+          <div>
+            <Field label="Role" htmlFor="role">
+              <Select id="role" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <FieldError messages={errors.role} />
+          </div>
+
+          <div>
+            <Field label="Department" htmlFor="department">
+              <Select
+                id="department"
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+              >
+                <option value="">— None —</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <FieldError messages={errors.department_id} />
+          </div>
+
+          {isEditMode && (
+            <div>
+              <Field label="Hourly Rate" htmlFor="hourlyRate">
+                <TextInput
+                  id="hourlyRate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 20.00"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                />
+              </Field>
+              <FieldError messages={errors.hourly_rate} />
+            </div>
+          )}
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? 'Saving…' : isEditMode ? 'Save Changes' : 'Create User'}
+          </Button>
+        </form>
+      </Card>
     </main>
   )
 }

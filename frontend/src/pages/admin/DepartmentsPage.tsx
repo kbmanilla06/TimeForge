@@ -2,6 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createDepartment, deleteDepartment, listDepartments, updateDepartment } from '../../lib/adminApi'
 import { ApiError } from '../../lib/apiClient'
 import type { Department } from '../../types/admin'
+import { Alert } from '../../components/ui/Alert'
+import { Button } from '../../components/ui/Button'
+import { TextInput } from '../../components/ui/fields'
+import { PageHeader } from '../../components/ui/PageHeader'
+import { LoadingState } from '../../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../../components/ui/Table'
 
 export function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([])
@@ -80,70 +86,68 @@ export function DepartmentsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Departments</h1>
+    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <PageHeader title="Departments" subtitle="Organize users into departments." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <form onSubmit={handleCreate} className="mt-6 flex gap-2">
-        <input
+      <form onSubmit={handleCreate} className="mb-6 flex flex-wrap gap-2">
+        <TextInput
           type="text"
           required
           placeholder="New department name"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="max-w-xs flex-1"
         />
-        <button
-          type="submit"
-          disabled={isCreating}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <Button type="submit" disabled={isCreating}>
           Add Department
-        </button>
+        </Button>
       </form>
 
       {isLoading ? (
-        <p className="mt-6 text-slate-500">Loading…</p>
+        <LoadingState />
       ) : (
-        <table className="mt-6 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-500">
-              <th className="py-2">Name</th>
-              <th className="py-2">Users</th>
-              <th className="py-2">Actions</th>
-            </tr>
-          </thead>
+        <TableCard>
+          <TableHead>
+            <Th>Name</Th>
+            <Th>Users</Th>
+            <Th>Actions</Th>
+          </TableHead>
           <tbody>
             {departments.map((department) => (
-              <tr key={department.id} className="border-b border-slate-100">
-                <td className="py-2">
+              <Tr key={department.id}>
+                <Td className="font-medium text-ink">
                   {editingId === department.id ? (
-                    <input
+                    <TextInput
                       type="text"
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+                      className="h-8 max-w-xs"
                     />
                   ) : (
                     department.name
                   )}
-                </td>
-                <td className="py-2">{department.users_count ?? 0}</td>
-                <td className="space-x-2 py-2">
+                </Td>
+                <Td className="text-muted">{department.users_count ?? 0}</Td>
+                <Td className="space-x-3 whitespace-nowrap">
                   {editingId === department.id ? (
                     <>
                       <button
                         type="button"
                         onClick={() => handleRename(department.id)}
-                        className="text-slate-900 underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="text-slate-500 underline"
+                        className="font-medium text-muted hover:underline"
                       >
                         Cancel
                       </button>
@@ -153,31 +157,31 @@ export function DepartmentsPage() {
                       <button
                         type="button"
                         onClick={() => startEditing(department)}
-                        className="text-slate-900 underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         Rename
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(department)}
-                        className="text-red-600 underline"
+                        className="font-medium text-red-600 hover:underline"
                       >
                         Delete
                       </button>
                     </>
                   )}
-                </td>
-              </tr>
+                </Td>
+              </Tr>
             ))}
             {departments.length === 0 && (
               <tr>
-                <td colSpan={3} className="py-4 text-center text-slate-400">
+                <td colSpan={3} className="px-4 py-8 text-center text-muted">
                   No departments yet.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+        </TableCard>
       )}
     </main>
   )

@@ -3,6 +3,12 @@ import { ApiError } from '../lib/apiClient'
 import { downloadBlob } from '../lib/download'
 import { exportPayrollExcel, exportPayrollPdf, getPayrollSummary } from '../lib/payrollApi'
 import type { PayrollSummaryRow } from '../types/payroll'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { TextInput } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { LoadingState } from '../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
 
 function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(2)
@@ -67,82 +73,81 @@ export function PayrollPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-5xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   const periodLabel = rows[0] ? `${rows[0].period_start} – ${rows[0].period_end}` : null
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Payroll</h1>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            disabled={isExporting}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
-          >
-            Export PDF
-          </button>
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            disabled={isExporting}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-50"
-          >
-            Export Excel
-          </button>
-        </div>
-      </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+      <PageHeader
+        title="Payroll"
+        subtitle={periodLabel ? `Period: ${periodLabel}` : undefined}
+        actions={
+          <>
+            <TextInput
+              type="date"
+              value={date}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="w-auto"
+            />
+            <Button variant="secondary" onClick={handleExportPdf} disabled={isExporting}>
+              Export PDF
+            </Button>
+            <Button variant="secondary" onClick={handleExportExcel} disabled={isExporting}>
+              Export Excel
+            </Button>
+          </>
+        }
+      />
 
-      {periodLabel && <p className="mt-2 text-sm text-slate-500">Period: {periodLabel}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-
-      <table className="mt-6 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-slate-500">
-            <th className="py-2">Employee</th>
-            <th className="py-2">Department</th>
-            <th className="py-2">Hourly Rate</th>
-            <th className="py-2">Approved Hrs</th>
-            <th className="py-2">Overtime Hrs</th>
-            <th className="py-2">Pending Hrs</th>
-            <th className="py-2">Rejected Hrs</th>
-            <th className="py-2">Attendance</th>
-            <th className="py-2">Estimated Payroll</th>
-          </tr>
-        </thead>
+      <TableCard>
+        <TableHead>
+          <Th>Employee</Th>
+          <Th>Department</Th>
+          <Th>Hourly Rate</Th>
+          <Th>Approved Hrs</Th>
+          <Th>Overtime Hrs</Th>
+          <Th>Pending Hrs</Th>
+          <Th>Rejected Hrs</Th>
+          <Th>Attendance</Th>
+          <Th>Estimated Payroll</Th>
+        </TableHead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.user_id} className="border-b border-slate-100">
-              <td className="py-2">{row.name}</td>
-              <td className="py-2">{row.department ?? '—'}</td>
-              <td className="py-2">{row.hourly_rate !== null ? `$${row.hourly_rate.toFixed(2)}` : '—'}</td>
-              <td className="py-2">{formatHours(row.approved_minutes)}</td>
-              <td className="py-2">{formatHours(row.overtime_minutes)}</td>
-              <td className="py-2">{formatHours(row.pending_minutes)}</td>
-              <td className="py-2">{formatHours(row.rejected_minutes)}</td>
-              <td className="py-2">{row.attendance_days}</td>
-              <td className="py-2">{formatCurrency(row.estimated_payroll)}</td>
-            </tr>
+            <Tr key={row.user_id}>
+              <Td className="font-medium text-ink">{row.name}</Td>
+              <Td className="text-muted">{row.department ?? '—'}</Td>
+              <Td className="text-muted">
+                {row.hourly_rate !== null ? `$${row.hourly_rate.toFixed(2)}` : '—'}
+              </Td>
+              <Td>{formatHours(row.approved_minutes)}</Td>
+              <Td>{formatHours(row.overtime_minutes)}</Td>
+              <Td>{formatHours(row.pending_minutes)}</Td>
+              <Td>{formatHours(row.rejected_minutes)}</Td>
+              <Td>{row.attendance_days}</Td>
+              <Td className="font-medium text-ink">{formatCurrency(row.estimated_payroll)}</Td>
+            </Tr>
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={9} className="py-4 text-center text-slate-400">
+              <td colSpan={9} className="px-4 py-8 text-center text-muted">
                 No active employees found.
               </td>
             </tr>
           )}
         </tbody>
-      </table>
+      </TableCard>
     </main>
   )
 }

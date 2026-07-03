@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '../lib/apiClient'
 import { addScrumComment, listTeamScrums } from '../lib/scrumApi'
 import type { DailyScrum } from '../types/scrum'
+import { Alert } from '../components/ui/Alert'
+import { Button } from '../components/ui/Button'
+import { TextInput } from '../components/ui/fields'
+import { PageHeader } from '../components/ui/PageHeader'
+import { EmptyState, LoadingState } from '../components/ui/states'
 
 export function TeamScrumPage() {
   const [scrums, setScrums] = useState<DailyScrum[]>([])
@@ -40,66 +45,71 @@ export function TeamScrumPage() {
   }
 
   if (isLoading) {
-    return <p className="mx-auto max-w-4xl px-4 py-8 text-slate-500">Loading…</p>
+    return (
+      <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+        <LoadingState />
+      </main>
+    )
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-slate-900">Team Scrum</h1>
+    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <PageHeader title="Team Scrum" subtitle="Your team's daily updates and blockers." />
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Alert tone="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      <div className="mt-6 space-y-4">
+      <div className="space-y-4">
         {scrums.map((scrum) => (
-          <div key={scrum.id} className="rounded-md border border-slate-200 p-4">
-            <p className="font-medium text-slate-900">
+          <div key={scrum.id} className="rounded-2xl border border-line bg-white p-5 shadow-card">
+            <p className="font-medium text-ink">
               {scrum.user?.name ?? `User #${scrum.user_id}`} — {scrum.date}
             </p>
-            <p className="mt-1 text-sm text-slate-700">
+            <p className="mt-2 text-sm text-ink">
               <span className="font-medium">Previous:</span> {scrum.previous_work}
             </p>
-            <p className="text-sm text-slate-700">
+            <p className="mt-1 text-sm text-ink">
               <span className="font-medium">Planned:</span> {scrum.planned_work}
             </p>
             {scrum.blockers && (
-              <p className="text-sm font-medium text-red-600">Blockers: {scrum.blockers}</p>
+              <p className="mt-1 text-sm font-medium text-red-600">Blockers: {scrum.blockers}</p>
             )}
             {scrum.notes && (
-              <p className="text-sm text-slate-700">
+              <p className="mt-1 text-sm text-muted">
                 <span className="font-medium">Notes:</span> {scrum.notes}
               </p>
             )}
 
             {(scrum.comments ?? []).length > 0 && (
-              <div className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-sm">
+              <div className="mt-3 space-y-1 border-t border-line pt-3 text-sm">
                 {(scrum.comments ?? []).map((comment) => (
-                  <p key={comment.id} className="text-slate-600">
-                    <span className="font-medium">{comment.author?.name ?? 'Reviewer'}:</span> {comment.comment}
+                  <p key={comment.id} className="text-muted">
+                    <span className="font-medium text-ink">{comment.author?.name ?? 'Reviewer'}:</span>{' '}
+                    {comment.comment}
                   </p>
                 ))}
               </div>
             )}
 
-            <div className="mt-3 flex gap-2">
-              <input
+            <div className="mt-4 flex flex-wrap gap-2">
+              <TextInput
                 type="text"
                 placeholder="Add a comment"
                 value={drafts[scrum.id] ?? ''}
                 onChange={(e) => setDrafts({ ...drafts, [scrum.id]: e.target.value })}
-                className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="flex-1"
               />
-              <button
-                type="button"
-                onClick={() => handleComment(scrum)}
-                className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white"
-              >
+              <Button size="sm" className="h-10" onClick={() => handleComment(scrum)}>
                 Comment
-              </button>
+              </Button>
             </div>
           </div>
         ))}
 
-        {scrums.length === 0 && <p className="text-slate-400">No scrum entries yet.</p>}
+        {scrums.length === 0 && <EmptyState>No scrum entries yet.</EmptyState>}
       </div>
     </main>
   )
