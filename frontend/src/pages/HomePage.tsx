@@ -1,4 +1,5 @@
 import { useAuth } from '../context/useAuth'
+import { AttendanceWidget } from '../components/AttendanceWidget'
 import { Avatar } from '../components/ui/Avatar'
 import { Card } from '../components/ui/Card'
 
@@ -44,6 +45,8 @@ export function HomePage() {
           </div>
         )}
       </Card>
+
+      <AttendanceWidget />
     </main>
   )
 }

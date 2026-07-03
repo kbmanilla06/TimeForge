@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->hasOne(AccountRequest::class);
     }
 
+    public function attendanceSessions(): HasMany
+    {
+        return $this->hasMany(AttendanceSession::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;

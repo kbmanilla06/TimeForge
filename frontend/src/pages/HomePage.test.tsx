@@ -8,6 +8,12 @@ vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+// AttendanceWidget fetches on mount — mocked here so HomePage's own tests
+// (profile summary / department description) aren't coupled to it.
+vi.mock('../lib/attendanceApi', () => ({
+  getTodaysAttendance: () => Promise.resolve({ session: null }),
+}))
+
 function withUser(user: User) {
   mockUseAuth.mockReturnValue({ user, isLoading: false, login: vi.fn(), logout: vi.fn() })
 }

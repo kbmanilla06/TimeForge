@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AiOutputController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\ClientController;
@@ -40,6 +41,12 @@ Route::middleware('throttle:lookup')->group(function () {
 Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::get('attendance/today', [AttendanceController::class, 'today']);
+    Route::post('attendance/time-in', [AttendanceController::class, 'timeIn']);
+    Route::patch('attendance/pause', [AttendanceController::class, 'pause']);
+    Route::patch('attendance/resume', [AttendanceController::class, 'resume']);
+    Route::patch('attendance/time-out', [AttendanceController::class, 'timeOut']);
 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('users', [UserController::class, 'index']);
