@@ -30,6 +30,8 @@ The default `.env` is configured for MySQL (`DB_CONNECTION=mysql`, `DB_HOST=127.
 
 `FRONTEND_URL` (default `http://localhost:5173`) tells the backend where the React SPA lives, so password-reset emails link to the SPA's `/reset-password/:token` page instead of a Laravel-named web route (this app is API-only, so no such route exists).
 
+**Mail (Sprint 18):** the default `.env` ships `MAIL_MAILER=log`, so every email — password reset, plus the Sprint 18 registration/approval/rejection notifications — writes to `storage/logs/laravel.log` instead of being delivered anywhere. This is deliberate for local dev/demo: zero external calls, zero mail credentials to provision. To see real inbox delivery, point the standard `MAIL_*` variables at a real or local-catch-all SMTP server (e.g. Mailpit/Mailhog) — no code changes are required, only `.env`. All four new notifications (`RegistrationReceived`, `NewAccountRequestSubmitted`, `AccountApproved`, `AccountRejected`) send synchronously, same as every existing notification in the app — `QUEUE_CONNECTION=redis` is set and Redis is reachable via the Docker stack, but no queue worker (`php artisan queue:work` or Horizon) runs by default, so marking anything `ShouldQueue` today would mean it's enqueued and never processed. Queuing mail is a deferred, environment-dependent enhancement, not implemented here.
+
 After migrating, seed the database to create the one bootstrap account (see "Seeded Admin Account" below):
 
 ```bash
@@ -248,7 +250,9 @@ These are intentionally out of scope, each backed by a recorded decision in `doc
 - Employee-to-project assignment restrictions (currently: any employee may reference any project — see `docs/DECISIONS.md` Sprint 3 decisions).
 - HR/Finance can now view live payroll summaries (Sprint 8), but still cannot view raw Timesheet records directly (e.g., `GET /api/timesheets/team` remains Supervisor/Admin-only, unchanged from Sprint 5) — only the computed payroll numbers are exposed. Direct timesheet-record visibility for HR/Finance, if needed, is a future follow-up.
 - Field-level "flagged" revision requests — revision request reopens the whole day's entries, not specific fields.
-- Email notifications and a nav notification bell/badge — only a "Notifications" list page exists for now.
+- Email notifications now exist for the auth/onboarding flow only (Sprint 18: registration received, new-request admin alert, approval, rejection, plus the pre-existing password reset) — every other module (Timesheets, Daily Scrum, KPIs) remains in-app-only via the "Notifications" list page. No nav notification bell/badge anywhere yet.
+- Email verification (a click-to-confirm step before an Admin reviews a registration) was explicitly considered and deferred in Sprint 18 — the Admin's manual review already serves as the identity check, and `MAIL_MAILER=log` has no real inbox delivery to verify against yet. `email_verified_at` exists on `users` and Laravel's `MustVerifyEmail` is available if a future sprint wants it.
+- Mail queuing was explicitly considered and deferred in Sprint 18 — `QUEUE_CONNECTION=redis` is reachable but no queue worker runs by default; all mail sends synchronously, same as every other notification in the app.
 - Rejected timesheets are currently terminal (no owner resubmission path) — only "Request Revision" reopens entries for editing. This is a faithful implementation of the approved decisions but a known usability gap worth revisiting if it proves too restrictive in practice.
 - KPI Productivity Dashboards (charts, real-time visualizations) — Sprint 6 only exposes plain numeric progress; see `docs/DECISIONS.md` Sprint 6 decisions.
 - KPI role-based and project-based assignment, periodic KPI resets, and automatic KPI-progress reversal on timesheet reopen — all explicitly deferred by Sprint 6 decisions.

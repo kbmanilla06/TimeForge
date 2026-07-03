@@ -10,8 +10,11 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\AccountRequest;
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\NewAccountRequestSubmitted;
+use App\Notifications\RegistrationReceived;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class RegistrationController extends Controller
 {
@@ -44,7 +47,7 @@ class RegistrationController extends Controller
             $data['last_name'],
         ])));
 
-        DB::transaction(function () use ($data, $name) {
+        $user = DB::transaction(function () use ($data, $name) {
             $user = User::create([
                 'name' => $name,
                 'email' => $data['email'],
@@ -62,7 +65,16 @@ class RegistrationController extends Controller
                 'status' => AccountRequestStatus::Submitted,
                 'terms_accepted_at' => now(),
             ]);
+
+            return $user;
         });
+
+        // Notified after the transaction commits, so a mail failure can
+        // never roll back an otherwise-successful registration.
+        $user->notify(new RegistrationReceived());
+
+        $admins = User::where('role', UserRole::Admin)->where('status', UserStatus::Active)->get();
+        Notification::send($admins, new NewAccountRequestSubmitted($user->accountRequest));
 
         return response()->json([
             'message' => 'Your registration has been received and is pending administrator approval.',

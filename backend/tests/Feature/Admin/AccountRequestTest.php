@@ -6,7 +6,10 @@ use App\Enums\AccountRequestStatus;
 use App\Enums\UserStatus;
 use App\Models\AccountRequest;
 use App\Models\User;
+use App\Notifications\AccountApproved;
+use App\Notifications\AccountRejected;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class AccountRequestTest extends TestCase
@@ -200,5 +203,40 @@ class AccountRequestTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/admin/account-requests')->assertStatus(401);
+    }
+
+    public function test_approving_notifies_the_applicant(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $accountRequest = AccountRequest::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/account-requests/{$accountRequest->id}/approve")
+            ->assertOk();
+
+        Notification::assertSentTo($accountRequest->user, AccountApproved::class);
+    }
+
+    public function test_rejecting_notifies_the_applicant_with_the_remark(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+        $accountRequest = AccountRequest::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/account-requests/{$accountRequest->id}/reject", [
+                'remarks' => 'Could not verify employment.',
+            ])
+            ->assertOk();
+
+        Notification::assertSentTo(
+            $accountRequest->user,
+            function (AccountRejected $notification) use ($accountRequest) {
+                $mail = $notification->toMail($accountRequest->user);
+
+                return str_contains(implode(' ', $mail->introLines), 'Could not verify employment.');
+            },
+        );
     }
 }

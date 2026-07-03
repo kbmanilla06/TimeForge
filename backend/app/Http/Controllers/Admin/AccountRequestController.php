@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveAccountRequestRequest;
 use App\Http\Requests\Admin\RejectAccountRequestRequest;
 use App\Models\AccountRequest;
+use App\Notifications\AccountApproved;
+use App\Notifications\AccountRejected;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -67,6 +69,8 @@ class AccountRequestController extends Controller
             $accountRequest->user->update(['status' => UserStatus::Active]);
         });
 
+        $accountRequest->user->notify(new AccountApproved());
+
         return response()->json($accountRequest->fresh(self::RELATIONS));
     }
 
@@ -92,6 +96,8 @@ class AccountRequestController extends Controller
 
             $accountRequest->user->update(['status' => UserStatus::Deactivated]);
         });
+
+        $accountRequest->user->notify(new AccountRejected($accountRequest->rejection_reason));
 
         return response()->json($accountRequest->fresh(self::RELATIONS));
     }

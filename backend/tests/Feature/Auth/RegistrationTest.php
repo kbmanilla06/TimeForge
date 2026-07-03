@@ -7,7 +7,10 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\NewAccountRequestSubmitted;
+use App\Notifications\RegistrationReceived;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -159,5 +162,42 @@ class RegistrationTest extends TestCase
         $response = $this->postJson('/api/register', $this->validPayload());
 
         $response->assertStatus(429);
+    }
+
+    public function test_registration_notifies_the_applicant_and_active_admins(): void
+    {
+        Notification::fake();
+
+        $activeAdmin = User::factory()->admin()->create();
+        $pendingAdmin = User::factory()->admin()->pending()->create();
+        $deactivatedAdmin = User::factory()->admin()->deactivated()->create();
+
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+
+        $applicant = User::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+
+        Notification::assertSentTo($applicant, RegistrationReceived::class);
+        Notification::assertSentTo($activeAdmin, NewAccountRequestSubmitted::class);
+        Notification::assertNotSentTo($pendingAdmin, NewAccountRequestSubmitted::class);
+        Notification::assertNotSentTo($deactivatedAdmin, NewAccountRequestSubmitted::class);
+        Notification::assertNotSentTo($applicant, NewAccountRequestSubmitted::class);
+    }
+
+    public function test_new_account_request_notification_contains_applicant_details(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create();
+
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+
+        Notification::assertSentTo(
+            $admin,
+            function (NewAccountRequestSubmitted $notification) use ($admin) {
+                $mail = $notification->toMail($admin);
+
+                return str_contains(implode(' ', $mail->introLines), 'Jane Q Applicant')
+                    && str_contains(implode(' ', $mail->introLines), 'jane.applicant@timeforge.test');
+            },
+        );
     }
 }

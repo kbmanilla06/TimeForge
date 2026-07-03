@@ -59,11 +59,16 @@ class AuthController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        // Sprint 18 hardening: always respond identically (200, same message)
+        // regardless of whether the email exists, whether a link was
+        // actually sent, or whether the broker's own request is throttled.
+        // Anything status-dependent here would let an unauthenticated
+        // caller enumerate which emails have accounts.
+        Password::sendResetLink($request->only('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => __($status)])
-            : response()->json(['message' => __($status)], 422);
+        return response()->json([
+            'message' => 'If an account exists for that email, a password reset link has been sent.',
+        ]);
     }
 
     public function resetPassword(Request $request): JsonResponse
