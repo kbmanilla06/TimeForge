@@ -86,6 +86,26 @@ class SidebarBadgeTest extends TestCase
         $response->assertJsonPath('account_approvals', 1);
     }
 
+    /**
+     * Regression test: a still-submitted request whose applicant hasn't
+     * verified their email is hidden from the Account Approvals list
+     * (Sprint 36), but this count previously included it anyway — an
+     * admin would see a badge promising a request the list didn't show.
+     */
+    public function test_account_approvals_count_excludes_unverified_registrations(): void
+    {
+        $admin = User::factory()->admin()->create();
+        AccountRequest::factory()->create(['status' => 'submitted']); // verified by default
+        $unverifiedUser = User::factory()->unverified()->create();
+        AccountRequest::factory()->create(['status' => 'submitted', 'user_id' => $unverifiedUser->id]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->getJson('/api/sidebar-counts')
+            ->assertOk();
+
+        $response->assertJsonPath('account_approvals', 1);
+    }
+
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/sidebar-counts', ['Accept' => 'application/json'])->assertStatus(401);

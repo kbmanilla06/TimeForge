@@ -56,7 +56,13 @@ class SidebarBadgeController extends Controller
         }
 
         if ($user->isAdmin()) {
-            $counts['account_approvals'] = AccountRequest::where('status', AccountRequestStatus::Submitted)->count();
+            // Sprint 36 hides a still-submitted request from the Account
+            // Approvals list until its applicant verifies their email —
+            // this count must match, or the badge promises more than the
+            // list actually shows.
+            $counts['account_approvals'] = AccountRequest::where('status', AccountRequestStatus::Submitted)
+                ->whereHas('user', fn ($query) => $query->whereNotNull('email_verified_at'))
+                ->count();
         }
 
         return response()->json($counts);
