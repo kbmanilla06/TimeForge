@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import type { SVGProps } from 'react'
 import { authButtonClass, authInputClass, authLabelClass, BackToSignInLink } from '../components/AuthLayout'
 import { PasswordStrengthIndicator } from '../components/PasswordStrengthIndicator'
+import { Modal } from '../components/ui/Modal'
 import { ApiError } from '../lib/apiClient'
 import { listPublicDepartments, registerAccount } from '../lib/registrationApi'
 import type { Department } from '../types/admin'
@@ -42,6 +43,62 @@ function EyeOffIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * Placeholder MVP copy — not reviewed by legal. Swap for real terms
+ * before a production launch (see docs/DECISIONS.md, Sprint 29).
+ */
+function TermsAndConditionsContent() {
+  return (
+    <div className="space-y-4">
+      <section>
+        <h3 className="font-medium text-ink">1. Acceptance of Terms</h3>
+        <p className="mt-1 text-muted">
+          By creating a TimeForge account, you agree to use the platform in accordance with these terms and
+          your organization&rsquo;s policies. Your account request is subject to administrator approval before
+          you may sign in.
+        </p>
+      </section>
+      <section>
+        <h3 className="font-medium text-ink">2. Use of the Platform</h3>
+        <p className="mt-1 text-muted">
+          TimeForge is provided for time tracking, timesheet approval, KPI management, daily scrum reporting,
+          and related workforce management functions. Access is limited to authorized employees, supervisors,
+          HR/Finance staff, and administrators of your organization.
+        </p>
+      </section>
+      <section>
+        <h3 className="font-medium text-ink">3. Data &amp; Privacy</h3>
+        <p className="mt-1 text-muted">
+          Information you submit — including time entries, timesheets, scrum updates, and KPI progress — is
+          visible to your supervisor, HR/Finance, and system administrators as needed to operate the platform.
+          Data is stored and processed only within TimeForge; it is not shared with external services.
+        </p>
+      </section>
+      <section>
+        <h3 className="font-medium text-ink">4. Account Responsibilities</h3>
+        <p className="mt-1 text-muted">
+          You are responsible for the accuracy of the information you submit and for keeping your password
+          confidential. Report any unauthorized use of your account to an administrator immediately.
+        </p>
+      </section>
+      <section>
+        <h3 className="font-medium text-ink">5. Termination</h3>
+        <p className="mt-1 text-muted">
+          An administrator may deactivate an account that violates these terms or your organization&rsquo;s
+          policies.
+        </p>
+      </section>
+      <section>
+        <h3 className="font-medium text-ink">6. Changes to These Terms</h3>
+        <p className="mt-1 text-muted">
+          These terms may be updated from time to time. Continued use of TimeForge after a change constitutes
+          acceptance of the updated terms.
+        </p>
+      </section>
+    </div>
+  )
+}
+
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages) return null
   return (
@@ -75,6 +132,8 @@ export function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null)
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [hasViewedTerms, setHasViewedTerms] = useState(false)
 
   useEffect(() => {
     listPublicDepartments()
@@ -337,23 +396,47 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="flex items-start gap-2 text-sm text-ink">
+            <button
+              type="button"
+              onClick={() => {
+                setIsTermsModalOpen(true)
+                setHasViewedTerms(true)
+              }}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Read Terms and Conditions
+            </button>
+            <label className="mt-2 flex items-start gap-2 text-sm text-ink">
               <input
                 type="checkbox"
                 required
+                disabled={!hasViewedTerms}
                 checked={form.termsAccepted}
                 onChange={(e) => setForm({ ...form, termsAccepted: e.target.checked })}
-                className="mt-0.5 size-4 rounded border-line text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="mt-0.5 size-4 rounded border-line text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
               />
               I agree to the Terms and Conditions.
             </label>
+            {!hasViewedTerms && (
+              <p className="mt-1 text-xs text-muted">
+                Open and read the Terms and Conditions above before you can agree.
+              </p>
+            )}
             <FieldError messages={errors.terms_accepted} />
           </div>
 
-          <button type="submit" disabled={isSubmitting} className={authButtonClass}>
+          <button
+            type="submit"
+            disabled={isSubmitting || !form.termsAccepted}
+            className={authButtonClass}
+          >
             {isSubmitting ? 'Submitting…' : 'Create Account'}
           </button>
         </form>
+
+        <Modal open={isTermsModalOpen} title="Terms and Conditions" onClose={() => setIsTermsModalOpen(false)}>
+          <TermsAndConditionsContent />
+        </Modal>
 
         <BackToSignInLink />
       </div>

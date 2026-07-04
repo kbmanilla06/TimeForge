@@ -69,6 +69,8 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Company Email'), 'jane@company.com')
     await user.type(screen.getByLabelText('Password'), 'Str0ng!Passw0rd')
     await user.type(screen.getByLabelText('Confirm Password'), 'Str0ng!Passw0rd')
+    await user.click(screen.getByRole('button', { name: 'Read Terms and Conditions' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
     await user.click(screen.getByLabelText(/I agree to the Terms and Conditions/))
     await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
@@ -107,10 +109,41 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText('Company Email'), 'taken@company.com')
     await user.type(screen.getByLabelText('Password'), 'Str0ng!Passw0rd')
     await user.type(screen.getByLabelText('Confirm Password'), 'Str0ng!Passw0rd')
+    await user.click(screen.getByRole('button', { name: 'Read Terms and Conditions' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
     await user.click(screen.getByLabelText(/I agree to the Terms and Conditions/))
     await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     expect(await screen.findByText('The email has already been taken.')).toBeInTheDocument()
     expect(screen.queryByText('Registration Received')).not.toBeInTheDocument()
+  })
+
+  it('keeps the terms checkbox disabled until the terms have been opened', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const checkbox = screen.getByLabelText(/I agree to the Terms and Conditions/)
+    expect(checkbox).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Read Terms and Conditions' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('1. Acceptance of Terms')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(checkbox).toBeEnabled()
+  })
+
+  it('disables Create Account until the terms are accepted', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(screen.getByRole('button', { name: 'Create Account' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Read Terms and Conditions' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('button', { name: 'Create Account' })).toBeDisabled()
+
+    await user.click(screen.getByLabelText(/I agree to the Terms and Conditions/))
+    expect(screen.getByRole('button', { name: 'Create Account' })).toBeEnabled()
   })
 })

@@ -392,6 +392,16 @@ Approved for the Sprint 28 (AI Insights Chat Assistant) plan, implementing the "
 - **Persistence:** Each question is appended as a new `AiOutputType::AssistantQuery` row in the existing `ai_outputs` table (Organization-shaped — both subject foreign keys null, regardless of whether the actual runtime scope was organization-wide or one department; the real scope and full answer are recorded in `source_data`, the audit snapshot). This type is explicitly walled off from the generic `/ai-outputs` endpoints (404) since it doesn't fit their date/subject model; it's served only by its own dedicated endpoint.
 - **UI placement:** An Admin/Supervisor-only "Ask AI" mode toggle added alongside the existing report tabs on `AiInsightsPage` (default: "Reports", unchanged for Employee/HR-Finance, who never see the toggle). Charts/tables reuse the existing Recharts setup and `TableCard` components — no new chart library, no new table component.
 
+## Sprint 29 Implementation Decisions (Approved)
+
+Approved for the Sprint 29 (Registration Terms And Conditions Fix) plan. Frontend-only: no migrations, no changes to `RegisterRequest`'s validation rules or `RegistrationController`, no changes to `AccountRequest.terms_accepted_at`.
+
+- **Bugs found and fixed:** No Terms and Conditions document or modal existed anywhere in the codebase — the registration checkbox referenced content that could never actually be opened/read. Separately, the registration `<form>` has `noValidate`, which silently disabled the checkbox's HTML `required` attribute; client-side, nothing previously stopped submitting with the box unchecked (only the server's existing `terms_accepted => required|accepted` 422 caught it). Both are fixed: a real terms modal now exists, and "Create Account" is now explicitly `disabled` client-side until `termsAccepted` is true.
+- **Terms content:** Placeholder MVP copy (`TermsAndConditionsContent` in `RegisterPage.tsx`) — six standard sections (acceptance, platform use, data/privacy, account responsibilities, termination, changes to terms). Explicitly **not reviewed by legal** and must be replaced before a real production launch, matching the existing "MVP branding is text-only, no final logo" precedent (Sprint 9/14).
+- **Read enforcement:** Opened-once, not scroll-to-bottom. The acceptance checkbox is `disabled` until the new "Read Terms and Conditions" link has opened the modal at least once (`hasViewedTerms` state); closing the modal (via the close button, backdrop click, or Escape) does not revoke that state.
+- **Presentation:** A new, first-of-its-kind `components/ui/Modal.tsx` (reusable overlay + centered panel, closes on close-button/backdrop-click/Escape) — no new route, no separate `/terms` page.
+- **Backend:** Deliberately unchanged. "Must open before checking" is inherently a client-side-only signal (the server can't verify a modal was opened), so it's enforced entirely in `RegisterPage`. The existing server-side `terms_accepted` validation and `terms_accepted_at` audit timestamp remain the source of truth for actual acceptance.
+
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
 Recorded for when each of these specific sprints is opened; none of this work has been started or approved for implementation yet, per the "plan one sprint at a time" workflow rule.
