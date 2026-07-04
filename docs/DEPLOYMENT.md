@@ -63,6 +63,10 @@ AWS_USE_PATH_STYLE_ENDPOINT=true
 
 Find the access key pair under your Supabase project's **Storage → S3 Connection** settings: https://supabase.com/docs/guides/storage/s3/compatibility
 
+**Create the bucket as private (Sprint 44) — do not enable public access.** This app never generates a signed/public URL for attachments or profile pictures; every download goes through `ProfileController::showPicture()` / `TimeEntryAttachmentController::download()`, which stream the file through Laravel and re-check authorization (owner, same-department supervisor, or Admin) on every single request — not a one-time signed link that could be cached, shared, or bypass those checks later. If the bucket itself were public, anyone who somehow learned an object's storage path could fetch it directly from Supabase, bypassing the app's authorization entirely. Bucket privacy is what makes "authorization enforced at the app layer" actually hold in production, not just in this codebase's own request handlers.
+
+**Verified this sprint:** every storage call site (`ProfileController`, `TimeEntryAttachmentController`, `TimeEntryAttachment`'s deleting hook) was re-audited and confirmed to still use the default-disk facade with no hardcoded disk name — the Sprint 39 fix is intact. New tests (`ProfileTest::test_profile_picture_flow_follows_the_configured_default_disk`, `TimeEntryAttachmentTest::test_attachment_flow_follows_the_configured_default_disk`) fake a **non-local** disk and prove the full upload/download/delete flow genuinely follows `FILESYSTEM_DISK` — every prior test in both files exercised only the `local` disk, which is also this app's default, so none of them would have caught a reintroduced hardcoding bug. Confirmed by deliberately reintroducing the old hardcoded-`'local'` pattern and watching both new tests fail as expected, before restoring the fix.
+
 ### Mail — Google SMTP
 
 ```

@@ -93,6 +93,38 @@ class TimeEntryAttachmentTest extends TestCase
         Storage::disk('local')->assertExists($attachment->path);
     }
 
+    /**
+     * Sprint 44: every other test in this file exercises the 'local'
+     * disk, which is also this app's default — that wouldn't have caught
+     * the original Sprint 39 bug where every call site hardcoded
+     * Storage::disk('local') regardless of FILESYSTEM_DISK. This proves
+     * the upload/download/delete flow genuinely follows whatever disk is
+     * configured, not just 'local' coincidentally.
+     */
+    public function test_attachment_flow_follows_the_configured_default_disk(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+
+        $owner = User::factory()->create();
+        $entry = $this->entryFor($owner);
+
+        $this->upload($owner, $entry, $this->pdf('receipt.pdf', '%PDF-1.4 hello sprint 44'))->assertStatus(201);
+        $attachment = TimeEntryAttachment::sole();
+
+        Storage::disk('s3')->assertExists($attachment->path);
+        Storage::disk('local')->assertMissing($attachment->path);
+
+        $download = $this->withAuth($owner)->get("/api/time-entries/{$entry->id}/attachments/{$attachment->id}/download");
+        $download->assertOk();
+        $this->assertSame('%PDF-1.4 hello sprint 44', $download->streamedContent());
+
+        $this->withAuth($owner)
+            ->deleteJson("/api/time-entries/{$entry->id}/attachments/{$attachment->id}")
+            ->assertStatus(204);
+        Storage::disk('s3')->assertMissing($attachment->path);
+    }
+
     public function test_upload_rejects_bad_extension_mismatched_content_and_oversize(): void
     {
         $owner = User::factory()->create();

@@ -132,6 +132,38 @@ class ProfileTest extends TestCase
         $this->withAuth($user)->get('/api/profile/picture')->assertOk();
     }
 
+    /**
+     * Sprint 44: every other test in this file exercises the 'local'
+     * disk, which is also this app's default — that wouldn't have caught
+     * the original Sprint 39 bug where every call site hardcoded
+     * Storage::disk('local') regardless of FILESYSTEM_DISK. This proves
+     * the upload/download/delete flow genuinely follows whatever disk is
+     * configured, not just 'local' coincidentally.
+     */
+    public function test_profile_picture_flow_follows_the_configured_default_disk(): void
+    {
+        config(['filesystems.default' => 's3']);
+        Storage::fake('s3');
+
+        $user = User::factory()->create();
+
+        $this->withAuth($user)->post('/api/profile/picture', [
+            'file' => UploadedFile::fake()->create('avatar.png', 100, 'image/png'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $path = $user->fresh()->profile_picture_path;
+        Storage::disk('s3')->assertExists($path);
+        Storage::disk('local')->assertMissing($path);
+
+        $this->withAuth($user)->get('/api/profile/picture')->assertOk();
+
+        $this->withAuth($user)->post('/api/profile/picture', [
+            'file' => UploadedFile::fake()->create('second.png', 100, 'image/png'),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        Storage::disk('s3')->assertMissing($path);
+    }
+
     public function test_user_can_change_their_password_with_the_correct_current_password(): void
     {
         $user = User::factory()->create(['password' => 'old-password-123']);
