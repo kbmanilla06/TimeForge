@@ -136,6 +136,7 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
 
     Route::get('team-hours-report/export/pdf', [TeamHoursReportController::class, 'exportPdf']);
     Route::get('team-hours-report/export/excel', [TeamHoursReportController::class, 'exportExcel']);
+    Route::get('team-hours-report/trend', [TeamHoursReportController::class, 'trend']);
 
     Route::get('dashboard', [DashboardController::class, 'index']);
 

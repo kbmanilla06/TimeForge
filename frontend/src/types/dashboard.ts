@@ -41,6 +41,12 @@ export interface PayrollSummaryMetric {
   employees_without_rate_count: number
 }
 
+export interface ProductivityTrendPoint {
+  period_start: string
+  period_end: string
+  approved_minutes: number
+}
+
 export interface DashboardData {
   scope: 'organization' | 'department'
   department_name: string | null
