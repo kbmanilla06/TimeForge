@@ -205,6 +205,60 @@ class AccountRequestTest extends TestCase
         $this->getJson('/api/admin/account-requests')->assertStatus(401);
     }
 
+    public function test_an_unverified_submitted_request_is_hidden_from_the_list(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $unverifiedApplicant = User::factory()->pending()->unverified()->create();
+        AccountRequest::factory()->create(['user_id' => $unverifiedApplicant->id]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->getJson('/api/admin/account-requests');
+
+        $response->assertOk();
+        $this->assertCount(0, $response->json());
+    }
+
+    public function test_verifying_makes_a_previously_hidden_request_appear(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $applicant = User::factory()->pending()->unverified()->create();
+        AccountRequest::factory()->create(['user_id' => $applicant->id]);
+
+        $applicant->forceFill(['email_verified_at' => now()])->save();
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->getJson('/api/admin/account-requests');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json());
+    }
+
+    public function test_approved_and_rejected_history_stays_visible_even_if_never_verified(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $unverifiedApprovedApplicant = User::factory()->pending()->unverified()->create();
+        AccountRequest::factory()->approved()->create(['user_id' => $unverifiedApprovedApplicant->id]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->getJson('/api/admin/account-requests');
+
+        $response->assertOk();
+        $this->assertCount(1, $response->json());
+    }
+
+    public function test_approving_an_unverified_request_is_rejected_with_422(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $applicant = User::factory()->pending()->unverified()->create();
+        $accountRequest = AccountRequest::factory()->create(['user_id' => $applicant->id]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/account-requests/{$accountRequest->id}/approve");
+
+        $response->assertStatus(422);
+        $this->assertSame(AccountRequestStatus::Submitted, $accountRequest->fresh()->status);
+    }
+
     public function test_approving_notifies_the_applicant(): void
     {
         Notification::fake();

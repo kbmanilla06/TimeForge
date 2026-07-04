@@ -17,6 +17,16 @@ export interface RegistrationPayload {
 
 export interface RegistrationResponse {
   message: string
+  email?: string
+}
+
+export interface VerifyOtpPayload {
+  email: string
+  code: string
+}
+
+export interface ResendOtpPayload {
+  email: string
 }
 
 export function listPublicDepartments(): Promise<Department[]> {
@@ -25,4 +35,12 @@ export function listPublicDepartments(): Promise<Department[]> {
 
 export function registerAccount(payload: RegistrationPayload): Promise<RegistrationResponse> {
   return apiFetch<RegistrationResponse>('/register', { method: 'POST', body: payload })
+}
+
+export function verifyRegistrationOtp(payload: VerifyOtpPayload): Promise<RegistrationResponse> {
+  return apiFetch<RegistrationResponse>('/register/verify-otp', { method: 'POST', body: payload })
+}
+
+export function resendRegistrationOtp(payload: ResendOtpPayload): Promise<RegistrationResponse> {
+  return apiFetch<RegistrationResponse>('/register/resend-otp', { method: 'POST', body: payload })
 }

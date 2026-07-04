@@ -4,8 +4,17 @@ import { authButtonClass, authInputClass, authLabelClass, BackToSignInLink } fro
 import { PasswordStrengthIndicator } from '../components/PasswordStrengthIndicator'
 import { Modal } from '../components/ui/Modal'
 import { ApiError } from '../lib/apiClient'
-import { listPublicDepartments, registerAccount } from '../lib/registrationApi'
+import {
+  listPublicDepartments,
+  registerAccount,
+  resendRegistrationOtp,
+  verifyRegistrationOtp,
+} from '../lib/registrationApi'
 import type { Department } from '../types/admin'
+
+// Mirrors the backend's OtpPolicy::RESEND_COOLDOWN_SECONDS (Sprint 36) —
+// purely a UI countdown; the server enforces the real cooldown regardless.
+const RESEND_COOLDOWN_SECONDS = 60
 
 function EyeIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -130,16 +139,29 @@ export function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [step, setStep] = useState<'form' | 'otp' | 'done'>('form')
+  const [registeredEmail, setRegisteredEmail] = useState('')
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
   const [hasViewedTerms, setHasViewedTerms] = useState(false)
+
+  const [otpCode, setOtpCode] = useState('')
+  const [otpError, setOtpError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [resendSecondsLeft, setResendSecondsLeft] = useState(0)
 
   useEffect(() => {
     listPublicDepartments()
       .then(setDepartments)
       .catch(() => setDepartments([]))
   }, [])
+
+  useEffect(() => {
+    if (step !== 'otp') return undefined
+    const timer = setInterval(() => setResendSecondsLeft((seconds) => Math.max(0, seconds - 1)), 1000)
+    return () => clearInterval(timer)
+  }, [step])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -161,8 +183,10 @@ export function RegisterPage() {
         contact_number: form.contactNumber || undefined,
         terms_accepted: form.termsAccepted,
       })
+      setRegisteredEmail(response.email ?? form.email)
       setConfirmationMessage(response.message)
-      setIsSubmitted(true)
+      setResendSecondsLeft(RESEND_COOLDOWN_SECONDS)
+      setStep('otp')
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setErrors(err.errors)
@@ -174,7 +198,95 @@ export function RegisterPage() {
     }
   }
 
-  if (isSubmitted) {
+  async function handleVerifyOtp(event: FormEvent) {
+    event.preventDefault()
+    setOtpError(null)
+    setIsVerifying(true)
+    try {
+      const response = await verifyRegistrationOtp({ email: registeredEmail, code: otpCode })
+      setConfirmationMessage(response.message)
+      setStep('done')
+    } catch (err) {
+      setOtpError(err instanceof ApiError ? err.message : 'Unable to verify your code.')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  async function handleResendOtp() {
+    setOtpError(null)
+    setIsResending(true)
+    try {
+      await resendRegistrationOtp({ email: registeredEmail })
+      setOtpCode('')
+      setResendSecondsLeft(RESEND_COOLDOWN_SECONDS)
+    } catch (err) {
+      setOtpError(err instanceof ApiError ? err.message : 'Unable to resend the code.')
+    } finally {
+      setIsResending(false)
+    }
+  }
+
+  if (step === 'otp') {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white px-4 py-8">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-white p-8 shadow-card">
+          <h1 className="text-2xl font-bold leading-8 tracking-[-0.6px] text-ink">Verify Your Email</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            We sent a 6-digit verification code to <strong>{registeredEmail}</strong>. Enter it below to
+            continue your registration.
+          </p>
+
+          {otpError && (
+            <p role="alert" className="mt-4 text-sm text-red-600">
+              {otpError}
+            </p>
+          )}
+
+          <form onSubmit={handleVerifyOtp} noValidate className="mt-6 space-y-4">
+            <div>
+              <label htmlFor="otpCode" className={authLabelClass}>
+                Verification Code
+              </label>
+              <input
+                id="otpCode"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                required
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                className={`${authInputClass} tracking-[0.5em]`}
+              />
+            </div>
+
+            <button type="submit" disabled={isVerifying || otpCode.length !== 6} className={authButtonClass}>
+              {isVerifying ? 'Verifying…' : 'Verify Email'}
+            </button>
+          </form>
+
+          <button
+            type="button"
+            onClick={() => void handleResendOtp()}
+            disabled={isResending || resendSecondsLeft > 0}
+            className="mt-4 text-sm font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+          >
+            {resendSecondsLeft > 0
+              ? `Resend code in ${resendSecondsLeft}s`
+              : isResending
+                ? 'Resending…'
+                : 'Resend code'}
+          </button>
+
+          <BackToSignInLink />
+        </div>
+      </main>
+    )
+  }
+
+  if (step === 'done') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white px-4 py-8">
         <div className="w-full max-w-md rounded-2xl border border-line bg-white p-8 shadow-card">

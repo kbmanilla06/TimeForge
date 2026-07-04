@@ -6,10 +6,14 @@ use App\Enums\AccountRequestStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Department;
+use App\Models\RegistrationOtp;
 use App\Models\User;
 use App\Notifications\NewAccountRequestSubmitted;
+use App\Notifications\RegistrationOtpIssued;
 use App\Notifications\RegistrationReceived;
+use App\Support\OtpPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -195,7 +199,33 @@ class RegistrationTest extends TestCase
         $response->assertStatus(429);
     }
 
-    public function test_registration_notifies_the_applicant_and_active_admins(): void
+    public function test_registration_only_sends_the_otp_email_not_the_pending_approval_notifications(): void
+    {
+        Notification::fake();
+
+        $activeAdmin = User::factory()->admin()->create();
+
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+
+        $applicant = User::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+
+        Notification::assertSentTo($applicant, RegistrationOtpIssued::class);
+        Notification::assertNotSentTo($applicant, RegistrationReceived::class);
+        Notification::assertNotSentTo($activeAdmin, NewAccountRequestSubmitted::class);
+        $this->assertNull($applicant->fresh()->email_verified_at);
+    }
+
+    /**
+     * Overwrites the randomly generated OTP's hash with a known value —
+     * the plain code is never persisted or retrievable, by design, so
+     * this is the straightforward way to test against a known code.
+     */
+    private function forceKnownOtp(string $email, string $code = '123456'): void
+    {
+        RegistrationOtp::where('email', $email)->firstOrFail()->update(['code_hash' => Hash::make($code)]);
+    }
+
+    public function test_verifying_the_otp_notifies_the_applicant_and_active_admins(): void
     {
         Notification::fake();
 
@@ -204,14 +234,18 @@ class RegistrationTest extends TestCase
         $deactivatedAdmin = User::factory()->admin()->deactivated()->create();
 
         $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
-
         $applicant = User::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+        $this->forceKnownOtp($applicant->email);
+
+        $this->postJson('/api/register/verify-otp', ['email' => $applicant->email, 'code' => '123456'])
+            ->assertOk();
 
         Notification::assertSentTo($applicant, RegistrationReceived::class);
         Notification::assertSentTo($activeAdmin, NewAccountRequestSubmitted::class);
         Notification::assertNotSentTo($pendingAdmin, NewAccountRequestSubmitted::class);
         Notification::assertNotSentTo($deactivatedAdmin, NewAccountRequestSubmitted::class);
         Notification::assertNotSentTo($applicant, NewAccountRequestSubmitted::class);
+        $this->assertNotNull($applicant->fresh()->email_verified_at);
     }
 
     public function test_new_account_request_notification_contains_applicant_details(): void
@@ -220,6 +254,10 @@ class RegistrationTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $applicant = User::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+        $this->forceKnownOtp($applicant->email);
+
+        $this->postJson('/api/register/verify-otp', ['email' => $applicant->email, 'code' => '123456'])->assertOk();
 
         Notification::assertSentTo(
             $admin,
@@ -230,5 +268,132 @@ class RegistrationTest extends TestCase
                     && str_contains(implode(' ', $mail->introLines), 'jane.applicant@timeforge.test');
             },
         );
+    }
+
+    public function test_registering_issues_an_otp_expiring_in_ten_minutes(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+
+        $otp = RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+
+        $this->assertEqualsWithDelta(
+            now()->addMinutes(OtpPolicy::TTL_MINUTES)->timestamp,
+            $otp->expires_at->timestamp,
+            5,
+        );
+    }
+
+    public function test_verifying_with_the_wrong_code_is_rejected_and_counts_as_an_attempt(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test');
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '000000',
+        ])->assertStatus(422);
+
+        $otp = RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail();
+        $this->assertSame(1, $otp->attempts);
+        $this->assertNull(User::where('email', 'jane.applicant@timeforge.test')->firstOrFail()->email_verified_at);
+    }
+
+    public function test_verifying_an_expired_code_is_rejected_even_if_correct(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test');
+        RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail()
+            ->update(['expires_at' => now()->subMinute()]);
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertStatus(422);
+    }
+
+    public function test_verifying_is_rejected_after_the_max_attempt_cap_even_with_the_correct_code(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test');
+        RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail()
+            ->update(['attempts' => OtpPolicy::MAX_ATTEMPTS]);
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertStatus(422);
+    }
+
+    public function test_verifying_an_unregistered_email_returns_the_same_generic_error(): void
+    {
+        $response = $this->postJson('/api/register/verify-otp', [
+            'email' => 'never.registered@timeforge.test',
+            'code' => '123456',
+        ]);
+
+        $response->assertStatus(422)->assertJsonPath('message', 'Invalid or expired code.');
+    }
+
+    public function test_resend_within_the_cooldown_is_rejected(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+
+        $this->postJson('/api/register/resend-otp', ['email' => 'jane.applicant@timeforge.test'])
+            ->assertStatus(422);
+    }
+
+    public function test_resend_after_the_cooldown_issues_a_new_code_and_invalidates_the_old_one(): void
+    {
+        Notification::fake();
+
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test', '123456');
+        RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail()
+            ->update(['last_sent_at' => now()->subSeconds(OtpPolicy::RESEND_COOLDOWN_SECONDS + 1)]);
+
+        $this->postJson('/api/register/resend-otp', ['email' => 'jane.applicant@timeforge.test'])
+            ->assertOk();
+
+        Notification::assertSentTo(
+            User::where('email', 'jane.applicant@timeforge.test')->firstOrFail(),
+            RegistrationOtpIssued::class,
+        );
+
+        // The old known code ("123456") must no longer verify.
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertStatus(422);
+    }
+
+    public function test_resend_for_an_unregistered_email_returns_the_same_generic_message(): void
+    {
+        $registered = $this->postJson('/api/register', $this->validPayload());
+        $registered->assertStatus(201);
+        RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail()
+            ->update(['last_sent_at' => now()->subSeconds(OtpPolicy::RESEND_COOLDOWN_SECONDS + 1)]);
+
+        $realResend = $this->postJson('/api/register/resend-otp', ['email' => 'jane.applicant@timeforge.test']);
+        $unknownResend = $this->postJson('/api/register/resend-otp', ['email' => 'never.registered@timeforge.test']);
+
+        $realResend->assertOk();
+        $unknownResend->assertOk();
+        $this->assertSame($realResend->json('message'), $unknownResend->json('message'));
+    }
+
+    public function test_a_consumed_code_cannot_be_reused(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test');
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertOk();
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertStatus(422);
     }
 }

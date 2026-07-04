@@ -402,6 +402,18 @@ Approved for the Sprint 29 (Registration Terms And Conditions Fix) plan. Fronten
 - **Presentation:** A new, first-of-its-kind `components/ui/Modal.tsx` (reusable overlay + centered panel, closes on close-button/backdrop-click/Escape) — no new route, no separate `/terms` page.
 - **Backend:** Deliberately unchanged. "Must open before checking" is inherently a client-side-only signal (the server can't verify a modal was opened), so it's enforced entirely in `RegisterPage`. The existing server-side `terms_accepted` validation and `terms_accepted_at` audit timestamp remain the source of truth for actual acceptance.
 
+## Sprint 36 Implementation Decisions (Approved)
+
+Approved for the Sprint 36 (Registration Security) plan — email OTP verification inserted between registration submission and Admin approval: Registration → Email OTP → OTP Verification → Admin Approval → Account Activated.
+
+- **Data model:** Option A — `User`(pending) + `AccountRequest`(submitted) are still created immediately at `POST /register`, exactly as before. A new `email_otps` table (one row per email, overwritten on resend) tracks verification separately; `Admin\AccountRequestController::index()` hides a still-`submitted` request until its user's `email_verified_at` is set. Approved/rejected history remains visible unconditionally regardless of verification status — no backfill needed for pre-Sprint-36 accounts.
+- **Notification timing:** `RegistrationReceived` (applicant) and `NewAccountRequestSubmitted` (admins) no longer fire at submission — only the OTP email does. Both fire together once `POST /register/verify-otp` succeeds, matching the approved flow order.
+- **OTP parameters:** 6-digit numeric code, hashed at rest (`Hash::make`, never stored or returned in plain text after the outgoing email), 10-minute expiry, 60-second resend cooldown (enforced via the OTP row's own `last_sent_at`, same direct-model-check style as Attendance's "one break per day" rather than a generic rate-limit bucket), 5-attempt cap per code.
+- **Anti-enumeration:** `verify-otp` returns the same generic "Invalid or expired code." for a wrong code, an expired code, an exceeded-attempts code, *and* an email with no OTP at all — no distinguishing signal. `resend-otp` mirrors the Sprint 18 forgot-password shape: an email with no pending registration gets the identical generic response as a real resend. The resend cooldown's "please wait Ns" message *is* email-specific (not generic) — accepted low-risk since this only matters to the requester's own just-submitted email, not an arbitrary-email probe.
+- **`approve()` guard:** Server-side check that `email_verified_at` is set, independent of the list-hiding — defense in depth, not just UI-hiding.
+- **SMTP:** Resolves the "Real SMTP/mail provider selection" item from "Decisions Still Required" below. Google's SMTP relay (`smtp.gmail.com:587`, a Gmail account + App Password) was chosen; `.env.example` documents the shape but ships with `MAIL_MAILER=log` still as the default — real credentials are supplied and tested by the user outside this session (this sandbox has no outbound path to a real SMTP relay to verify live delivery). No code change to `config/mail.php` — its existing generic `smtp` driver already supports any host. `MAIL_ENCRYPTION` is **not** read anywhere in this app's mail config (Laravel 13 uses `MAIL_SCHEME`/port-based negotiation instead) — the `.env.example` comment calls this out explicitly so it isn't documented as a working setting when it silently does nothing.
+- **Known gotcha fixed during implementation:** `email_verified_at` is intentionally excluded from `User::$fillable` (never user-settable), so setting it via `update()` would have silently no-op'd exactly like the earlier `TimeEntry::kpi_progress_applied_at` case (Sprint 6) — fixed with the same `forceFill()` pattern.
+
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
 Recorded for when each of these specific sprints is opened; none of this work has been started or approved for implementation yet, per the "plan one sprint at a time" workflow rule.
@@ -419,7 +431,7 @@ The following remain open and must be resolved before their related sprint begin
 - AI provider selection and external data privacy rules (Sprint 11 is stub-only per its approved decisions; this item now gates only the future swap to a real external provider).
 - Whether to raise the password minimum length beyond Laravel's bare 8-character default (Sprint 19 flagged this as recommended, not required — the seeded demo password and every QA doc referencing it would need to change too, so it needs an explicit decision, not a default assumption).
 - Whether to publish an explicit `config/cors.php` allowed-origins allowlist instead of relying on Laravel's framework defaults (Sprint 19, defense-in-depth — no known exploit path today given the stateless Bearer-token architecture).
-- Real SMTP/mail provider selection, whenever production deployment is decided (currently `MAIL_MAILER=log` for all environments, Sprint 18).
+- ~~Real SMTP/mail provider selection~~ — resolved in Sprint 36 (Google SMTP relay); see "Sprint 36 Implementation Decisions" above. `MAIL_MAILER` stays `log` by default until real credentials are supplied.
 
 Full question text and traceability: `docs/QUESTIONS.md`.
 

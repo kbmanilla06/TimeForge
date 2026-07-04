@@ -33,6 +33,15 @@ class AccountRequestController extends Controller
 
         $query = AccountRequest::query()->with(self::RELATIONS);
 
+        // Sprint 36: a still-submitted request only surfaces once its
+        // applicant has verified their email via OTP. Approved/rejected
+        // history stays visible unconditionally either way — this never
+        // hides past decisions, including ones made before this sprint.
+        $query->where(function ($scoped) {
+            $scoped->where('status', '!=', AccountRequestStatus::Submitted)
+                ->orWhereHas('user', fn ($userQuery) => $userQuery->whereNotNull('email_verified_at'));
+        });
+
         if (! empty($validated['search'])) {
             $term = $validated['search'];
             $query->whereHas('user', function ($userQuery) use ($term) {
@@ -57,6 +66,10 @@ class AccountRequestController extends Controller
     {
         if ($accountRequest->status !== AccountRequestStatus::Submitted) {
             abort(422, 'This account request has already been decided.');
+        }
+
+        if ($accountRequest->user->email_verified_at === null) {
+            abort(422, 'This applicant has not yet verified their email.');
         }
 
         DB::transaction(function () use ($request, $accountRequest) {

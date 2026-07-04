@@ -33,6 +33,8 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/register', [RegistrationController::class, 'store']);
+    Route::post('/register/verify-otp', [RegistrationController::class, 'verifyOtp']);
+    Route::post('/register/resend-otp', [RegistrationController::class, 'resendOtp']);
 });
 
 // Sprint 19: a harmless public read (no credential, no brute-forceable
