@@ -211,4 +211,20 @@ describe('AppLayout', () => {
 
     expect(screen.getByAltText("Bob Employee's profile picture")).toHaveAttribute('src', 'blob:mock-picture-url')
   })
+
+  it('mounts the floating AI Assistant button for an admin', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada Admin' }, logout: vi.fn() })
+
+    renderLayout()
+
+    expect(screen.getByLabelText('Open AI Assistant')).toBeInTheDocument()
+  })
+
+  it('does not mount the floating AI Assistant button for an employee', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob Employee' }, logout: vi.fn() })
+
+    renderLayout()
+
+    expect(screen.queryByLabelText('Open AI Assistant')).not.toBeInTheDocument()
+  })
 })

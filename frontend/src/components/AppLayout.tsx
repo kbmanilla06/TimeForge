@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { useSidebarBadges } from '../hooks/useSidebarBadges'
+import { AiFloatingAssistant } from './AiFloatingAssistant'
 import { NotificationCenter } from './NotificationCenter'
 import { Avatar } from './ui/Avatar'
 import { ToastStack, type ToastItem } from './ui/Toast'
@@ -217,6 +218,7 @@ export function AppLayout() {
       </div>
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      <AiFloatingAssistant />
     </div>
   )
 }
