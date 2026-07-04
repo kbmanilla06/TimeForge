@@ -71,7 +71,7 @@ export function AppLayout() {
     user?.role === 'supervisor' || user?.role === 'admin' || user?.role === 'hr_finance'
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="flex h-screen overflow-hidden bg-canvas">
       {isNavOpen && (
         <div
           aria-hidden="true"
@@ -81,7 +81,7 @@ export function AppLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 transform flex-col border-r border-line bg-white transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 transform flex-col border-r border-line bg-white transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           isNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -187,7 +187,7 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto">
         <header className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 lg:hidden">
           <button
             type="button"
