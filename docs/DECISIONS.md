@@ -350,6 +350,15 @@ Approved sprint-by-sprint alongside the Landing Page (15), Create Account (16), 
 - **Rate-limiter scoping (Sprint 19):** `GET /register/departments` was moved off the `throttle:auth` (anti-brute-force, email+IP-keyed) bucket onto its own generous per-IP `throttle:lookup` bucket, after finding that a request with no `email` field always keyed to a single shared `''|{ip}` bucket — meaning a legitimate applicant reloading the registration page could exhaust the same budget meant to stop brute-force login/registration. The real anti-brute-force protection on `/login`, `/forgot-password`, `/reset-password`, and `/register` itself is untouched.
 - **No account-level lockout (Sprint 19):** considered and explicitly not added. Current IP+email rate limiting already matches modern guidance (NIST 800-63B specifically advises against forced lockout, since it hands an attacker a free way to lock a legitimate user out).
 
+## Sprint 25 Implementation Decisions (Approved)
+
+Approved for the Sprint 25 (KPI Pages UX Redesign) plan. Frontend-only: no migrations, no new KPI routes, no `DashboardController` changes, no backend logic changes.
+
+- **History section:** No progress history/audit table. Lightweight history only — "Assigned on {date}" rendered from the existing `kpi_assignments.created_at` timestamp (already serialized by the API; no new endpoint or migration needed). No invented progress-over-time data.
+- **Admin KPI page scope:** `Admin\KpisPage` remains KPI catalog management only (define KPIs), not progress assignments. Sprint 25 only polishes its spacing, typography, form layout, and table styling — no Current/Pending/Completed restructuring, no update/delete of KPI definitions, no backend route changes.
+- **KPI categorization:** Computed on the frontend only, via `frontend/src/lib/kpiInsights.ts`, and applied to `MyKpisPage`/`TeamKpisPage` (not the Admin catalog page): Completed = has a target and `progress_value >= target_value`; Current = `progress_value > 0` and not completed, or no target but progress exists; Pending = `progress_value === 0`.
+- **Analytics/charts:** KPI summary/analytics (category breakdown, completion-rate charts) are computed client-side from already-fetched `kpi_assignments`, using the existing Recharts dependency. No calls to the Dashboard endpoint, no backend aggregation.
+
 ## Decisions Still Required
 
 The following remain open and must be resolved before their related sprint begins. Do not invent answers — ask when the sprint is reached:

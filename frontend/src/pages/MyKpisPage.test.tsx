@@ -18,6 +18,7 @@ describe('MyKpisPage', () => {
         user_id: 5,
         department_id: null,
         progress_value: 3,
+        created_at: '2026-07-01T00:00:00.000Z',
         kpi: { id: 1, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 1 },
       },
     ])
@@ -26,6 +27,7 @@ describe('MyKpisPage', () => {
 
     expect(await screen.findByText('Bugs Resolved')).toBeInTheDocument()
     expect(screen.getByText('3 / 10 bugs')).toBeInTheDocument()
+    expect(screen.getByText(/Assigned on/)).toBeInTheDocument()
   })
 
   it('labels a shared department-level assignment', async () => {
@@ -36,6 +38,7 @@ describe('MyKpisPage', () => {
         user_id: null,
         department_id: 7,
         progress_value: 4,
+        created_at: '2026-07-01T00:00:00.000Z',
         kpi: { id: 1, name: 'Campaigns Launched', target_value: null, unit: null, created_by: 1 },
         department: { id: 7, name: 'Marketing' },
       },

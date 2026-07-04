@@ -369,6 +369,7 @@ describe('TimeTrackingPage', () => {
         user_id: 1,
         department_id: null,
         progress_value: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
         kpi: { id: 4, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 2 },
       },
     ])
@@ -426,6 +427,7 @@ describe('TimeTrackingPage', () => {
         user_id: 1,
         department_id: null,
         progress_value: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
         kpi: { id: 4, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 2 },
       },
     ])

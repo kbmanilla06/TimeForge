@@ -4,7 +4,8 @@ import { createKpi, listKpis } from '../../lib/kpiApi'
 import type { Kpi } from '../../types/kpi'
 import { Alert } from '../../components/ui/Alert'
 import { Button } from '../../components/ui/Button'
-import { TextInput } from '../../components/ui/fields'
+import { Card, SectionCard } from '../../components/ui/Card'
+import { Field, TextInput } from '../../components/ui/fields'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { LoadingState } from '../../components/ui/states'
 import { TableCard, TableHead, Td, Th, Tr } from '../../components/ui/Table'
@@ -58,39 +59,61 @@ export function KpisPage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
-      <PageHeader title="Manage KPIs" subtitle="Define the measurable targets teams work toward." />
+      <PageHeader
+        title="Manage KPIs"
+        subtitle="Define the measurable targets teams work toward."
+        actions={
+          !isLoading && (
+            <Card className="px-4 py-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Total KPIs</p>
+              <p className="text-lg font-semibold text-ink">{kpis.length}</p>
+            </Card>
+          )
+        }
+      />
 
       {error && (
-        <Alert tone="error" className="mb-4">
+        <Alert tone="error" className="mb-6">
           {error}
         </Alert>
       )}
 
-      <form onSubmit={handleCreate} className="mb-6 grid gap-2 sm:grid-cols-3">
-        <TextInput
-          type="text"
-          required
-          placeholder="KPI name (e.g. Bugs Resolved)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <TextInput
-          type="number"
-          min="0"
-          placeholder="Target (optional)"
-          value={targetValue}
-          onChange={(e) => setTargetValue(e.target.value)}
-        />
-        <TextInput
-          type="text"
-          placeholder="Unit (optional, e.g. bugs)"
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
-        />
-        <Button type="submit" disabled={isCreating} className="sm:col-span-3">
-          Add KPI
-        </Button>
-      </form>
+      <SectionCard title="Add KPI" className="mb-8">
+        <form onSubmit={handleCreate} className="grid gap-4 sm:grid-cols-3">
+          <Field label="Name" htmlFor="kpi-name">
+            <TextInput
+              id="kpi-name"
+              type="text"
+              required
+              placeholder="e.g. Bugs Resolved"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field label="Target" htmlFor="kpi-target" hint="Optional">
+            <TextInput
+              id="kpi-target"
+              type="number"
+              min="0"
+              placeholder="Optional"
+              value={targetValue}
+              onChange={(e) => setTargetValue(e.target.value)}
+            />
+          </Field>
+          <Field label="Unit" htmlFor="kpi-unit" hint="Optional">
+            <TextInput
+              id="kpi-unit"
+              type="text"
+              placeholder="e.g. bugs"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+            />
+          </Field>
+          <Button type="submit" disabled={isCreating} className="sm:col-span-3">
+            Add KPI
+          </Button>
+        </form>
+      </SectionCard>
 
       {isLoading ? (
         <LoadingState />

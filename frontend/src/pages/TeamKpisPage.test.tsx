@@ -21,7 +21,7 @@ describe('TeamKpisPage', () => {
     vi.mocked(kpiApi.listTeamMembers).mockResolvedValue([{ id: 2, name: 'Jane Employee', department_id: 7 }])
   })
 
-  it('renders team assignments with progress vs target', async () => {
+  it('renders team assignments with progress vs target, grouped as current', async () => {
     vi.mocked(kpiApi.listTeamAssignments).mockResolvedValue([
       {
         id: 1,
@@ -29,6 +29,7 @@ describe('TeamKpisPage', () => {
         user_id: 2,
         department_id: null,
         progress_value: 3,
+        created_at: '2026-07-01T00:00:00.000Z',
         kpi: { id: 1, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 1 },
         user: { id: 2, name: 'Jane Employee' },
       },
@@ -36,7 +37,8 @@ describe('TeamKpisPage', () => {
 
     render(<TeamKpisPage />)
 
-    expect(await screen.findByRole('cell', { name: 'Bugs Resolved' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Current' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Bugs Resolved' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'Jane Employee' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: '3 / 10 bugs' })).toBeInTheDocument()
   })
@@ -50,6 +52,7 @@ describe('TeamKpisPage', () => {
       user_id: 2,
       department_id: null,
       progress_value: 0,
+      created_at: '2026-07-01T00:00:00.000Z',
     })
 
     render(<TeamKpisPage />)
@@ -73,6 +76,7 @@ describe('TeamKpisPage', () => {
       user_id: null,
       department_id: 7,
       progress_value: 0,
+      created_at: '2026-07-01T00:00:00.000Z',
     })
 
     render(<TeamKpisPage />)
@@ -96,6 +100,7 @@ describe('TeamKpisPage', () => {
         user_id: 2,
         department_id: null,
         progress_value: 3,
+        created_at: '2026-07-01T00:00:00.000Z',
         kpi: { id: 1, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 1 },
         user: { id: 2, name: 'Jane Employee' },
       },
@@ -111,5 +116,26 @@ describe('TeamKpisPage', () => {
     await waitFor(() => {
       expect(kpiApi.deleteAssignment).toHaveBeenCalledWith(1)
     })
+  })
+
+  it('shows completed assignments in the Completed group', async () => {
+    vi.mocked(kpiApi.listTeamAssignments).mockResolvedValue([
+      {
+        id: 1,
+        kpi_id: 1,
+        user_id: 2,
+        department_id: null,
+        progress_value: 10,
+        created_at: '2026-07-01T00:00:00.000Z',
+        kpi: { id: 1, name: 'Bugs Resolved', target_value: 10, unit: 'bugs', created_by: 1 },
+        user: { id: 2, name: 'Jane Employee' },
+      },
+    ])
+
+    render(<TeamKpisPage />)
+
+    expect(await screen.findByRole('heading', { name: 'Completed' })).toBeInTheDocument()
+    expect(screen.getByText('No current assignments.')).toBeInTheDocument()
+    expect(screen.getByText('No pending assignments.')).toBeInTheDocument()
   })
 })

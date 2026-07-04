@@ -37,9 +37,9 @@ describe('KpisPage', () => {
     render(<KpisPage />)
     await screen.findByText('No KPIs yet.')
 
-    await user.type(screen.getByPlaceholderText(/KPI name/), 'Features Completed')
-    await user.type(screen.getByPlaceholderText(/Target/), '5')
-    await user.type(screen.getByPlaceholderText(/Unit/), 'features')
+    await user.type(screen.getByLabelText('Name'), 'Features Completed')
+    await user.type(screen.getByLabelText('Target'), '5')
+    await user.type(screen.getByLabelText('Unit'), 'features')
     await user.click(screen.getByRole('button', { name: 'Add KPI' }))
 
     await waitFor(() => {

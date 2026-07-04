@@ -12,6 +12,7 @@ export interface KpiAssignment {
   user_id: number | null
   department_id: number | null
   progress_value: number
+  created_at: string
   kpi?: Kpi | null
   user?: { id: number; name: string } | null
   department?: { id: number; name: string } | null
