@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { apiFetch, getToken, setToken } from '../lib/apiClient'
+import { ApiError, apiFetch, getToken, setToken } from '../lib/apiClient'
 import { getProfilePictureBlob } from '../lib/profileApi'
 import type { LoginResponse, MeResponse, User } from '../types/auth'
 import { AuthContext } from './useAuth'
@@ -45,7 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(response.user)
         void refreshPicture()
       })
-      .catch(() => setToken(null))
+      .catch((err) => {
+        // Sprint 38: only a genuine 401 means the token itself is
+        // actually invalid. Any other failure (429 from the shared
+        // per-user rate limiter, a transient 5xx, a network blip) must
+        // not destroy a perfectly valid session — the token lives in
+        // localStorage shared across every open tab, so wiping it here
+        // would log the user out everywhere over a problem that has
+        // nothing to do with their credentials.
+        if (err instanceof ApiError && err.status === 401) {
+          setToken(null)
+        }
+      })
       .finally(() => setIsLoading(false))
   }, [refreshPicture])
 
@@ -57,8 +68,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function refreshUser() {
     if (!getToken()) return
-    const response = await apiFetch<MeResponse>('/me')
-    setUser(response.user)
+
+    try {
+      const response = await apiFetch<MeResponse>('/me')
+      setUser(response.user)
+    } catch (err) {
+      // Same rule as the initial load: only a genuine 401 means the
+      // session is actually gone. Anything else (rate limiting, a
+      // transient error) leaves the current session untouched.
+      if (err instanceof ApiError && err.status === 401) {
+        setToken(null)
+        setUser(null)
+      }
+    }
   }
 
   async function login(email: string, password: string) {

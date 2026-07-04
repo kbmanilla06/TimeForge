@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as notificationApi from '../lib/notificationApi'
 import type { AppNotification } from '../types/notification'
 import { NotificationCenter } from './NotificationCenter'
@@ -19,10 +19,10 @@ function notification(overrides: Partial<AppNotification> = {}): AppNotification
   }
 }
 
-function renderCenter(onNewNotification = vi.fn()) {
+function renderCenter(unreadCount: number | undefined, onNewNotification = vi.fn()) {
   return render(
     <MemoryRouter>
-      <NotificationCenter onNewNotification={onNewNotification} />
+      <NotificationCenter unreadCount={unreadCount} onNewNotification={onNewNotification} />
     </MemoryRouter>,
   )
 }
@@ -30,12 +30,12 @@ function renderCenter(onNewNotification = vi.fn()) {
 describe('NotificationCenter', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification()])
   })
 
-  it('shows no unread badge and no "Mark all read" action when nothing is unread', async () => {
+  it('shows no unread badge and no "Mark all read" action when unreadCount is 0', async () => {
     const user = userEvent.setup()
-    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification({ read_at: '2026-01-14T11:00:00Z' })])
-    renderCenter()
+    renderCenter(0)
     await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalled())
 
     const bell = screen.getByRole('button', { name: 'Notifications' })
@@ -45,17 +45,25 @@ describe('NotificationCenter', () => {
     expect(screen.queryByRole('button', { name: 'Mark all read' })).not.toBeInTheDocument()
   })
 
-  it('shows an unread count badge on the bell', async () => {
-    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification(), notification({ id: 'n2' })])
-    renderCenter()
+  it('shows no unread badge while unreadCount has not resolved yet (undefined)', () => {
+    renderCenter(undefined)
 
-    expect(await screen.findByText('2')).toBeInTheDocument()
+    const bell = screen.getByRole('button', { name: 'Notifications' })
+    expect(bell.querySelector('.bg-red-500')).toBeNull()
+  })
+
+  it('shows the unreadCount prop as the badge, not a count derived from the fetched list', async () => {
+    // The fetched list only has 1 item, but the true total (from the
+    // shared sidebar-badges poll) is 7 — the badge must reflect that
+    // true total, not undercount based on the small recent-list fetch.
+    renderCenter(7)
+
+    expect(await screen.findByText('7')).toBeInTheDocument()
   })
 
   it('opens the dropdown on click and lists recent notifications, with a link to view all', async () => {
     const user = userEvent.setup()
-    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification()])
-    renderCenter()
+    renderCenter(1)
     await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalled())
 
     await user.click(screen.getByRole('button', { name: 'Notifications' }))
@@ -66,9 +74,8 @@ describe('NotificationCenter', () => {
 
   it('marks a notification as read when clicked in the dropdown', async () => {
     const user = userEvent.setup()
-    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification()])
     vi.mocked(notificationApi.markNotificationRead).mockResolvedValue(notification({ read_at: '2026-01-14T12:00:00Z' }))
-    renderCenter()
+    renderCenter(1)
     await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalled())
 
     await user.click(screen.getByRole('button', { name: 'Notifications' }))
@@ -79,9 +86,8 @@ describe('NotificationCenter', () => {
 
   it('calls markAllNotificationsRead from "Mark all read"', async () => {
     const user = userEvent.setup()
-    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification()])
     vi.mocked(notificationApi.markAllNotificationsRead).mockResolvedValue({ message: 'ok' })
-    renderCenter()
+    renderCenter(1)
     await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalled())
 
     await user.click(screen.getByRole('button', { name: 'Notifications' }))
@@ -89,30 +95,75 @@ describe('NotificationCenter', () => {
 
     await waitFor(() => expect(notificationApi.markAllNotificationsRead).toHaveBeenCalled())
   })
+
+  it('re-fetches the recent list when the dropdown is opened', async () => {
+    const user = userEvent.setup()
+    renderCenter(1)
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByRole('button', { name: 'Notifications' }))
+
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(2))
+  })
 })
 
-describe('NotificationCenter polling', () => {
+describe('NotificationCenter unreadCount-driven refresh', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.useFakeTimers()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
+  it('does not toast on the initial load, even if unreadCount starts above 0', async () => {
+    const onNewNotification = vi.fn()
+    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification()])
+
+    renderCenter(3, onNewNotification)
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1))
+
+    expect(onNewNotification).not.toHaveBeenCalled()
   })
 
-  it('reports a newly-arrived unread notification to onNewNotification on a later poll, but not on the initial load', async () => {
+  it('reports a newly-arrived unread notification to onNewNotification when unreadCount increases', async () => {
     const onNewNotification = vi.fn()
     vi.mocked(notificationApi.listNotifications)
       .mockResolvedValueOnce([]) // initial load: nothing yet
-      .mockResolvedValueOnce([notification()]) // next poll: a new one arrives
+      .mockResolvedValueOnce([notification()]) // after the count increases
 
-    renderCenter(onNewNotification)
-    await vi.waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1))
+    const { rerender } = render(
+      <MemoryRouter>
+        <NotificationCenter unreadCount={0} onNewNotification={onNewNotification} />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1))
     expect(onNewNotification).not.toHaveBeenCalled()
 
-    await vi.advanceTimersByTimeAsync(20000)
+    rerender(
+      <MemoryRouter>
+        <NotificationCenter unreadCount={1} onNewNotification={onNewNotification} />
+      </MemoryRouter>,
+    )
 
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(2))
     expect(onNewNotification).toHaveBeenCalledWith(notification())
+  })
+
+  it('does not re-fetch when unreadCount decreases (e.g. after marking read elsewhere)', async () => {
+    vi.mocked(notificationApi.listNotifications).mockResolvedValue([notification({ read_at: '2026-01-14T12:00:00Z' })])
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <NotificationCenter unreadCount={2} onNewNotification={vi.fn()} />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1))
+
+    rerender(
+      <MemoryRouter>
+        <NotificationCenter unreadCount={1} onNewNotification={vi.fn()} />
+      </MemoryRouter>,
+    )
+
+    // Give any (incorrect) refetch a chance to happen before asserting it didn't.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(notificationApi.listNotifications).toHaveBeenCalledTimes(1)
   })
 })

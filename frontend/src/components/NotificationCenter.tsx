@@ -1,14 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { POLL_INTERVAL_MS } from '../hooks/useSidebarBadges'
 import { listNotifications, markAllNotificationsRead, markNotificationRead } from '../lib/notificationApi'
 import type { AppNotification } from '../types/notification'
 
 const RECENT_LIMIT = 5
 
+/**
+ * Sprint 38: the bell badge's count comes from the parent's own
+ * unreadCount prop (the same aggregated, always-correct total already
+ * polled once for every sidebar badge via useSidebarBadges) instead of
+ * being re-derived here from a separately-polled, windowed list of the
+ * 5 most recent notifications — that used to undercount as soon as more
+ * than 5 were unread, and disagree with the sidebar's own nav badge.
+ * This also removes NotificationCenter's own independent polling
+ * interval entirely, halving background notification request volume:
+ * the recent list (for the dropdown) is now fetched on demand — once on
+ * mount, when the dropdown opens, and whenever unreadCount increases
+ * (used as the signal to detect and toast a newly-arrived notification).
+ */
 export function NotificationCenter({
+  unreadCount,
   onNewNotification,
 }: {
+  unreadCount: number | undefined
   onNewNotification: (notification: AppNotification) => void
 }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -16,42 +30,53 @@ export function NotificationCenter({
   const seenIds = useRef<Set<string> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Kept in a ref (updated every render) so the polling effect below can
-  // call the latest callback without needing it in its dependency array —
-  // it must run on a stable mount-once interval, not restart whenever the
-  // parent re-renders and passes a new function reference.
+  // Kept in a ref so effects can call the latest callback without
+  // needing it in their dependency arrays.
   const onNewNotificationRef = useRef(onNewNotification)
   onNewNotificationRef.current = onNewNotification
 
-  useEffect(() => {
-    let cancelled = false
+  async function refreshList() {
+    try {
+      const result = await listNotifications(RECENT_LIMIT)
 
-    const poll = async () => {
-      try {
-        const result = await listNotifications(RECENT_LIMIT)
-        if (cancelled) return
-
-        if (seenIds.current) {
-          for (const notification of result) {
-            if (!notification.read_at && !seenIds.current.has(notification.id)) {
-              onNewNotificationRef.current(notification)
-            }
+      if (seenIds.current) {
+        for (const notification of result) {
+          if (!notification.read_at && !seenIds.current.has(notification.id)) {
+            onNewNotificationRef.current(notification)
           }
         }
-        seenIds.current = new Set(result.map((n) => n.id))
-        setNotifications(result)
-      } catch {
-        // Non-critical background poll — keep showing the last known list.
       }
+      seenIds.current = new Set(result.map((n) => n.id))
+      setNotifications(result)
+    } catch {
+      // Non-critical — keep showing the last known list.
     }
+  }
 
-    void poll()
-    const interval = setInterval(poll, POLL_INTERVAL_MS)
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
+  useEffect(() => {
+    void refreshList()
+    // Initial load only — later refreshes are driven by unreadCount
+    // changes and the dropdown being opened, not a timer.
   }, [])
+
+  // undefined while the shared badge poll hasn't resolved yet — only
+  // start comparing once a real baseline exists, so the first genuine
+  // count that arrives is never mistaken for "new" notifications and
+  // toasted (mirrors the old seenIds.current === null guard above).
+  const previousUnreadCount = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    if (unreadCount === undefined) return
+
+    if (previousUnreadCount.current !== undefined && unreadCount > previousUnreadCount.current) {
+      void refreshList()
+    }
+    previousUnreadCount.current = unreadCount
+  }, [unreadCount])
+
+  useEffect(() => {
+    if (isOpen) void refreshList()
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -66,7 +91,7 @@ export function NotificationCenter({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  const unreadCount = notifications.filter((n) => !n.read_at).length
+  const displayCount = unreadCount ?? 0
 
   async function handleMarkRead(notification: AppNotification) {
     await markNotificationRead(notification.id)
@@ -94,9 +119,9 @@ export function NotificationCenter({
             d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0m6 0H9"
           />
         </svg>
-        {unreadCount > 0 && (
+        {displayCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {displayCount > 9 ? '9+' : displayCount}
           </span>
         )}
       </button>
@@ -105,7 +130,7 @@ export function NotificationCenter({
         <div className="absolute left-0 top-full z-40 mt-2 w-80 rounded-xl border border-line bg-white p-2 shadow-card">
           <div className="flex items-center justify-between px-2 py-1">
             <p className="text-sm font-semibold text-ink">Notifications</p>
-            {unreadCount > 0 && (
+            {displayCount > 0 && (
               <button type="button" onClick={handleMarkAllRead} className="text-xs font-medium text-primary hover:underline">
                 Mark all read
               </button>

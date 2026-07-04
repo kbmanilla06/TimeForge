@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { useSidebarBadges } from '../hooks/useSidebarBadges'
@@ -62,9 +62,22 @@ export function AppLayout() {
   const badgeCounts = useSidebarBadges()
 
   const [toasts, setToasts] = useState<ToastItem[]>([])
-  const dismissToast = (id: string) => setToasts((prev) => prev.filter((toast) => toast.id !== id))
-  const handleNewNotification = (notification: AppNotification) =>
-    setToasts((prev) => (prev.some((t) => t.id === notification.id) ? prev : [...prev, { id: notification.id, message: notification.data.message }]))
+  // Sprint 38: memoized so ToastCard's auto-dismiss effect (which depends
+  // on this callback's identity) isn't reset by every unrelated AppLayout
+  // re-render — e.g. the 20s sidebar-badges poll updating badgeCounts.
+  const dismissToast = useCallback(
+    (id: string) => setToasts((prev) => prev.filter((toast) => toast.id !== id)),
+    [],
+  )
+  const handleNewNotification = useCallback(
+    (notification: AppNotification) =>
+      setToasts((prev) =>
+        prev.some((t) => t.id === notification.id)
+          ? prev
+          : [...prev, { id: notification.id, message: notification.data.message }],
+      ),
+    [],
+  )
 
   const isSupervisorOrAdmin = user?.role === 'supervisor' || user?.role === 'admin'
   const canSeePayroll = user?.role === 'admin' || user?.role === 'hr_finance'
@@ -88,7 +101,7 @@ export function AppLayout() {
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <span className="text-lg font-bold tracking-tight text-ink">TimeForge</span>
-          <NotificationCenter onNewNotification={handleNewNotification} />
+          <NotificationCenter unreadCount={badgeCounts?.notifications} onNewNotification={handleNewNotification} />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">

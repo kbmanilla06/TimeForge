@@ -60,4 +60,28 @@ class RateLimitTest extends TestCase
 
         $this->getJson('/api/me')->assertStatus(429);
     }
+
+    /**
+     * Sprint 38: rate limiting is a per-request, decaying-window check —
+     * it has nothing to do with whether the Sanctum token itself is
+     * still valid. This proves the 429 above doesn't touch the token: the
+     * exact same token keeps working once the one-minute window rolls
+     * over, with no re-login required. Complements the frontend fix
+     * (AuthContext no longer clears the token on a 429).
+     */
+    public function test_a_rate_limited_token_still_works_once_the_throttle_window_resets(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+        $this->withHeader('Authorization', 'Bearer '.$token);
+
+        for ($i = 0; $i < 60; $i++) {
+            $this->getJson('/api/me');
+        }
+        $this->getJson('/api/me')->assertStatus(429);
+
+        $this->travel(61)->seconds();
+
+        $this->getJson('/api/me')->assertOk();
+    }
 }
