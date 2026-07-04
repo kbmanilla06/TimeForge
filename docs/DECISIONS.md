@@ -371,6 +371,15 @@ Approved for the Sprint 26 (Team Timesheet Grouping And Analytics) plan.
 - **Filters:** Status filter and date-range filter only, applied client-side against the existing (unbounded) `/timesheets/team` payload. No department filter in Sprint 26 (existing Supervisor department-scoping and Admin global-visibility rules are unaffected either way); Admin department filtering is deferred to a later sprint if needed.
 - **Scope guardrails:** No changes to existing approve/reject/revision-request behavior, authorization rules, payroll logic, or KPI logic. No migrations. No new business rules beyond what's listed above. Backend changes limited to the one small Productivity Trend endpoint, added only because the existing dashboard endpoint cannot provide multi-period trend data.
 
+## Sprint 27 Implementation Decisions (Approved)
+
+Approved for the Sprint 27 (Team Scrum Kanban Redesign) plan. Frontend-only: no backend, route, or migration changes — `GET /daily-scrums/team` is already unbounded and already eager-loads `user`/`comments.author`, so grouping is entirely client-side, same as Sprint 26's timesheet grouping.
+
+- **Employee header collapse:** Interactive expand/collapse per employee card, collapsed by default, matching the Sprint 26 timesheet-grouping interaction pattern for consistency.
+- **Notes placement:** Kept as a 4th section alongside Yesterday/Today/Blockers (only rendered when notes exist, same as the pre-redesign behavior) rather than being dropped or folded into another section.
+- **Section layout:** Yesterday/Today/Blockers render as side-by-side mini-columns per day-entry (stacking to one column on narrow screens), with a muted "No blockers reported." placeholder when `blockers` is null so the three-column grid stays visually aligned.
+- **Preserved unchanged:** comment thread rendering, the "Add a comment" input and `addScrumComment` call, `isScrumLocked` semantics, and the separate `DailyScrumPage` (employee's own single-entry submission page) — this sprint only touches `TeamScrumPage`.
+
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
 Recorded for when each of these specific sprints is opened; none of this work has been started or approved for implementation yet, per the "plan one sprint at a time" workflow rule.

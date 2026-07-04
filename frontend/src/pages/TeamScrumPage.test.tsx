@@ -6,12 +6,18 @@ import { TeamScrumPage } from './TeamScrumPage'
 
 vi.mock('../lib/scrumApi')
 
+async function expandJaneEmployee() {
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: /Jane Employee/ }))
+  return user
+}
+
 describe('TeamScrumPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders team entries with employee, date, and blockers', async () => {
+  it('renders one collapsed card per employee, with entries hidden until expanded', async () => {
     vi.mocked(scrumApi.listTeamScrums).mockResolvedValue([
       {
         id: 1,
@@ -27,13 +33,76 @@ describe('TeamScrumPage', () => {
 
     render(<TeamScrumPage />)
 
-    expect(await screen.findByText(/Jane Employee/)).toBeInTheDocument()
+    expect(await screen.findByText('Jane Employee')).toBeInTheDocument()
+    expect(screen.getByText('1 entry')).toBeInTheDocument()
+    expect(screen.queryByText(/Built the feature\./)).not.toBeInTheDocument()
+
+    await expandJaneEmployee()
+
+    expect(await screen.findByText('Yesterday')).toBeInTheDocument()
+    expect(screen.getByText('Today')).toBeInTheDocument()
+    expect(screen.getByText('Blockers')).toBeInTheDocument()
     expect(screen.getByText(/Built the feature\./)).toBeInTheDocument()
+    expect(screen.getByText(/Write tests\./)).toBeInTheDocument()
     expect(screen.getByText(/Blocked on design review\./)).toBeInTheDocument()
   })
 
+  it('groups multiple submissions from the same employee under one card', async () => {
+    vi.mocked(scrumApi.listTeamScrums).mockResolvedValue([
+      {
+        id: 1,
+        user_id: 2,
+        date: '2026-01-15',
+        previous_work: 'Day two work.',
+        planned_work: 'Day two plan.',
+        blockers: null,
+        notes: null,
+        user: { id: 2, name: 'Jane Employee' },
+      },
+      {
+        id: 2,
+        user_id: 2,
+        date: '2026-01-14',
+        previous_work: 'Day one work.',
+        planned_work: 'Day one plan.',
+        blockers: null,
+        notes: null,
+        user: { id: 2, name: 'Jane Employee' },
+      },
+    ])
+
+    render(<TeamScrumPage />)
+
+    expect(await screen.findByText('2 entries')).toBeInTheDocument()
+    await expandJaneEmployee()
+
+    const dates = await screen.findAllByText(/2026-01-1[45]/)
+    expect(dates.map((el) => el.textContent)).toEqual(['2026-01-15', '2026-01-14'])
+  })
+
+  it('shows a placeholder when there are no blockers, and renders notes as a section', async () => {
+    vi.mocked(scrumApi.listTeamScrums).mockResolvedValue([
+      {
+        id: 1,
+        user_id: 2,
+        date: '2026-01-14',
+        previous_work: 'Built the feature.',
+        planned_work: 'Write tests.',
+        blockers: null,
+        notes: 'Remote today.',
+        user: { id: 2, name: 'Jane Employee' },
+      },
+    ])
+
+    render(<TeamScrumPage />)
+    await expandJaneEmployee()
+
+    expect(await screen.findByText('No blockers reported.')).toBeInTheDocument()
+    expect(screen.getByText('Notes')).toBeInTheDocument()
+    expect(screen.getByText('Remote today.')).toBeInTheDocument()
+  })
+
   it('adds a comment to an entry', async () => {
-    const user = userEvent.setup()
     vi.mocked(scrumApi.listTeamScrums).mockResolvedValue([
       {
         id: 1,
@@ -67,7 +136,7 @@ describe('TeamScrumPage', () => {
     })
 
     render(<TeamScrumPage />)
-    await screen.findByText(/Jane Employee/)
+    const user = await expandJaneEmployee()
 
     await user.type(screen.getByPlaceholderText('Add a comment'), 'Nice work.')
     await user.click(screen.getByRole('button', { name: 'Comment' }))
@@ -102,6 +171,7 @@ describe('TeamScrumPage', () => {
     ])
 
     render(<TeamScrumPage />)
+    await expandJaneEmployee()
 
     expect(await screen.findByText(/Nice work\./)).toBeInTheDocument()
     expect(screen.getByText(/Sam Supervisor/)).toBeInTheDocument()
