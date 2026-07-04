@@ -98,6 +98,28 @@ QUEUE_CONNECTION=redis
 
 These don't need to change for production — Sanctum's Bearer-token auth doesn't depend on session cookies, and both drivers work the same against Postgres as they did against MySQL.
 
+### CORS — Allowed Origins (Sprint 43)
+
+```
+CORS_ALLOWED_ORIGINS=https://your-app-domain.example
+```
+
+Laravel's out-of-the-box default is a wildcard (`Access-Control-Allow-Origin: *`) — confirmed live against this app before this sprint. `config/cors.php` now reads an explicit allowlist instead, defaulting to `FRONTEND_URL` above if `CORS_ALLOWED_ORIGINS` isn't set, so a typical single-frontend deployment needs no extra variable at all. Set `CORS_ALLOWED_ORIGINS` (comma-separated) only if more than one origin needs access — e.g. a staging frontend and production frontend sharing one backend. Never set this to `*` in production.
+
+With exactly one configured origin (the default case), the underlying `fruitcake/php-cors` library always echoes that one value back regardless of the request's actual `Origin` header — this is safe (the browser itself enforces the same-origin match against the header before exposing the response to a page's JS, and the server never reflects an arbitrary attacker-supplied origin), but it means a single-origin allowlist won't show a *missing* header for a disallowed origin, only the *correct configured* one. Genuine per-request gating (header absent for an unlisted origin) only kicks in once `CORS_ALLOWED_ORIGINS` has two or more values — verified directly against the library's own source, not assumed; see `tests/Feature/CorsTest.php`.
+
+This app is Bearer-token-only (no cookies sent cross-origin, confirmed: `apiFetch` never sends `credentials: 'include'`, and Sanctum's stateful/cookie mode is never engaged), so the wildcard default wasn't a CSRF risk — but it did let any origin read API responses cross-origin if a token ever leaked into that page's JS context. Closed as defense-in-depth.
+
+### HTTPS and Trusted Proxies (Sprint 43)
+
+```
+TRUSTED_PROXIES=10.0.0.0/8
+```
+
+By default, this app trusts **no** proxies — if it ends up behind a reverse proxy or load balancer that terminates TLS and forwards plain HTTP internally (common in most hosting setups, including a more elaborate topology than this repo's own `nginx` Docker container), Laravel won't know the original request was HTTPS. This can produce wrong (`http://`) URLs in generated links and misclassify the connection as insecure.
+
+Set `TRUSTED_PROXIES` to the proxy's IP/CIDR range (comma-separated for more than one), or `*` only if your deployment topology guarantees no untrusted client can reach the app directly (e.g. the app is genuinely unreachable except through the proxy). Leave unset for this repo's own local Docker Compose stack — nothing proxies it. Do **not** set this to `*` casually; it means trusting `X-Forwarded-*` headers from any source, which lets a client spoof its own IP/scheme if the app actually is directly reachable.
+
 ## Deployment Sequence
 
 ```bash
@@ -143,6 +165,26 @@ Never edit `.env` alone and assume it took effect — verify with `php artisan t
 - **Google SMTP credentials in the current local `.env` are rejected by Google** (535 "Username and Password not accepted") even though outbound connectivity to `smtp.gmail.com:587` itself works fine. The stored App Password needs to be regenerated (https://myaccount.google.com/apppasswords) before real mail delivery will work — this is a credential problem, not a code or connectivity problem.
 - **Registration isn't transactionally safe against a mail-send failure.** While reproducing the SMTP issue above, a real request left a `User`/`AccountRequest` row created in the database even though the subsequent OTP-email `notify()` call threw and the endpoint returned a raw 500 — the applicant never received a usable OTP and can't cleanly retry (the email is now taken). This is a genuine production-readiness gap in `RegistrationController::store()`, out of this sprint's approved scope (env/deployment configuration, not registration-flow behavior) — recommend a dedicated follow-up sprint to wrap the create-and-notify sequence so a mail failure doesn't leave an orphaned, unrecoverable registration.
 - **Malware scanning on uploads remains an accepted MVP risk** (Sprint 13 decision, explicitly deferred "to be revisited at deployment/security hardening" — this is that moment, but it wasn't in this sprint's approved scope either). Revisit if/when this becomes a priority.
+
+## Production Environment Checklist (Sprint 43)
+
+Run through this before any real deployment — it consolidates every environment-safety item documented above into one pass:
+
+- [ ] `APP_ENV=production`
+- [ ] `APP_DEBUG=false` (confirm — never `true` in production, leaks stack traces/config to error responses)
+- [ ] `APP_KEY` freshly generated for this environment (`php artisan key:generate`), never copied from dev/staging
+- [ ] `APP_URL` set to this backend's own public URL
+- [ ] `FRONTEND_URL` set to the deployed SPA's origin
+- [ ] `CORS_ALLOWED_ORIGINS` set if more than one frontend origin needs access (otherwise `FRONTEND_URL` alone covers it) — confirm it is **not** a wildcard
+- [ ] `TRUSTED_PROXIES` set if a TLS-terminating reverse proxy/load balancer sits in front of the app; confirmed generated URLs are `https://` afterward
+- [ ] `DB_*` point at the real production Postgres instance, `DB_SSLMODE=require` for Supabase
+- [ ] `FILESYSTEM_DISK=s3` with real Supabase Storage credentials (not local disk)
+- [ ] `MAIL_MAILER=smtp` with a real, working Google App Password — verify by actually sending one email, not just checking the variable is set
+- [ ] `CAPTCHA_ENABLED=true` with real Turnstile keys (not the published test key pair) and the frontend's `VITE_TURNSTILE_SITE_KEY` matches
+- [ ] `php artisan migrate --force` run and confirmed clean (`php artisan migrate:status` shows nothing pending)
+- [ ] `php artisan config:cache` run **last**, after every other `.env` value above is finalized (see the `config:cache` gotcha above — changing `.env` afterward silently does nothing until `config:clear`)
+- [ ] Demo/seed data (`DemoDataSeeder`) never run against this environment; every demo credential changed or removed
+- [ ] `/horizon` confirmed inaccessible (its allowlist is empty by default — access only in `local`)
 
 ## Rollback
 

@@ -19,6 +19,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserIsActive::class,
             'role' => EnsureUserHasRole::class,
         ]);
+
+        // Sprint 43: trusts no proxies by default (unchanged behavior)
+        // unless TRUSTED_PROXIES is explicitly set — needed for correct
+        // HTTPS detection/URL generation when this app sits behind a
+        // TLS-terminating reverse proxy or load balancer. Set to specific
+        // IPs/CIDRs, or '*' only if the deployment topology guarantees no
+        // untrusted client can reach the app directly.
+        if ($trustedProxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(
+                at: $trustedProxies === '*' ? '*' : explode(',', $trustedProxies),
+                headers: Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
