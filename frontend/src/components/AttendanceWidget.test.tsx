@@ -92,6 +92,17 @@ describe('AttendanceWidget', () => {
     expect(screen.queryByRole('button', { name: 'Time In' })).not.toBeInTheDocument()
   })
 
+  it('shows an error message instead of vanishing when the initial load fails', async () => {
+    vi.mocked(attendanceApi.getTodaysAttendance).mockRejectedValue(new Error('boom'))
+    render(<AttendanceWidget />)
+
+    expect(await screen.findByText('Unable to load attendance.')).toBeInTheDocument()
+    // The widget itself (and a way to retry via Time In) must stay visible,
+    // not silently render nothing.
+    expect(screen.getByText('Attendance')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Time In' })).toBeInTheDocument()
+  })
+
   it('surfaces an error message if an action is rejected', async () => {
     const user = userEvent.setup()
     vi.mocked(attendanceApi.getTodaysAttendance).mockResolvedValue({ session: CLOCKED_IN })

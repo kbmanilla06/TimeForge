@@ -5,6 +5,7 @@ import type { AttendanceSession } from '../types/attendance'
 import { Alert } from './ui/Alert'
 import { Button } from './ui/Button'
 import { SectionCard } from './ui/Card'
+import { LoadingState } from './ui/states'
 
 function formatMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60)
@@ -37,7 +38,8 @@ function useLiveMinutesSince(since: string | null): number {
 }
 
 export function AttendanceWidget() {
-  const [session, setSession] = useState<AttendanceSession | null | undefined>(undefined)
+  const [session, setSession] = useState<AttendanceSession | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isActing, setIsActing] = useState(false)
 
@@ -47,11 +49,14 @@ export function AttendanceWidget() {
 
   async function load() {
     setError(null)
+    setIsLoading(true)
     try {
       const { session } = await getTodaysAttendance()
       setSession(session)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Unable to load attendance.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -70,10 +75,6 @@ export function AttendanceWidget() {
   const activeSince = session && !session.is_timed_out ? (session.is_on_break ? session.break_started_at : session.time_in) : null
   const liveMinutes = useLiveMinutesSince(activeSince)
 
-  if (session === undefined) {
-    return null
-  }
-
   return (
     <SectionCard title="Attendance" className="mt-6">
       {error && (
@@ -82,7 +83,9 @@ export function AttendanceWidget() {
         </Alert>
       )}
 
-      {!session && (
+      {isLoading && <LoadingState label="Loading attendance…" />}
+
+      {!isLoading && !session && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">You haven't clocked in today.</p>
           <Button disabled={isActing} onClick={() => perform(timeIn)}>
@@ -91,7 +94,7 @@ export function AttendanceWidget() {
         </div>
       )}
 
-      {session && !session.is_timed_out && (
+      {!isLoading && session && !session.is_timed_out && (
         <div>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

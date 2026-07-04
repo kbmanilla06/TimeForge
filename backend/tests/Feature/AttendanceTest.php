@@ -165,6 +165,19 @@ class AttendanceTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_cannot_time_in_again_after_completing_a_full_day(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")->postJson('/api/attendance/time-in')->assertCreated();
+        $this->withHeader('Authorization', "Bearer {$token}")->patchJson('/api/attendance/time-out')->assertOk();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/attendance/time-in')
+            ->assertStatus(422);
+    }
+
     public function test_users_cannot_see_or_affect_each_others_sessions(): void
     {
         $userA = User::factory()->create();
