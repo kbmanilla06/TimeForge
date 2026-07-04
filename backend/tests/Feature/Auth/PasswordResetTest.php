@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
@@ -128,5 +129,82 @@ class PasswordResetTest extends TestCase
         ]);
 
         $replay->assertStatus(422);
+    }
+
+    /**
+     * Sprint 37: these explicitly re-enable captcha.enabled (off by
+     * default in this test suite — see phpunit.xml) to exercise the real
+     * gating logic against a faked Cloudflare Turnstile response.
+     */
+    public function test_forgot_password_is_rejected_when_captcha_is_enabled_and_no_token_is_sent(): void
+    {
+        config(['captcha.enabled' => true]);
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/forgot-password', ['email' => $user->email]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['captcha_token']);
+    }
+
+    public function test_forgot_password_succeeds_when_captcha_is_enabled_and_verification_passes(): void
+    {
+        config(['captcha.enabled' => true]);
+        Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => true])]);
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/forgot-password', [
+            'email' => $user->email,
+            'captcha_token' => 'a-real-widget-token',
+        ]);
+
+        $response->assertOk();
+    }
+
+    public function test_forgot_password_is_rejected_when_captcha_verification_fails(): void
+    {
+        config(['captcha.enabled' => true]);
+        Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => false])]);
+        $user = User::factory()->create();
+
+        $response = $this->postJson('/api/forgot-password', [
+            'email' => $user->email,
+            'captcha_token' => 'a-forged-token',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['captcha_token']);
+    }
+
+    public function test_reset_password_is_rejected_when_captcha_is_enabled_and_no_token_is_sent(): void
+    {
+        config(['captcha.enabled' => true]);
+        $user = User::factory()->create(['password' => 'old-password']);
+        $token = Password::createToken($user);
+
+        $response = $this->postJson('/api/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['captcha_token']);
+    }
+
+    public function test_reset_password_succeeds_when_captcha_is_enabled_and_verification_passes(): void
+    {
+        config(['captcha.enabled' => true]);
+        Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => true])]);
+        $user = User::factory()->create(['password' => 'old-password']);
+        $token = Password::createToken($user);
+
+        $response = $this->postJson('/api/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+            'captcha_token' => 'a-real-widget-token',
+        ]);
+
+        $response->assertOk();
     }
 }

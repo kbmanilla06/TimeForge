@@ -8,9 +8,11 @@ import {
   authInputClass,
   authLabelClass,
 } from '../components/AuthLayout'
+import { Turnstile } from '../components/Turnstile'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -24,7 +26,7 @@ export function ForgotPasswordPage() {
     try {
       const response = await apiFetch<ApiMessageResponse>('/forgot-password', {
         method: 'POST',
-        body: { email },
+        body: { email, captcha_token: captchaToken },
       })
       setMessage(response.message)
     } catch (err) {
@@ -58,7 +60,9 @@ export function ForgotPasswordPage() {
           />
         </div>
 
-        <button type="submit" disabled={isSubmitting} className={authButtonClass}>
+        <Turnstile onVerify={setCaptchaToken} />
+
+        <button type="submit" disabled={isSubmitting || !captchaToken} className={authButtonClass}>
           {isSubmitting ? 'Sending…' : 'Send reset link'}
         </button>
       </form>

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Ai\AiProvider;
 use App\Ai\StubAiProvider;
+use App\Captcha\CaptchaVerifier;
+use App\Captcha\TurnstileCaptchaVerifier;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -28,6 +30,17 @@ class AppServiceProvider extends ServiceProvider
                 'stub' => new StubAiProvider,
                 default => throw new InvalidArgumentException(
                     "Unsupported AI provider [{$provider}]; only [stub] is implemented."
+                ),
+            };
+        });
+
+        // Sprint 37: CAPTCHA provider is likewise a config choice behind an
+        // interface — only Cloudflare Turnstile is implemented so far.
+        $this->app->bind(CaptchaVerifier::class, function () {
+            return match ($provider = config('captcha.provider')) {
+                'turnstile' => new TurnstileCaptchaVerifier,
+                default => throw new InvalidArgumentException(
+                    "Unsupported captcha provider [{$provider}]; only [turnstile] is implemented."
                 ),
             };
         });

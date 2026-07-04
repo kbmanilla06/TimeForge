@@ -9,6 +9,7 @@ import {
   authInputClass,
   authLabelClass,
 } from '../components/AuthLayout'
+import { Turnstile } from '../components/Turnstile'
 
 export function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>()
@@ -18,6 +19,7 @@ export function ResetPasswordPage() {
   const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -34,6 +36,7 @@ export function ResetPasswordPage() {
           email,
           password,
           password_confirmation: passwordConfirmation,
+          captcha_token: captchaToken,
         },
       })
       navigate('/login', { replace: true })
@@ -94,7 +97,9 @@ export function ResetPasswordPage() {
           />
         </div>
 
-        <button type="submit" disabled={isSubmitting} className={authButtonClass}>
+        <Turnstile onVerify={setCaptchaToken} />
+
+        <button type="submit" disabled={isSubmitting || !captchaToken} className={authButtonClass}>
           {isSubmitting ? 'Changing…' : 'Change Password'}
         </button>
       </form>
