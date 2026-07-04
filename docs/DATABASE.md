@@ -1,6 +1,6 @@
 # TimeForge Database Design
 
-As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancement). MySQL in development/production; automated tests run the same migrations on SQLite in-memory. All tables use auto-increment `id` primary keys and `created_at`/`updated_at` timestamps unless noted. Single-company MVP by decision — no organization/tenant column anywhere, but no design choice blocks adding one later.
+As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancement). PostgreSQL in development and production as of Sprint 39 (self-hosted via Docker locally, Supabase-hosted in production — previously MySQL; see `docs/DECISIONS.md` Sprint 39 entry); automated tests run the same migrations on SQLite in-memory. All tables use auto-increment `id` primary keys and `created_at`/`updated_at` timestamps unless noted. Single-company MVP by decision — no organization/tenant column anywhere, but no design choice blocks adding one later.
 
 ## Domain Tables
 

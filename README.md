@@ -78,7 +78,7 @@ cd frontend && npm run build && npm run lint && npm run test   # 186 tests, zero
 
 The deliberate MVP boundaries, each backed by a recorded decision (details: `docs/SETUP.md` Known Deferred Items, `docs/DECISIONS.md`):
 
-- **Docker/MySQL end-to-end has now run** (2026-07-03) — see `docs/QA_RUN_2026-07-03.md` for the full log, including the post-MVP auth/onboarding enhancement (Sprints 15–19) exercised live against the real stack.
+- **Docker end-to-end has now run** (first on MySQL, 2026-07-03 — see `docs/QA_RUN_2026-07-03.md`; the stack moved to PostgreSQL in Sprint 39 for dev/prod parity with Supabase-hosted production, re-verified live against Postgres during Sprints 39–40) — including the post-MVP auth/onboarding enhancement (Sprints 15–19) exercised live against the real stack.
 - **AI is a local stub** — real provider selection + external data-privacy rules are the last open product decision; the swap is config/binding, not architecture.
 - **No malware scanning on uploads** (accepted risk with compensating controls: type/content validation, size cap, private storage, authorized download-only) — revisit at deployment hardening. Attachments retained indefinitely as audit evidence.
 - **Email is log-driver only** (`MAIL_MAILER=log`) — registration, admin-review, approval, rejection, and password-reset emails all write to `storage/logs/laravel.log` rather than being delivered anywhere; no external mail provider is configured or required. Mail also sends synchronously — `QUEUE_CONNECTION=redis` is reachable, but no queue worker runs by default, so queuing is deferred rather than silently broken. Business-module events (Timesheets, Daily Scrum, KPIs) remain in-app-only via the Notifications page, no email.

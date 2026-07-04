@@ -116,6 +116,20 @@ npm run build                      # outputs frontend/dist/ — deploy as a stat
 
 Run `php artisan config:clear` and `route:clear` before making any further `.env` changes locally — cached config takes precedence over `.env` once cached.
 
+### ⚠️ The `config:cache` database gotcha (Sprint 41)
+
+Once `php artisan config:cache` has run, every `DB_*` value (host, database, username, password) is frozen into `bootstrap/cache/config.php` at that exact moment — **editing `.env` afterward has no effect at all** until `config:clear` runs, even though nothing in the app or its logs indicates this. This is a genuine, easy-to-hit foot-gun, not a hypothetical: it happened mid-session during this project's own Sprint 40 audit, where a temporary `.env` change was silently ignored until `config:clear` was run.
+
+**Rule for any production database change** (rotating credentials, pointing at a different Supabase instance, restoring to a new host after an incident): always run, in this order —
+
+```bash
+php artisan config:clear
+# edit .env
+php artisan config:cache
+```
+
+Never edit `.env` alone and assume it took effect — verify with `php artisan tinker --execute="echo config('database.connections.pgsql.host');"` (or `config('database.default')`) if there's ever doubt about which database the running app actually believes it's talking to.
+
 ## What Was Actually Verified (Sprint 39)
 
 - **Migrations against real Postgres**: `docker-compose.yml`'s `mysql` service was replaced with a local `postgres:16-alpine` service (dev/prod parity — dev now runs the same SQL dialect as production, just self-hosted instead of Supabase-hosted). `php artisan migrate:fresh` ran clean against it with zero errors across all 27 migrations, and `php artisan db:seed` completed successfully.

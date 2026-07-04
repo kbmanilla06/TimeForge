@@ -30,7 +30,7 @@ Backend:
 
 - Laravel
 - PHP
-- MySQL
+- PostgreSQL (Supabase-hosted in production; self-hosted via Docker locally — explicitly authorized override of the original MySQL decision, Sprint 39)
 - Laravel Sanctum
 - Laravel Queues
 - Horizon

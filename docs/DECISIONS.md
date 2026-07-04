@@ -36,6 +36,8 @@ This file records confirmed project decisions. Claude Code must preserve these d
 - Frontend: React, TypeScript, Vite, Tailwind CSS, React Router.
 - Tools: Docker, Git, GitHub, Postman, PHPUnit, Pest if applicable.
 
+> **Amended in Sprint 39:** the database was explicitly changed from MySQL to PostgreSQL (self-hosted via Docker locally, Supabase-hosted in production) — a deliberate, explicitly-authorized override of this original Sprint 0 decision, not an accidental drift. See "Sprint 39 Implementation Decisions" below for the full reasoning. This line is left as-written above as the historical record of what Sprint 0 actually decided.
+
 ## Initial Implementation Decisions
 
 These are safe Sprint 0 decisions that do not change business requirements:
