@@ -98,8 +98,52 @@ Demo credentials (all passwords `password`, dev-only): `admin@` / `supervisor@` 
 - [ ] Security Checklist: 6 rapid failed logins on one email → 429 on the 6th; 6 rapid `/register` attempts with one email → 429 on the 6th; rapidly reloading `/register` (which calls `/register/departments`) does **not** 429 (Sprint 19 fix); `GET`/`PATCH /api/admin/account-requests*` → 403 for a non-admin, 401 unauthenticated; `POST /api/register` with `role: admin` in the body still creates an Employee
 - [ ] Full regression tie-in: re-run Phase 1 (Auth, Roles, Rate Limiting) of this checklist in full — the pre-existing admin-created-user path, Activate/Deactivate, and all 6 demo-account logins are unaffected by five sprints of auth-module changes
 
+## Phase 13 — Home Dashboard & Attendance Widget (Sprints 20–22)
+
+- [ ] Home greets the logged-in user by name/role; widgets render with no console errors for each of the six demo roles
+- [ ] Attendance: Time In → Start Break → Resume Break → Time Out updates `working_minutes`/`break_minutes`/`total_minutes` correctly; a second Time In the same day is rejected
+- [ ] Attendance session data never appears in Payroll figures (confirms the Sprint 22 "informational only" decision still holds — verified in code during the Sprint 30 pass: `AttendanceSession` is never referenced by `PayrollController`/`HoursSummaryCalculator`/`PayrollFigures`)
+
+## Phase 14 — Notifications & Sidebar Badges (Sprint 23)
+
+- [ ] Notification bell count matches unread count; opening/marking-read decrements it; dropdown list matches `NotificationsPage`
+- [ ] Sidebar badges (Team Timesheets, Team Scrum, Account Approvals for Admin) match live counts (submitted timesheets / no-comment scrum entries / submitted account requests) and update after the polling interval
+- [ ] No polling-related console errors; no WebSocket/Reverb/Pusher dependency was introduced (Sprint 23 guardrail — verified in code during the Sprint 30 pass: neither `composer.json` nor `package.json` references any realtime library)
+
+## Phase 15 — Profile Settings & Sidebar Profile (Sprint 24)
+
+- [ ] Update name/contact fields as any role; change password (wrong current password rejected); upload/replace/view profile picture; picture never exposes a raw storage path
+- [ ] Sidebar profile summary reflects the updated name/picture immediately
+
+## Phase 16 — KPI Redesign (Sprint 25)
+
+- [ ] My/Team KPIs group correctly into Completed/Current/Pending using the exact Sprint 25 rule; "Assigned on" date renders; charts match underlying assignment data
+- [ ] Admin KPI catalog page is still create-only, no update/delete (verified in code during the Sprint 30 pass: `admin/KpisPage.tsx` only calls `createKpi`/`listKpis`)
+
+## Phase 17 — Team Timesheets Grouping & Analytics (Sprint 26)
+
+- [ ] Entries group one card per employee, expand/collapse works, total hours = sum of all visible entries regardless of status
+- [ ] Status + date filters narrow correctly; Department/Employee Progress, Completion Rate, Total Hours, Attendance Trend, Productivity Trend charts match Dashboard/trend-endpoint data; approve/reject/revision/reopen/export all still work unchanged
+
+## Phase 18 — Team Scrum Kanban (Sprint 27)
+
+- [ ] One card per employee, collapsed by default; Yesterday/Today/Blockers/Notes render correctly per entry; comment/"Add a comment" behavior unchanged
+
+## Phase 19 — AI Assistant (Sprint 28)
+
+- [ ] "Ask AI" toggle visible only to Admin/Supervisor (not Employee/HR-Finance); each of the six example questions returns the right category, with chart/table where expected
+- [ ] Supervisor scope stays department-only; Admin gets org-wide; the KPI-decline question visibly states the "furthest below target" substitution rather than a fabricated decline
+- [ ] Existing report tabs (Daily Summary → Payroll Validation) still work exactly as before the assistant was added (verified in code during the Sprint 30 pass: `visibleTabs`/`TAB_LABELS` logic in `AiInsightsPage.tsx` is untouched)
+
+## Phase 20 — Registration Terms Fix (Sprint 29)
+
+- [ ] Terms checkbox is disabled until "Read Terms and Conditions" is opened; modal shows real content; Create Account stays disabled until checked
+- [ ] Full registration → pending → admin-approve → login path (Phase 12) still works end-to-end with this extra step added
+
+**Status as of the Sprint 30 run (2026-07-04):** all automated suites green (`composer validate`, `php artisan test` 262/262, `npm run build`/`lint` clean, `npm run test` 258/258 across 48 files) — this is the primary regression signal for Phases 13–20, since every one of Sprints 20–29 shipped with its own passing test suite covering the behavior described above, and nothing has changed since. The three cross-cutting guarantees called out above (attendance never feeds payroll, no realtime dependency, KPI catalog still create-only, AI Assistant doesn't disturb existing report tabs) were independently re-verified directly in code, not just inferred from tests passing. No regressions found; no P0s to fix. Visual/click-through confirmation of all eight phases (does each screen *look* right, do charts/modals render as expected) still needs a human in a browser — see `docs/QA_RUN_2026-07-04.md`.
+
 **Status as of the Sprint 20 run (2026-07-03):** every item above that doesn't require a browser click was executed and passed — live, against the real Docker/MySQL stack, not just the automated suite: the full register → pending-blocked → admin search/filter → approve → login-succeeds path; a second register → reject-with-remark → still-blocked → existing-Activate-button-reactivates path; both anti-brute-force limits (login, register) tripping on the 6th attempt; the Sprint 19 `lookup` limiter fix (20 rapid department-list calls, zero 429s); anti-enumeration (identical forgot-password response for a real vs. fake email); the role/status-injection defense (still creates a plain Employee); all four new notification subjects plus the pre-existing password-reset email confirmed in `storage/logs/laravel.log` with correct body content; 403/401 gating on the new admin endpoints. Visual/click-through confirmation (does the landing page *look* right, does the show/hide icon toggle on click) still needs a human in a browser — see `docs/QA_RUN_2026-07-03.md` for the full run log and one non-blocking observation found during this pass.
 
 ## Recording Results
 
-Log the run (date, environment, commit, per-phase PASS/FAIL, defects found) in the sprint/handoff notes. Phase 0 (Docker/MySQL) executed successfully for the first time during the 2026-07-03 QA pass — see `docs/QA_RUN_2026-07-03.md`. Phase 12 (Sprints 15–19) executed the same day — see that log for the auth/onboarding results and the one known, pre-existing, out-of-scope observation found along the way.
+Log the run (date, environment, commit, per-phase PASS/FAIL, defects found) in the sprint/handoff notes. Phase 0 (Docker/MySQL) executed successfully for the first time during the 2026-07-03 QA pass — see `docs/QA_RUN_2026-07-03.md`. Phase 12 (Sprints 15–19) executed the same day — see that log for the auth/onboarding results and the one known, pre-existing, out-of-scope observation found along the way. Phases 13–20 (Sprints 20–29) executed during the Sprint 30 QA pass on 2026-07-04 — see `docs/QA_RUN_2026-07-04.md` for the full run log; automated-only (no Docker/MySQL environment available during that pass), with visual/click-through confirmation still outstanding.
