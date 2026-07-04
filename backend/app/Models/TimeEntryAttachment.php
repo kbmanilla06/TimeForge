@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * A file attached to a time entry (PRD §7.1), stored on the private local
- * disk per the Sprint 13 decisions. The physical storage path is hidden
- * from every serialization — clients only ever see metadata and retrieve
- * content through the authorized download endpoint.
+ * A file attached to a time entry (PRD §7.1), stored on the app's
+ * configured default disk (Sprint 13 decisions; Sprint 39 made the disk
+ * itself configurable via FILESYSTEM_DISK instead of hardcoded 'local').
+ * The physical storage path is hidden from every serialization — clients
+ * only ever see metadata and retrieve content through the authorized
+ * download endpoint.
  */
 class TimeEntryAttachment extends Model
 {
@@ -35,7 +37,7 @@ class TimeEntryAttachment extends Model
         // event; TimeEntry's own deleting hook removes attachments through
         // Eloquent for the same reason.
         static::deleting(function (TimeEntryAttachment $attachment): void {
-            Storage::disk('local')->delete($attachment->path);
+            Storage::delete($attachment->path);
         });
     }
 

@@ -18,7 +18,7 @@ Prepared for StartupLab Business Center & AI Consulting Services OPC. Requiremen
 
 ## Tech Stack
 
-Laravel 13 (PHP 8.5, MySQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind CSS + React Router + Recharts · PHPUnit & Vitest · Docker Compose (app, nginx, MySQL, Redis).
+Laravel 13 (PHP 8.5, PostgreSQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind CSS + React Router + Recharts · PHPUnit & Vitest · Docker Compose (app, nginx, PostgreSQL, Redis). Production runs on Supabase-hosted Postgres + Supabase Storage (Sprint 39) — see `docs/DEPLOYMENT.md`.
 
 ## Repository Layout
 
@@ -33,7 +33,7 @@ Laravel 13 (PHP 8.5, MySQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind 
 
 ## Quickstart
 
-**Option A — host PHP + your own MySQL** (see `docs/SETUP.md` for detail):
+**Option A — host PHP + your own PostgreSQL** (see `docs/SETUP.md` for detail):
 
 ```bash
 cd backend
@@ -91,7 +91,7 @@ The deliberate MVP boundaries, each backed by a recorded decision (details: `doc
 
 ## Production Notes (before any deployment)
 
-Deployment target is still an open decision. Whenever it lands: set `APP_ENV=production`, `APP_DEBUG=false`, a fresh `APP_KEY`; serve over HTTPS and restrict CORS/Sanctum to the real frontend origin; persist and back up `storage/app` (attachments live there) and the MySQL volume; configure a real mailer (password resets); keep `/horizon` gated (its allowlist is empty by default — access only in `local`); revisit malware scanning for uploads; change every demo credential and never run `DemoDataSeeder` outside dev/demo; put the queue worker + Horizon in place before enabling any future async features.
+Deployment target is resolved as of Sprint 39: Supabase-hosted Postgres for the database, Supabase Storage (S3-compatible) for attachments/profile pictures. Full environment variables, migration sequence, and build commands are in `docs/DEPLOYMENT.md`. Still true regardless of host: keep `/horizon` gated (its allowlist is empty by default — access only in `local`); revisit malware scanning for uploads (still an accepted MVP risk); change every demo credential and never run `DemoDataSeeder` outside dev/demo; put a queue worker + Horizon in place before enabling any future async features (mail/notifications currently send synchronously).
 
 ## Project History
 

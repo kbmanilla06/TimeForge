@@ -21,7 +21,7 @@ class TimeEntryAttachmentController extends Controller
         $this->authorize('update', $timeEntry);
 
         $file = $request->file('file');
-        $path = $file->store('time-entry-attachments/'.$timeEntry->id, 'local');
+        $path = $file->store('time-entry-attachments/'.$timeEntry->id);
 
         $attachment = $timeEntry->attachments()->create([
             'original_name' => $file->getClientOriginalName(),
@@ -43,7 +43,7 @@ class TimeEntryAttachmentController extends Controller
     {
         $this->authorize('downloadAttachment', $timeEntry);
 
-        return Storage::disk('local')->download($attachment->path, $attachment->original_name);
+        return Storage::download($attachment->path, $attachment->original_name);
     }
 
     /**

@@ -10,7 +10,7 @@ This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And
 | Composer 2.10 | Installed via Homebrew (`brew install composer`) | Required for Laravel. |
 | Node.js 22 / npm 10 | Already present | Required for Vite/React. |
 | Docker Desktop | **Not installed** | Deferred by project decision. Install manually from docker.com when ready to run `docker-compose.yml`. |
-| MySQL | **Not installed locally** | Intended to run via the `mysql` service in `docker-compose.yml` once Docker Desktop is installed. |
+| PostgreSQL | **Not installed locally** | Intended to run via the `postgres` service in `docker-compose.yml` once Docker Desktop is installed (Sprint 39 — moved off MySQL for dev/prod parity with Supabase-hosted Postgres). |
 | Redis | **Not installed locally** | Intended to run via the `redis` service in `docker-compose.yml` (required for Laravel Horizon). |
 
 ## Option A: Run Backend/Frontend Directly On The Host
@@ -22,11 +22,11 @@ cd backend
 composer install          # already run during scaffolding; re-run after pulling new commits
 cp .env.example .env      # if .env does not already exist
 php artisan key:generate  # already run during scaffolding
-php artisan migrate       # requires a reachable MySQL database — see Option B if none is running
+php artisan migrate       # requires a reachable Postgres database — see Option B if none is running
 php artisan serve         # http://localhost:8000
 ```
 
-The default `.env` is configured for MySQL (`DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=timeforge`, `DB_USERNAME=timeforge`, `DB_PASSWORD=secret`) and Redis-backed queues (`QUEUE_CONNECTION=redis`), matching the services defined in `docker-compose.yml`. Without a running MySQL/Redis instance, `php artisan migrate` and queue commands will fail to connect — this is expected until Option B is available. `php artisan test` does not require a live database; PHPUnit is configured to use an in-memory SQLite connection for tests.
+The default `.env` is configured for Postgres (`DB_CONNECTION=pgsql`, `DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=timeforge`, `DB_USERNAME=timeforge`, `DB_PASSWORD=secret`) and Redis-backed queues (`QUEUE_CONNECTION=redis`), matching the services defined in `docker-compose.yml`. Without a running Postgres/Redis instance, `php artisan migrate` and queue commands will fail to connect — this is expected until Option B is available. `php artisan test` does not require a live database; PHPUnit is configured to use an in-memory SQLite connection for tests. See `docs/DEPLOYMENT.md` for the production database (Supabase-hosted Postgres) and storage (Supabase Storage) setup.
 
 `FRONTEND_URL` (default `http://localhost:5173`) tells the backend where the React SPA lives, so password-reset emails link to the SPA's `/reset-password/:token` page instead of a Laravel-named web route (this app is API-only, so no such route exists).
 
@@ -66,7 +66,7 @@ Only a System Administrator can create other users (`docs/DECISIONS.md`), so `Da
 
 ## Testing The Auth Flow And Admin UI Manually
 
-Once MySQL is reachable (Option B, or a locally installed MySQL) and both apps are running:
+Once Postgres is reachable (Option B, or a locally installed Postgres) and both apps are running:
 
 1. Log in at `http://localhost:5173/login` with the seeded Admin credentials.
 2. You should land on `/` and see "Welcome, TimeForge Admin (admin)", with a top nav showing Home, Manage Users, Manage Departments, Manage Clients, and Manage Projects (admin-only links) plus a Log out button.
@@ -236,10 +236,10 @@ docker compose exec app php artisan migrate
 
 - Backend (via nginx): http://localhost:8000
 - Frontend (Vite dev server): http://localhost:5173
-- MySQL: localhost:3306 (user `timeforge` / password `secret` / database `timeforge`)
+- PostgreSQL: localhost:5432 (user `timeforge` / password `secret` / database `timeforge`)
 - Redis: localhost:6379
 
-This has not been run or validated on this machine yet because Docker Desktop is not installed. `docker-compose.yml` has been checked for valid YAML syntax only.
+Validated on this machine as part of Sprint 39 (Postgres migration): the stack builds and starts cleanly, `migrate:fresh` and `db:seed` both run successfully against the real Postgres container, and login/`/me`/rate-limiting were smoke-tested against it directly. A full manual walkthrough of every module below has not been repeated against Postgres specifically — the automated test suite (SQLite in-memory) remains the primary regression signal.
 
 Laravel Horizon (queue dashboard) is not started automatically. Once queue-driven features exist in a later sprint, start it manually inside the app container: `docker compose exec app php artisan horizon`.
 

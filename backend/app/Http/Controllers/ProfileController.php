@@ -32,10 +32,10 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if ($user->profile_picture_path) {
-            Storage::disk('local')->delete($user->profile_picture_path);
+            Storage::delete($user->profile_picture_path);
         }
 
-        $path = $request->file('file')->store('profile-pictures/'.$user->id, 'local');
+        $path = $request->file('file')->store('profile-pictures/'.$user->id);
         $user->update(['profile_picture_path' => $path]);
 
         return response()->json(['message' => 'Profile picture updated.']);
@@ -49,7 +49,7 @@ class ProfileController extends Controller
             abort(404, 'No profile picture set.');
         }
 
-        return Storage::disk('local')->response($user->profile_picture_path);
+        return Storage::response($user->profile_picture_path);
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
