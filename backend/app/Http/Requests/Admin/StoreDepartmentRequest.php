@@ -24,6 +24,7 @@ class StoreDepartmentRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255', 'unique:departments,name'],
+            'description' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

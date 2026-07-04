@@ -63,6 +63,31 @@ class DepartmentManagementTest extends TestCase
         $this->assertSame(1, $counts[$marketing->id]);
     }
 
+    public function test_admin_can_create_a_department_with_a_description(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $description = "Paragraph one about the department.\n\nParagraph two with more detail.";
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->postJson('/api/admin/departments', [
+                'name' => 'Engineering',
+                'description' => $description,
+            ]);
+
+        $response->assertCreated()->assertJsonPath('description', $description);
+        $this->assertSame($description, Department::where('name', 'Engineering')->firstOrFail()->description);
+    }
+
+    public function test_creating_a_department_without_a_description_leaves_it_null(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->postJson('/api/admin/departments', ['name' => 'Marketing']);
+
+        $response->assertCreated()->assertJsonPath('description', null);
+    }
+
     public function test_admin_can_set_a_multi_paragraph_department_description(): void
     {
         $admin = User::factory()->admin()->create();

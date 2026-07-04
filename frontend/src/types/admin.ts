@@ -30,6 +30,7 @@ export interface UpdateUserPayload {
 
 export interface CreateDepartmentPayload {
   name: string
+  description?: string | null
 }
 
 export interface UpdateDepartmentPayload {

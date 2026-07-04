@@ -19,6 +19,7 @@ export function DepartmentsPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
   const [isCreating, setIsCreating] = useState(false)
 
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -46,8 +47,9 @@ export function DepartmentsPage() {
     setError(null)
     setIsCreating(true)
     try {
-      await createDepartment({ name: newName })
+      await createDepartment({ name: newName, description: newDescription || null })
       setNewName('')
+      setNewDescription('')
       await loadDepartments()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Unable to create department.')
@@ -104,7 +106,7 @@ export function DepartmentsPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleCreate} className="mb-6 flex flex-wrap gap-2">
+      <form onSubmit={handleCreate} className="mb-6 flex flex-wrap items-start gap-2">
         <TextInput
           type="text"
           required
@@ -112,6 +114,12 @@ export function DepartmentsPage() {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           className="max-w-xs flex-1"
+        />
+        <Textarea
+          placeholder="Description (optional, shown on members' Home dashboard)"
+          value={newDescription}
+          onChange={(e) => setNewDescription(e.target.value)}
+          className="h-10 max-w-sm flex-1"
         />
         <Button type="submit" disabled={isCreating}>
           Add Department

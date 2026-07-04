@@ -23,7 +23,7 @@ describe('DepartmentsPage', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
-  it('creates a new department and reloads the list', async () => {
+  it('creates a new department with no description and reloads the list', async () => {
     const user = userEvent.setup()
     vi.mocked(adminApi.createDepartment).mockResolvedValue({ id: 3, name: 'Sales', description: null, users_count: 0 })
 
@@ -34,9 +34,36 @@ describe('DepartmentsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Add Department' }))
 
     await waitFor(() => {
-      expect(adminApi.createDepartment).toHaveBeenCalledWith({ name: 'Sales' })
+      expect(adminApi.createDepartment).toHaveBeenCalledWith({ name: 'Sales', description: null })
     })
     expect(adminApi.listDepartments).toHaveBeenCalledTimes(2)
+  })
+
+  it('creates a new department with a description', async () => {
+    const user = userEvent.setup()
+    vi.mocked(adminApi.createDepartment).mockResolvedValue({
+      id: 3,
+      name: 'Sales',
+      description: 'Handles outbound sales.',
+      users_count: 0,
+    })
+
+    render(<DepartmentsPage />)
+    await screen.findByText('Engineering')
+
+    await user.type(screen.getByPlaceholderText('New department name'), 'Sales')
+    await user.type(
+      screen.getByPlaceholderText("Description (optional, shown on members' Home dashboard)"),
+      'Handles outbound sales.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add Department' }))
+
+    await waitFor(() => {
+      expect(adminApi.createDepartment).toHaveBeenCalledWith({
+        name: 'Sales',
+        description: 'Handles outbound sales.',
+      })
+    })
   })
 
   it('warns about affected users and deletes only when confirmed', async () => {
