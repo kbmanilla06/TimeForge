@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
@@ -206,5 +207,30 @@ class PasswordResetTest extends TestCase
         ]);
 
         $response->assertOk();
+    }
+
+    /**
+     * Sprint 45: without the try/catch around Password::sendResetLink(),
+     * a real registered email hitting a genuine mail-send failure would
+     * throw and return a distinguishable 500 — while a fake/unregistered
+     * email is never actually mailed at all (Laravel's broker checks
+     * existence first) and always returns the generic 200. That
+     * difference is exactly the enumeration side-channel Sprint 18 was
+     * built to prevent. This proves both cases are identical even when
+     * the mail provider itself is broken.
+     */
+    public function test_forgot_password_response_is_identical_for_a_real_email_even_when_mail_delivery_fails(): void
+    {
+        $user = User::factory()->create();
+
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $realEmailResponse = $this->postJson('/api/forgot-password', ['email' => $user->email]);
+        $fakeEmailResponse = $this->postJson('/api/forgot-password', ['email' => 'nobody@timeforge.test']);
+
+        $realEmailResponse->assertOk()->assertJson(['message' => self::GENERIC_MESSAGE]);
+        $fakeEmailResponse->assertOk()->assertJson(['message' => self::GENERIC_MESSAGE]);
     }
 }

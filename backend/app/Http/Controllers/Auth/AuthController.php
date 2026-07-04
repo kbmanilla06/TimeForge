@@ -68,8 +68,16 @@ class AuthController extends Controller
         // regardless of whether the email exists, whether a link was
         // actually sent, or whether the broker's own request is throttled.
         // Anything status-dependent here would let an unauthenticated
-        // caller enumerate which emails have accounts.
-        Password::sendResetLink($request->only('email'));
+        // caller enumerate which emails have accounts. Sprint 45: this
+        // includes a broken mail provider — without the try/catch, a real
+        // email hitting a genuine send attempt (unlike a fake email, which
+        // the broker never attempts to mail at all) would throw and return
+        // a distinguishable 500, defeating the whole guarantee above.
+        try {
+            Password::sendResetLink($request->only('email'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json([
             'message' => 'If an account exists for that email, a password reset link has been sent.',

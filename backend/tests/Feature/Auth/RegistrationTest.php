@@ -12,6 +12,7 @@ use App\Notifications\NewAccountRequestSubmitted;
 use App\Notifications\RegistrationOtpIssued;
 use App\Notifications\RegistrationReceived;
 use App\Support\OtpPolicy;
+use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -395,5 +396,59 @@ class RegistrationTest extends TestCase
             'email' => 'jane.applicant@timeforge.test',
             'code' => '123456',
         ])->assertStatus(422);
+    }
+
+    /**
+     * Sprint 45: a broken mail provider previously surfaced here as a raw
+     * 500 even though the account was already created successfully.
+     * Mocking the notification Dispatcher to throw simulates a real
+     * provider outage without needing a live SMTP failure.
+     */
+    public function test_registration_succeeds_even_when_the_otp_notification_fails_to_send(): void
+    {
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $this->postJson('/api/register', $this->validPayload())
+            ->assertStatus(201)
+            ->assertJson(['message' => 'Check your email for a verification code to continue your registration.']);
+
+        $this->assertDatabaseHas('users', ['email' => 'jane.applicant@timeforge.test']);
+        $this->assertDatabaseHas('account_requests', ['status' => AccountRequestStatus::Submitted]);
+    }
+
+    public function test_verify_otp_succeeds_even_when_the_confirmation_notifications_fail_to_send(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        $this->forceKnownOtp('jane.applicant@timeforge.test');
+
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $this->postJson('/api/register/verify-otp', [
+            'email' => 'jane.applicant@timeforge.test',
+            'code' => '123456',
+        ])->assertOk()->assertJson([
+            'message' => 'Your email has been verified. Your registration is now pending administrator approval.',
+        ]);
+
+        $this->assertNotNull(User::where('email', 'jane.applicant@timeforge.test')->firstOrFail()->email_verified_at);
+    }
+
+    public function test_resend_otp_succeeds_even_when_the_notification_fails_to_send(): void
+    {
+        $this->postJson('/api/register', $this->validPayload())->assertStatus(201);
+        RegistrationOtp::where('email', 'jane.applicant@timeforge.test')->firstOrFail()
+            ->update(['last_sent_at' => now()->subSeconds(OtpPolicy::RESEND_COOLDOWN_SECONDS + 1)]);
+
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $this->postJson('/api/register/resend-otp', ['email' => 'jane.applicant@timeforge.test'])
+            ->assertOk()
+            ->assertJson(['message' => 'If a pending registration exists for that email, a new verification code has been sent.']);
     }
 }

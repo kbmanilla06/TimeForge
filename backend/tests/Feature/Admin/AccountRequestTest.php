@@ -8,6 +8,7 @@ use App\Models\AccountRequest;
 use App\Models\User;
 use App\Notifications\AccountApproved;
 use App\Notifications\AccountRejected;
+use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -292,5 +293,47 @@ class AccountRequestTest extends TestCase
                 return str_contains(implode(' ', $mail->introLines), 'Could not verify employment.');
             },
         );
+    }
+
+    /**
+     * Sprint 45: a broken mail provider previously surfaced here as a raw
+     * 500 even though the status change already succeeded — an admin
+     * could think the approval itself failed and retry, only to hit the
+     * already-decided guard, confusingly.
+     */
+    public function test_approving_succeeds_even_when_the_notification_fails_to_send(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $accountRequest = AccountRequest::factory()->create();
+
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/account-requests/{$accountRequest->id}/approve")
+            ->assertOk();
+
+        $this->assertSame(AccountRequestStatus::Approved, $accountRequest->fresh()->status);
+        $this->assertSame(UserStatus::Active, $accountRequest->user->fresh()->status);
+    }
+
+    public function test_rejecting_succeeds_even_when_the_notification_fails_to_send(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $accountRequest = AccountRequest::factory()->create();
+
+        $this->mock(Dispatcher::class, function ($mock) {
+            $mock->shouldReceive('send')->andThrow(new \RuntimeException('Simulated mail provider failure'));
+        });
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/account-requests/{$accountRequest->id}/reject", [
+                'remarks' => 'Could not verify employment.',
+            ])
+            ->assertOk();
+
+        $this->assertSame(AccountRequestStatus::Rejected, $accountRequest->fresh()->status);
+        $this->assertSame(UserStatus::Deactivated, $accountRequest->user->fresh()->status);
     }
 }

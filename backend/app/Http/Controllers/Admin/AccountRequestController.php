@@ -82,7 +82,11 @@ class AccountRequestController extends Controller
             $accountRequest->user->update(['status' => UserStatus::Active]);
         });
 
-        $accountRequest->user->notify(new AccountApproved());
+        // Sprint 45: the status change above already succeeded — a mail
+        // failure here must not surface as a 500 that could make the admin
+        // think the approval itself failed and retry (hitting the
+        // already-decided guard above, confusingly).
+        $this->notifySafely(fn () => $accountRequest->user->notify(new AccountApproved()));
 
         return response()->json($accountRequest->fresh(self::RELATIONS));
     }
@@ -110,8 +114,24 @@ class AccountRequestController extends Controller
             $accountRequest->user->update(['status' => UserStatus::Deactivated]);
         });
 
-        $accountRequest->user->notify(new AccountRejected($accountRequest->rejection_reason));
+        $this->notifySafely(fn () => $accountRequest->user->notify(new AccountRejected($accountRequest->rejection_reason)));
 
         return response()->json($accountRequest->fresh(self::RELATIONS));
+    }
+
+    /**
+     * Sprint 45: same rationale as RegistrationController's helper of the
+     * same name — a mail-provider failure must never surface as a raw 500
+     * or change the response an endpoint already gives, since the
+     * underlying state change has already succeeded regardless of whether
+     * the notification could actually be delivered.
+     */
+    private function notifySafely(callable $send): void
+    {
+        try {
+            $send();
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

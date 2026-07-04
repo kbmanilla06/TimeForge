@@ -77,9 +77,13 @@ class RegistrationController extends Controller
         });
 
         // Issued after the transaction commits, so a mail failure can never
-        // roll back an otherwise-successful registration.
+        // roll back an otherwise-successful registration. Sprint 45: the
+        // notify() call itself is also failure-safe now — a broken mail
+        // provider previously surfaced as a raw 500 here even though the
+        // account was created successfully; the applicant now still gets
+        // the normal response and can use resend-otp once mail is fixed.
         $code = RegistrationOtp::issueFor($user->email);
-        $user->notify(new RegistrationOtpIssued($code));
+        $this->notifySafely(fn () => $user->notify(new RegistrationOtpIssued($code)));
 
         return response()->json([
             'message' => 'Check your email for a verification code to continue your registration.',
@@ -125,10 +129,10 @@ class RegistrationController extends Controller
         // TimeEntry::kpi_progress_applied_at.
         $user->forceFill(['email_verified_at' => now()])->save();
 
-        $user->notify(new RegistrationReceived());
+        $this->notifySafely(fn () => $user->notify(new RegistrationReceived()));
 
         $admins = User::where('role', UserRole::Admin)->where('status', UserStatus::Active)->get();
-        Notification::send($admins, new NewAccountRequestSubmitted($user->accountRequest));
+        $this->notifySafely(fn () => Notification::send($admins, new NewAccountRequestSubmitted($user->accountRequest)));
 
         return response()->json([
             'message' => 'Your email has been verified. Your registration is now pending administrator approval.',
@@ -157,8 +161,26 @@ class RegistrationController extends Controller
         }
 
         $code = RegistrationOtp::issueFor($email);
-        User::where('email', $email)->first()?->notify(new RegistrationOtpIssued($code));
+        $user = User::where('email', $email)->first();
+        $this->notifySafely(fn () => $user?->notify(new RegistrationOtpIssued($code)));
 
         return response()->json($generic);
+    }
+
+    /**
+     * Sprint 45: a mail-provider failure must never surface as a raw 500
+     * or otherwise change the response an endpoint already gives — the
+     * underlying state change (account created, email verified, code
+     * issued) has already succeeded independent of whether the
+     * notification itself could actually be delivered. Logged via
+     * report() so the failure is still visible in ops/logs.
+     */
+    private function notifySafely(callable $send): void
+    {
+        try {
+            $send();
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

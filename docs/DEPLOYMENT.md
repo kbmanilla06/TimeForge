@@ -7,7 +7,7 @@ Sprint 39 resolved the previously-open "deployment target" decision (`docs/DECIS
 - **Backend:** Laravel API (this repo's `backend/`), stateless Bearer-token auth via Sanctum — no server-side sessions to worry about for the API itself (the `database` session/cache drivers still need a working DB connection, but nothing here is sticky-session-dependent).
 - **Database:** Supabase-hosted Postgres (a managed Postgres instance — not Supabase's other products unless you separately choose to use them).
 - **File storage:** Supabase Storage, via Laravel's generic S3-compatible `s3` disk driver — no custom SDK, no code specific to Supabase.
-- **Mail:** Google's SMTP relay (`smtp.gmail.com:587`) via Laravel's generic `smtp` mailer.
+- **Mail:** any provider via Laravel's mail config (Sprint 45) — Google's SMTP relay works today with zero new dependencies; SES/Postmark/Resend/Mailgun are documented options requiring an additional Composer package. See "Mail — Provider Options" below.
 - **CAPTCHA:** Cloudflare Turnstile, gating only `POST /forgot-password` and `POST /reset-password`.
 - **Frontend:** a static Vite/React build (`frontend/dist/` after `npm run build`) — deployable to any static host/CDN that can serve an SPA with a catch-all-to-`index.html` rewrite rule.
 - **Queue/cache:** Redis, required for Horizon and the `database`-driven session/cache stores use Postgres directly (no separate service needed for those).
@@ -67,7 +67,21 @@ Find the access key pair under your Supabase project's **Storage → S3 Connecti
 
 **Verified this sprint:** every storage call site (`ProfileController`, `TimeEntryAttachmentController`, `TimeEntryAttachment`'s deleting hook) was re-audited and confirmed to still use the default-disk facade with no hardcoded disk name — the Sprint 39 fix is intact. New tests (`ProfileTest::test_profile_picture_flow_follows_the_configured_default_disk`, `TimeEntryAttachmentTest::test_attachment_flow_follows_the_configured_default_disk`) fake a **non-local** disk and prove the full upload/download/delete flow genuinely follows `FILESYSTEM_DISK` — every prior test in both files exercised only the `local` disk, which is also this app's default, so none of them would have caught a reintroduced hardcoding bug. Confirmed by deliberately reintroducing the old hardcoded-`'local'` pattern and watching both new tests fail as expected, before restoring the fix.
 
-### Mail — Google SMTP
+### Mail — Provider Options (Sprint 45)
+
+This app's mail config (`config/mail.php`) is Laravel's stock, unmodified config — no code changes are needed to switch providers, only `.env`. Pick based on your own constraints; none of these is "the" answer:
+
+| Provider | Setup effort | Notes |
+| --- | --- | --- |
+| **Google SMTP relay** | Lowest — works today via the generic `smtp` mailer, zero new Composer packages | Free, but Gmail enforces sending limits (~500/day) not meant for high-volume transactional mail; fine for a pilot's registration/notification volume. Requires a Gmail App Password (2-Step Verification enabled): https://myaccount.google.com/apppasswords |
+| **Amazon SES** | Requires `composer require aws/aws-sdk-php` (not currently installed) | Very cheap at volume, strong deliverability if your sending domain is verified/warmed up; more setup (domain verification, sandbox-mode removal request) before first real send |
+| **Postmark** | Requires `composer require symfony/postmark-mailer symfony/http-client` (not currently installed) | Purpose-built for transactional mail (not marketing/bulk), excellent deliverability reputation and dashboards out of the box; paid |
+| **Resend** | Requires `composer require resend/resend-php` or the Symfony bridge (not currently installed) | Newer, developer-friendly API and dashboard; smaller track record than SES/Postmark |
+| **Mailgun** | Requires `composer require symfony/mailgun-mailer symfony/http-client` (not currently installed) | Established, flexible; historically stricter about sender domain verification |
+
+Adding any provider beyond the generic `smtp` transport (i.e. SES/Postmark/Resend/Mailgun) means installing a new Composer package first — treat that as its own decision, not something to do silently mid-deploy.
+
+**Google SMTP example** (works today, no new dependencies):
 
 ```
 MAIL_MAILER=smtp
@@ -80,6 +94,26 @@ MAIL_FROM_NAME="${APP_NAME}"
 ```
 
 The password is a 16-character **Gmail App Password**, not the account's normal login password — requires 2-Step Verification enabled on the Google account: https://myaccount.google.com/apppasswords. Leave `MAIL_SCHEME` unset; this app's `config/mail.php` doesn't read `MAIL_ENCRYPTION` — port 587 auto-negotiates STARTTLS.
+
+### Mail-Failure Resilience (Sprint 45)
+
+Every place this app sends a notification tied to registration, account approval/rejection, or password reset is now wrapped so a mail-provider failure **never** turns into a raw 500 or an inconsistent response — the underlying state change (account created, email verified, request approved/rejected, reset link "requested") has already succeeded independent of whether the notification itself could actually be delivered:
+
+- `RegistrationController::store()` / `verifyOtp()` / `resendOtp()` — a failed notify() is caught, logged via `report()`, and the normal success response still returns. The applicant can use `resend-otp` once the mail issue is fixed, without needing to re-register.
+- `Admin\AccountRequestController::approve()` / `reject()` — same pattern; an admin's approve/reject action isn't reported as failed just because the confirmation email couldn't send.
+- `AuthController::forgotPassword()` — this one matters most for security, not just UX: Laravel's password broker never even attempts to mail a *fake* email (it checks existence first), so an unguarded failure here would have meant a *real* registered email hitting a genuine send failure returned a distinguishable 500 while a fake one always returned the generic 200 — a real enumeration side-channel undermining the Sprint 18 anti-enumeration guarantee. Confirmed live against this environment's own (at-the-time) broken Gmail credentials before fixing it. Now both cases are identical regardless of mail provider health.
+
+All six failure points have a test that deliberately simulates a mail-provider outage (mocking the notification dispatcher to throw) and confirms the endpoint still behaves normally — see `RegistrationTest.php`, `Admin/AccountRequestTest.php`, and `Auth/PasswordResetTest.php`.
+
+### Testing OTP Delivery From Logs
+
+With `MAIL_MAILER=log` (the safe local default), every notification — including the registration OTP — writes to `storage/logs/laravel.log` instead of attempting real delivery:
+
+```bash
+docker exec timeforge-app tail -60 storage/logs/laravel.log | grep -B2 -A2 "verify your email"
+```
+
+Look for a 6-digit number inside a `<strong>` tag. The code expires in 10 minutes and allows 5 attempts; a resend is allowed after a 60-second cooldown. This is also documented in `docs/QA_CHECKLIST.md` Phase 21 with the full register → verify → approve walkthrough.
 
 ### CAPTCHA — Cloudflare Turnstile
 
@@ -163,11 +197,12 @@ Never edit `.env` alone and assume it took effect — verify with `php artisan t
 - **CAPTCHA against the real Cloudflare endpoint**: a live registration request with Cloudflare's test key pair successfully round-tripped to `https://challenges.cloudflare.com/turnstile/v0/siteverify` and passed — confirms outbound connectivity and the verification logic work outside of `Http::fake()` tests.
 - **Production build**: `composer install --no-dev --optimize-autoloader`, `config:cache`, and `route:cache` all completed without error inside the app container; the app continued serving requests correctly afterward. `npm run build` produced a clean static bundle (dev dependencies and cached config were restored afterward for continued local development).
 - **Storage disk fix**: `TimeEntryAttachment`, `TimeEntryAttachmentController`, and `ProfileController` (6 call sites total) used to hardcode `Storage::disk('local')`, so `FILESYSTEM_DISK` had no effect on them. Fixed to use the default disk facade (`Storage::` without `->disk('local')`), so switching `FILESYSTEM_DISK=s3` in `.env` now actually redirects attachments and profile pictures to Supabase Storage.
+- **Mail-failure resilience (Sprint 45)**: registration (OTP issue/verify/resend), account approve/reject, and forgot-password were all previously vulnerable to an unguarded `notify()`/`sendResetLink()` call surfacing a raw 500 on a mail-provider failure — worse, `forgotPassword()` specifically had a real, confirmed enumeration side-channel under mail failure (a real email could 500 while a fake one always returned the generic 200). All six call sites are now wrapped, logged via `report()` on failure, and proven with tests that simulate a mail outage by mocking the notification dispatcher — each test was independently verified to fail against the un-fixed code before confirming it passes against the fix.
 
 ## Known Gaps Found During Verification (not fixed this sprint — flagging for a follow-up)
 
-- **Google SMTP credentials in the current local `.env` are rejected by Google** (535 "Username and Password not accepted") even though outbound connectivity to `smtp.gmail.com:587` itself works fine. The stored App Password needs to be regenerated (https://myaccount.google.com/apppasswords) before real mail delivery will work — this is a credential problem, not a code or connectivity problem.
-- **Registration isn't transactionally safe against a mail-send failure.** While reproducing the SMTP issue above, a real request left a `User`/`AccountRequest` row created in the database even though the subsequent OTP-email `notify()` call threw and the endpoint returned a raw 500 — the applicant never received a usable OTP and can't cleanly retry (the email is now taken). This is a genuine production-readiness gap in `RegistrationController::store()`, out of this sprint's approved scope (env/deployment configuration, not registration-flow behavior) — recommend a dedicated follow-up sprint to wrap the create-and-notify sequence so a mail failure doesn't leave an orphaned, unrecoverable registration.
+- **Google SMTP credentials in the current local `.env` are rejected by Google** (535 "Username and Password not accepted") even though outbound connectivity to `smtp.gmail.com:587` itself works fine. The stored App Password needs to be regenerated (https://myaccount.google.com/apppasswords) before real mail delivery will work — this is a credential problem, not a code or connectivity problem, and isn't something a code sprint can fix.
+- ~~Registration isn't transactionally safe against a mail-send failure~~ — resolved in Sprint 45; see "Mail-Failure Resilience" above.
 - **Malware scanning on uploads remains an accepted MVP risk** (Sprint 13 decision, explicitly deferred "to be revisited at deployment/security hardening" — this is that moment, but it wasn't in this sprint's approved scope either). Revisit if/when this becomes a priority.
 
 ## Production Environment Checklist (Sprint 43)
