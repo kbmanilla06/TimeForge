@@ -14,8 +14,8 @@ vi.mock('../lib/attendanceApi', () => ({
   getTodaysAttendance: () => Promise.resolve({ session: null }),
 }))
 
-function withUser(user: User) {
-  mockUseAuth.mockReturnValue({ user, isLoading: false, login: vi.fn(), logout: vi.fn() })
+function withUser(user: User, pictureUrl: string | null = null) {
+  mockUseAuth.mockReturnValue({ user, isLoading: false, login: vi.fn(), logout: vi.fn(), pictureUrl })
 }
 
 describe('HomePage', () => {
@@ -90,5 +90,25 @@ describe('HomePage', () => {
 
     expect(screen.getByText('No department assigned')).toBeInTheDocument()
     expect(screen.queryByText(/^About /)).not.toBeInTheDocument()
+  })
+
+  it('shows the uploaded profile picture immediately when one is set', () => {
+    withUser(
+      {
+        id: 1,
+        name: 'Jane Employee',
+        email: 'jane@timeforge.test',
+        role: 'employee',
+        status: 'active',
+        department_id: null,
+        department: null,
+      },
+      'blob:mock-picture-url',
+    )
+
+    render(<HomePage />)
+
+    expect(screen.getByAltText("Jane Employee's profile picture")).toHaveAttribute('src', 'blob:mock-picture-url')
+    expect(screen.queryByText('JE')).not.toBeInTheDocument()
   })
 })

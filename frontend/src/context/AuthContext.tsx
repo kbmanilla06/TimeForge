@@ -1,11 +1,38 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { apiFetch, getToken, setToken } from '../lib/apiClient'
+import { getProfilePictureBlob } from '../lib/profileApi'
 import type { LoginResponse, MeResponse, User } from '../types/auth'
 import { AuthContext } from './useAuth'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null)
+  const currentPictureUrl = useRef<string | null>(null)
+
+  /**
+   * Single shared fetch: the sidebar, Profile page, and Home page all read
+   * pictureUrl from this one context instead of each fetching it
+   * independently, so an upload's refreshPicture() call updates every
+   * consumer at once (Sprint 31 — previously each had its own hook
+   * instance and only the caller's own copy ever updated).
+   */
+  const refreshPicture = useCallback(async () => {
+    const blob = await getProfilePictureBlob()
+
+    if (currentPictureUrl.current) {
+      URL.revokeObjectURL(currentPictureUrl.current)
+      currentPictureUrl.current = null
+    }
+
+    if (blob) {
+      const objectUrl = URL.createObjectURL(blob)
+      currentPictureUrl.current = objectUrl
+      setPictureUrl(objectUrl)
+    } else {
+      setPictureUrl(null)
+    }
+  }, [])
 
   useEffect(() => {
     if (!getToken()) {
@@ -14,9 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     apiFetch<MeResponse>('/me')
-      .then((response) => setUser(response.user))
+      .then((response) => {
+        setUser(response.user)
+        void refreshPicture()
+      })
       .catch(() => setToken(null))
       .finally(() => setIsLoading(false))
+  }, [refreshPicture])
+
+  useEffect(() => {
+    return () => {
+      if (currentPictureUrl.current) URL.revokeObjectURL(currentPictureUrl.current)
+    }
   }, [])
 
   async function refreshUser() {
@@ -33,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(response.token)
     setUser(response.user)
+    void refreshPicture()
   }
 
   async function logout() {
@@ -41,11 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setToken(null)
       setUser(null)
+      if (currentPictureUrl.current) {
+        URL.revokeObjectURL(currentPictureUrl.current)
+        currentPictureUrl.current = null
+      }
+      setPictureUrl(null)
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser, pictureUrl, refreshPicture }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,6 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/useAuth'
-import { useProfilePictureUrl } from '../hooks/useProfilePictureUrl'
 import { ApiError } from '../lib/apiClient'
 import { changePassword, updateProfile, uploadProfilePicture } from '../lib/profileApi'
 import { Alert } from '../components/ui/Alert'
@@ -10,9 +9,22 @@ import { Field, TextInput } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { SectionCard } from '../components/ui/Card'
 
+const ACCEPTED_PICTURE_TYPES = ['image/png', 'image/jpeg']
+const MAX_PICTURE_BYTES = 2 * 1024 * 1024 // matches UpdateProfilePictureRequest's server-side 2MB limit
+
+/** Mirrors the server's png/jpg/jpeg + 2MB rule so bad files fail fast, without a round trip. */
+function validatePictureFile(file: File): string | null {
+  if (!ACCEPTED_PICTURE_TYPES.includes(file.type)) {
+    return 'Please choose a PNG or JPG image.'
+  }
+  if (file.size > MAX_PICTURE_BYTES) {
+    return 'Image must be 2MB or smaller.'
+  }
+  return null
+}
+
 export function ProfilePage() {
-  const { user, refreshUser } = useAuth()
-  const { url: pictureUrl, refresh: refreshPicture } = useProfilePictureUrl()
+  const { user, refreshUser, pictureUrl, refreshPicture } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [contactNumber, setContactNumber] = useState(user?.contact_number ?? '')
@@ -54,12 +66,22 @@ export function ProfilePage() {
     if (!file) return
 
     setPictureError(null)
+
+    const validationError = validatePictureFile(file)
+    if (validationError) {
+      setPictureError(validationError)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setIsUploadingPicture(true)
     try {
       await uploadProfilePicture(file)
-      refreshPicture()
+      await refreshPicture()
     } catch (err) {
-      setPictureError(err instanceof ApiError ? err.message : 'Unable to upload profile picture.')
+      setPictureError(
+        err instanceof ApiError ? (err.errors?.file?.[0] ?? err.message) : 'Unable to upload profile picture.',
+      )
     } finally {
       setIsUploadingPicture(false)
       if (fileInputRef.current) fileInputRef.current.value = ''

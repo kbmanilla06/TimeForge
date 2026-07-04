@@ -25,14 +25,22 @@ const BASE_USER: User = {
 
 function setup(user: User = BASE_USER) {
   const refreshUser = vi.fn().mockResolvedValue(undefined)
-  mockUseAuth.mockReturnValue({ user, isLoading: false, login: vi.fn(), logout: vi.fn(), refreshUser })
-  return { refreshUser }
+  const refreshPicture = vi.fn().mockResolvedValue(undefined)
+  mockUseAuth.mockReturnValue({
+    user,
+    isLoading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+    refreshUser,
+    pictureUrl: null,
+    refreshPicture,
+  })
+  return { refreshUser, refreshPicture }
 }
 
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(profileApi.getProfilePictureBlob).mockResolvedValue(null)
   })
 
   it('shows the name as read-only, and the current position/contact number as editable', async () => {
@@ -66,9 +74,9 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('Profile updated.')).toBeInTheDocument()
   })
 
-  it('uploads a new profile picture when a file is selected', async () => {
+  it('uploads a new profile picture when a file is selected, then refreshes the shared picture', async () => {
     const user = userEvent.setup()
-    setup()
+    const { refreshPicture } = setup()
     vi.mocked(profileApi.uploadProfilePicture).mockResolvedValue({ message: 'Profile picture updated.' })
     render(<ProfilePage />)
 
@@ -79,6 +87,53 @@ describe('ProfilePage', () => {
     await waitFor(() => {
       expect(profileApi.uploadProfilePicture).toHaveBeenCalledWith(file)
     })
+    expect(refreshPicture).toHaveBeenCalled()
+  })
+
+  it('rejects a file whose real type does not match its extension, before calling the upload API', async () => {
+    // Named .png (passes the input's accept-extension filter) but with a
+    // mismatched real MIME type — the scenario the extension-only OS file
+    // picker filter can't catch, which is exactly why the MIME check matters.
+    const user = userEvent.setup()
+    setup()
+    render(<ProfilePage />)
+
+    const file = new File(['not actually a png'], 'fake.png', { type: 'image/gif' })
+    const input = document.getElementById('profile-picture-input') as HTMLInputElement
+    await user.upload(input, file)
+
+    expect(await screen.findByText('Please choose a PNG or JPG image.')).toBeInTheDocument()
+    expect(profileApi.uploadProfilePicture).not.toHaveBeenCalled()
+  })
+
+  it('rejects a file over 2MB before ever calling the upload API', async () => {
+    const user = userEvent.setup()
+    setup()
+    render(<ProfilePage />)
+
+    const oversized = new File([new Uint8Array(3 * 1024 * 1024)], 'huge.png', { type: 'image/png' })
+    const input = document.getElementById('profile-picture-input') as HTMLInputElement
+    await user.upload(input, oversized)
+
+    expect(await screen.findByText('Image must be 2MB or smaller.')).toBeInTheDocument()
+    expect(profileApi.uploadProfilePicture).not.toHaveBeenCalled()
+  })
+
+  it('surfaces the specific server validation reason instead of a generic message', async () => {
+    const user = userEvent.setup()
+    setup()
+    const { ApiError } = await import('../lib/apiClient')
+    vi.mocked(profileApi.uploadProfilePicture).mockRejectedValue(
+      new ApiError(422, 'The given data was invalid.', { file: ['The file must be an image of type: png, jpg, jpeg.'] }),
+    )
+    render(<ProfilePage />)
+
+    const file = new File(['fake image bytes'], 'avatar.png', { type: 'image/png' })
+    const input = document.getElementById('profile-picture-input') as HTMLInputElement
+    await user.upload(input, file)
+
+    expect(await screen.findByText('The file must be an image of type: png, jpg, jpeg.')).toBeInTheDocument()
+    expect(screen.queryByText('The given data was invalid.')).not.toBeInTheDocument()
   })
 
   it('changes the password and clears the form on success', async () => {

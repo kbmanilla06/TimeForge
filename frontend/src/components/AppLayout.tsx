@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
-import { useProfilePictureUrl } from '../hooks/useProfilePictureUrl'
 import { useSidebarBadges } from '../hooks/useSidebarBadges'
 import { NotificationCenter } from './NotificationCenter'
 import { Avatar } from './ui/Avatar'
@@ -56,11 +55,10 @@ function NavItem({
 }
 
 export function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, logout, pictureUrl } = useAuth()
   const [isNavOpen, setIsNavOpen] = useState(false)
   const closeNav = () => setIsNavOpen(false)
   const badgeCounts = useSidebarBadges()
-  const { url: pictureUrl } = useProfilePictureUrl()
 
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const dismissToast = (id: string) => setToasts((prev) => prev.filter((toast) => toast.id !== id))

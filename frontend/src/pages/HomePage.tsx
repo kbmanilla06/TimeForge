@@ -4,7 +4,7 @@ import { Avatar } from '../components/ui/Avatar'
 import { Card } from '../components/ui/Card'
 
 export function HomePage() {
-  const { user } = useAuth()
+  const { user, pictureUrl } = useAuth()
 
   if (!user) return null
 
@@ -14,7 +14,7 @@ export function HomePage() {
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
       <Card className="p-8">
         <div className="flex flex-wrap items-center gap-5">
-          <Avatar name={user.name} size="lg" />
+          <Avatar name={user.name} pictureUrl={pictureUrl} size="lg" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-ink">{user.name}</h1>
             <p className="mt-1 text-sm text-muted">

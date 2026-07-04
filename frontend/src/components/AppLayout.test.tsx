@@ -19,12 +19,6 @@ vi.mock('../lib/notificationApi', () => ({
 
 vi.mock('../lib/sidebarBadgeApi')
 
-// useProfilePictureUrl fetches on mount — mocked so it doesn't hit the
-// real API in tests that aren't about the profile picture specifically.
-vi.mock('../lib/profileApi', () => ({
-  getProfilePictureBlob: () => Promise.resolve(null),
-}))
-
 function renderLayout() {
   return render(
     <MemoryRouter initialEntries={['/']}>
@@ -204,5 +198,17 @@ describe('AppLayout', () => {
     renderLayout()
 
     expect(screen.getByText('employee')).toBeInTheDocument()
+  })
+
+  it('shows the shared profile picture from context immediately, without its own fetch', () => {
+    mockUseAuth.mockReturnValue({
+      user: { role: 'employee', name: 'Bob Employee' },
+      logout: vi.fn(),
+      pictureUrl: 'blob:mock-picture-url',
+    })
+
+    renderLayout()
+
+    expect(screen.getByAltText("Bob Employee's profile picture")).toHaveAttribute('src', 'blob:mock-picture-url')
   })
 })
