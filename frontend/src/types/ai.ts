@@ -37,3 +37,40 @@ export interface AiOutputQuery {
 export interface AiOutputListResponse {
   outputs: AiOutput[]
 }
+
+export type AssistantCategory =
+  | 'team_progress'
+  | 'department_productivity'
+  | 'attendance_trend'
+  | 'scrum_summary'
+  | 'behind_schedule'
+  | 'kpi_furthest_below_target'
+  | 'unsupported'
+
+export interface AssistantChartPoint {
+  label: string
+  value: number
+}
+
+export interface AssistantChart {
+  type: 'bar' | 'line'
+  series_label: string
+  points: AssistantChartPoint[]
+}
+
+export interface AssistantTable {
+  columns: string[]
+  rows: Array<Array<string | number>>
+}
+
+export interface AssistantAnswer {
+  question: string
+  category: AssistantCategory
+  executive_summary: string
+  detail: string
+  chart: AssistantChart | null
+  table: AssistantTable | null
+  recommendations: string[]
+  supported_examples: string[] | null
+  generated_at: string
+}

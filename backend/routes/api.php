@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\AiOutputController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
@@ -142,4 +143,6 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
 
     Route::get('ai-outputs', [AiOutputController::class, 'index']);
     Route::post('ai-outputs', [AiOutputController::class, 'store']);
+
+    Route::post('ai-assistant/ask', [AiAssistantController::class, 'ask']);
 });

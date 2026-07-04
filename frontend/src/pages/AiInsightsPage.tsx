@@ -1,17 +1,89 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useAuth } from '../context/useAuth'
 import { listDepartments } from '../lib/adminApi'
-import { generateAiOutput, listAiOutputs } from '../lib/aiApi'
+import { askAssistant, generateAiOutput, listAiOutputs } from '../lib/aiApi'
 import { ApiError } from '../lib/apiClient'
 import { listTeamMembers } from '../lib/kpiApi'
 import type { Department } from '../types/admin'
-import type { AiOutput, AiOutputQuery, AiOutputType } from '../types/ai'
+import type { AiOutput, AiOutputQuery, AiOutputType, AssistantAnswer, AssistantChart, AssistantTable } from '../types/ai'
 import type { TeamMember } from '../types/kpi'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
+import { SectionCard } from '../components/ui/Card'
 import { Select, TextInput } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { LoadingState } from '../components/ui/states'
+import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
+
+const CHART_COLOR = '#1876f2'
+
+const EXAMPLE_QUESTIONS = [
+  "What is my team's progress?",
+  'Which employees are behind schedule?',
+  'Which department has highest productivity?',
+  'Show attendance trends.',
+  "Summarize today's scrum.",
+  'Which KPIs declined this week?',
+]
+
+function AssistantChartView({ chart }: { chart: AssistantChart }) {
+  const data = chart.points.map((point) => ({ name: point.label, value: point.value }))
+
+  return (
+    <div className="h-64">
+      <ResponsiveContainer width="100%" height="100%">
+        {chart.type === 'line' ? (
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#dae0e7" />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke={CHART_COLOR} strokeWidth={2} name={chart.series_label} />
+          </LineChart>
+        ) : (
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#dae0e7" />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 12 }} />
+            <Tooltip />
+            <Bar dataKey="value" fill={CHART_COLOR} name={chart.series_label} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        )}
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function AssistantTableView({ table }: { table: AssistantTable }) {
+  return (
+    <TableCard>
+      <TableHead>
+        {table.columns.map((column) => (
+          <Th key={column}>{column}</Th>
+        ))}
+      </TableHead>
+      <tbody>
+        {table.rows.map((row, index) => (
+          <Tr key={index}>
+            {row.map((cell, cellIndex) => (
+              <Td key={cellIndex} className={cellIndex === 0 ? 'font-medium text-ink' : 'text-muted'}>
+                {cell}
+              </Td>
+            ))}
+          </Tr>
+        ))}
+        {table.rows.length === 0 && (
+          <tr>
+            <td colSpan={table.columns.length} className="px-4 py-8 text-center text-muted">
+              No data for this question.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </TableCard>
+  )
+}
 
 const TAB_LABELS: Record<AiOutputType, string> = {
   daily_work_summary: 'Daily Summary',
@@ -52,6 +124,7 @@ function todayLocal(): string {
 
 export function AiInsightsPage() {
   const { user } = useAuth()
+  const [mode, setMode] = useState<'reports' | 'assistant'>('reports')
   const [tab, setTab] = useState<AiOutputType>(() =>
     user?.role === 'hr_finance' ? 'payroll_validation' : 'daily_work_summary',
   )
@@ -65,7 +138,13 @@ export function AiInsightsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState<AssistantAnswer | null>(null)
+  const [isAsking, setIsAsking] = useState(false)
+  const [assistantError, setAssistantError] = useState<string | null>(null)
+
   const canPickSubject = user?.role === 'supervisor' || user?.role === 'admin'
+  const canUseAssistant = user?.role === 'admin' || user?.role === 'supervisor'
 
   useEffect(() => {
     if (!user) {
@@ -156,6 +235,22 @@ export function AiInsightsPage() {
     }
   }
 
+  async function handleAsk(text: string) {
+    const trimmed = text.trim()
+    if (!trimmed) {
+      return
+    }
+    setIsAsking(true)
+    setAssistantError(null)
+    try {
+      setAnswer(await askAssistant(trimmed))
+    } catch (err) {
+      setAssistantError(err instanceof ApiError ? err.message : 'Unable to answer that question.')
+    } finally {
+      setIsAsking(false)
+    }
+  }
+
   const visibleTabs: AiOutputType[] =
     user?.role === 'hr_finance'
       ? ['payroll_validation']
@@ -178,12 +273,126 @@ export function AiInsightsPage() {
   const history = outputs.slice(1)
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
       <PageHeader
         title="AI Insights"
         subtitle="On-demand summaries derived only from stored TimeForge records. Every output is labeled AI-generated; regenerating keeps previous versions."
       />
 
+      {canUseAssistant && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('reports')}
+            className={
+              mode === 'reports'
+                ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white'
+                : 'rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-field'
+            }
+          >
+            Reports
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('assistant')}
+            className={
+              mode === 'assistant'
+                ? 'rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white'
+                : 'rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-field'
+            }
+          >
+            Ask AI
+          </button>
+        </div>
+      )}
+
+      {mode === 'assistant' && canUseAssistant && (
+        <>
+          <SectionCard title="Ask AI Assistant">
+            <p className="text-sm text-muted">
+              Ask a question about your {user?.role === 'admin' ? 'organization' : 'team'}. Answers are computed
+              locally from stored TimeForge records only — no external AI service is used.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <TextInput
+                type="text"
+                placeholder="e.g. What is my team's progress?"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={() => void handleAsk(question)} disabled={isAsking || !question.trim()}>
+                {isAsking ? 'Asking…' : 'Ask'}
+              </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {EXAMPLE_QUESTIONS.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => {
+                    setQuestion(example)
+                    void handleAsk(example)
+                  }}
+                  className="rounded-full border border-line bg-field px-3 py-1 text-xs font-medium text-ink hover:bg-white"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+
+          {assistantError && (
+            <Alert tone="error" className="mt-4">
+              {assistantError}
+            </Alert>
+          )}
+          {isAsking && <LoadingState label="Thinking…" />}
+
+          {answer && !isAsking && (
+            <section className="mt-6 space-y-4">
+              <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full bg-primary px-2.5 py-1 font-medium text-white">AI-generated</span>
+                  <span className="text-muted">{new Date(answer.generated_at).toLocaleString()}</span>
+                </div>
+                <p className="mt-3 font-medium text-ink">{answer.executive_summary}</p>
+                <p className="mt-2 text-sm text-muted">{answer.detail}</p>
+
+                {answer.supported_examples && (
+                  <ul className="mt-3 list-inside list-disc text-sm text-muted">
+                    {answer.supported_examples.map((example) => (
+                      <li key={example}>{example}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {answer.recommendations.length > 0 && (
+                  <div className="mt-4 border-t border-line pt-3">
+                    <p className="text-sm font-medium text-ink">Recommendations</p>
+                    <ul className="mt-1 list-inside list-disc text-sm text-muted">
+                      {answer.recommendations.map((recommendation, index) => (
+                        <li key={index}>{recommendation}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {answer.chart && (
+                <SectionCard title="Chart">
+                  <AssistantChartView chart={answer.chart} />
+                </SectionCard>
+              )}
+
+              {answer.table && <AssistantTableView table={answer.table} />}
+            </section>
+          )}
+        </>
+      )}
+
+      {mode === 'reports' && (
+        <>
       <div className="flex flex-wrap gap-2 border-b border-line pb-4">
         {visibleTabs.map((tabOption) => (
           <button
@@ -290,6 +499,8 @@ export function AiInsightsPage() {
             ))}
           </div>
         </section>
+      )}
+        </>
       )}
     </main>
   )

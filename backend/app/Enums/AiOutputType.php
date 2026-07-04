@@ -17,6 +17,18 @@ enum AiOutputType: string
     case ProductivityTrendAnalysis = 'productivity_trend_analysis';
 
     /**
+     * Sprint 28's AI Assistant answer. Organization-shaped (both subject
+     * foreign keys null) regardless of whether the actual runtime scope
+     * was organization-wide or one department — the exact scope used is
+     * recorded in source_data, the audit snapshot. This type is never
+     * served through the generic /ai-outputs endpoints (see the explicit
+     * guard in AiOutputController::authorizeAccess); it has its own
+     * dedicated AiAssistantController/route because a free-text question
+     * doesn't fit the date+subject-picker model the other types use.
+     */
+    case AssistantQuery = 'assistant_query';
+
+    /**
      * What this output is about, per the approved Sprint 12 subject-shape
      * decisions. Drives request validation, authorization, and storage.
      */
@@ -29,7 +41,8 @@ enum AiOutputType: string
             self::RecurringBlockers,
             self::KpiPerformanceAnalysis,
             self::SupervisorRecommendations => AiSubjectShape::Department,
-            self::PayrollValidation => AiSubjectShape::Organization,
+            self::PayrollValidation,
+            self::AssistantQuery => AiSubjectShape::Organization,
         };
     }
 
@@ -55,6 +68,7 @@ enum AiOutputType: string
             self::PayrollValidation,
             self::SupervisorRecommendations => PayrollPeriod::resolve($date),
             self::ProductivityTrendAnalysis => self::trendWindow($date),
+            self::AssistantQuery => [$date->copy()->startOfDay(), $date->copy()->startOfDay()],
         };
     }
 

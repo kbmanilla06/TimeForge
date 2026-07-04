@@ -1,4 +1,4 @@
-import type { AiOutput, AiOutputListResponse, AiOutputQuery } from '../types/ai'
+import type { AiOutput, AiOutputListResponse, AiOutputQuery, AssistantAnswer } from '../types/ai'
 import { apiFetch } from './apiClient'
 
 function toQueryString(query: AiOutputQuery): string {
@@ -20,4 +20,8 @@ export function listAiOutputs(query: AiOutputQuery): Promise<AiOutput[]> {
 
 export function generateAiOutput(query: AiOutputQuery): Promise<AiOutput> {
   return apiFetch<AiOutput>('/ai-outputs', { method: 'POST', body: query })
+}
+
+export function askAssistant(question: string): Promise<AssistantAnswer> {
+  return apiFetch<AssistantAnswer>('/ai-assistant/ask', { method: 'POST', body: { question } })
 }

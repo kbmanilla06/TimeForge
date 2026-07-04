@@ -94,6 +94,10 @@ class AiOutputController extends Controller
      */
     private function authorizeAccess(User $requester, AiOutputType $type, ?User $subjectUser, ?Department $subjectDepartment): void
     {
+        if ($type === AiOutputType::AssistantQuery) {
+            abort(404, 'Assistant queries are served by the dedicated AI Assistant endpoint, not this one.');
+        }
+
         if ($type === AiOutputType::PayrollValidation) {
             if ($requester->isAdmin() || $requester->isHrFinance()) {
                 return;

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { generateAiOutput, listAiOutputs } from './aiApi'
+import { askAssistant, generateAiOutput, listAiOutputs } from './aiApi'
 
 function mockFetchOnce(body: unknown, status = 200) {
   const fetchMock = vi.fn().mockResolvedValue({
@@ -57,5 +57,20 @@ describe('aiApi', () => {
       }),
     )
     expect(result).toEqual({ id: 2 })
+  })
+
+  it('askAssistant POSTs the question as the request body', async () => {
+    const fetchMock = mockFetchOnce({ question: "What is my team's progress?", category: 'team_progress' })
+
+    const result = await askAssistant("What is my team's progress?")
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/ai-assistant\/ask$/),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ question: "What is my team's progress?" }),
+      }),
+    )
+    expect(result).toEqual({ question: "What is my team's progress?", category: 'team_progress' })
   })
 })
