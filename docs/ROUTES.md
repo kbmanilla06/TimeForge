@@ -23,6 +23,8 @@ As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancem
 | --- | --- | --- | --- |
 | POST | `/api/logout` | Any active user | 1 |
 | GET | `/api/me` | Any active user (no `hourly_rate`/password exposure) | 1 |
+| GET | `/api/company-settings` | Any active user — read-only; company name/logo shown in the sidebar for every role | 48 |
+| GET | `/api/company-logo` | Any active user — streams the logo file (404 if none set) | 48 |
 
 ## Admin Portal (`role:admin`)
 
@@ -34,6 +36,8 @@ As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancem
 | GET/POST/PATCH/DELETE | `/api/admin/clients[/{client}]` | Admin only | 3 |
 | GET/POST/PATCH/DELETE | `/api/admin/projects[/{project}]` | Admin only | 3 |
 | POST | `/api/admin/kpis` | Admin only | 6 |
+| PATCH | `/api/admin/company-settings` | Admin only — name/contact email/default timezone only; overtime multiplier and payroll period stay config-only, not accepted here | 48 |
+| POST | `/api/admin/company-settings/logo` | Admin only — replaces the existing logo if one is set | 48 |
 
 ## Account Approvals (`role:admin`)
 

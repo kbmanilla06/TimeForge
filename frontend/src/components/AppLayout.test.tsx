@@ -9,6 +9,11 @@ vi.mock('../context/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+const mockUseCompanySettings = vi.fn()
+vi.mock('../context/useCompanySettings', () => ({
+  useCompanySettings: () => mockUseCompanySettings(),
+}))
+
 // NotificationCenter fetches on mount — mocked so it doesn't hit the real
 // API in tests that aren't about notifications specifically.
 vi.mock('../lib/notificationApi', () => ({
@@ -34,6 +39,7 @@ function renderLayout() {
 describe('AppLayout', () => {
   beforeEach(() => {
     vi.mocked(sidebarBadgeApi.getSidebarBadgeCounts).mockResolvedValue({ notifications: 0 })
+    mockUseCompanySettings.mockReturnValue({ companyName: 'TimeForge', logoUrl: null, refresh: vi.fn() })
   })
 
   it('shows admin nav links for admin users', () => {
@@ -226,5 +232,40 @@ describe('AppLayout', () => {
     renderLayout()
 
     expect(screen.queryByLabelText('Open AI Assistant')).not.toBeInTheDocument()
+  })
+
+  it('shows the configured company name instead of a hardcoded literal', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    mockUseCompanySettings.mockReturnValue({ companyName: 'Acme Corp', logoUrl: null, refresh: vi.fn() })
+
+    renderLayout()
+
+    expect(screen.getAllByText('Acme Corp').length).toBeGreaterThan(0)
+    expect(screen.queryByText('TimeForge')).not.toBeInTheDocument()
+  })
+
+  it('shows the company logo image when one is configured', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    mockUseCompanySettings.mockReturnValue({
+      companyName: 'Acme Corp',
+      logoUrl: 'blob:mock-logo-url',
+      refresh: vi.fn(),
+    })
+
+    renderLayout()
+
+    const logos = screen.getAllByAltText('')
+    expect(logos.some((el) => el.getAttribute('src') === 'blob:mock-logo-url')).toBe(true)
+  })
+
+  it('shows Company Settings to admins only', () => {
+    mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
+    const { unmount } = renderLayout()
+    expect(screen.getByText('Company Settings')).toBeInTheDocument()
+    unmount()
+
+    mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
+    renderLayout()
+    expect(screen.queryByText('Company Settings')).not.toBeInTheDocument()
   })
 })

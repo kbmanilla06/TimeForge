@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import { useCompanySettings } from '../context/useCompanySettings'
 import { useSidebarBadges } from '../hooks/useSidebarBadges'
 import { AiFloatingAssistant } from './AiFloatingAssistant'
 import { NotificationCenter } from './NotificationCenter'
@@ -57,6 +58,7 @@ function NavItem({
 
 export function AppLayout() {
   const { user, logout, pictureUrl } = useAuth()
+  const { companyName, logoUrl } = useCompanySettings()
   const [isNavOpen, setIsNavOpen] = useState(false)
   const closeNav = () => setIsNavOpen(false)
   const badgeCounts = useSidebarBadges()
@@ -100,7 +102,10 @@ export function AppLayout() {
         }`}
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <span className="text-lg font-bold tracking-tight text-ink">TimeForge</span>
+          <span className="flex items-center gap-2">
+            {logoUrl && <img src={logoUrl} alt="" className="size-6 rounded object-contain" />}
+            <span className="text-lg font-bold tracking-tight text-ink">{companyName}</span>
+          </span>
           <NotificationCenter unreadCount={badgeCounts?.notifications} onNewNotification={handleNewNotification} />
         </div>
 
@@ -178,6 +183,9 @@ export function AppLayout() {
               <NavItem to="/admin/audit-logs" onNavigate={closeNav}>
                 Audit Log
               </NavItem>
+              <NavItem to="/admin/company-settings" onNavigate={closeNav}>
+                Company Settings
+              </NavItem>
             </NavGroup>
           )}
         </nav>
@@ -227,7 +235,10 @@ export function AppLayout() {
               <line x1="4" y1="18" x2="20" y2="18" />
             </svg>
           </button>
-          <span className="text-base font-bold tracking-tight text-ink">TimeForge</span>
+          <span className="flex items-center gap-2">
+            {logoUrl && <img src={logoUrl} alt="" className="size-5 rounded object-contain" />}
+            <span className="text-base font-bold tracking-tight text-ink">{companyName}</span>
+          </span>
         </header>
 
         <Outlet />

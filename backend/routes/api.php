@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AccountRequestController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
+use App\Http\Controllers\Admin\CompanySettingController as AdminCompanySettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyScrumController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KpiAssignmentController;
@@ -48,6 +50,9 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/sidebar-counts', [SidebarBadgeController::class, 'index']);
+
+    Route::get('company-settings', [CompanySettingController::class, 'index']);
+    Route::get('company-logo', [CompanySettingController::class, 'logo']);
 
     Route::patch('profile', [ProfileController::class, 'update']);
     Route::post('profile/picture', [ProfileController::class, 'uploadPicture']);
@@ -89,6 +94,9 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
         Route::post('kpis', [AdminKpiController::class, 'store']);
 
         Route::get('audit-logs', [AuditLogController::class, 'index']);
+
+        Route::patch('company-settings', [AdminCompanySettingController::class, 'update']);
+        Route::post('company-settings/logo', [AdminCompanySettingController::class, 'uploadLogo']);
     });
 
     Route::get('projects', [ProjectController::class, 'index']);
