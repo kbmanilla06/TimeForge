@@ -16,6 +16,7 @@ As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancem
 | Method | Path | Access | Sprint |
 | --- | --- | --- | --- |
 | GET | `/api/register/departments` | Public — id + name only, for the registration form's department picker | 16, 19 |
+| GET | `/health` | Public — not under `/api`; database/redis/storage connectivity checks for monitoring/load-balancer tooling. 200 if all healthy, 503 if any check fails. Never leaks hostnames, credentials, or raw exception detail | 52 |
 
 ## Session (`auth:sanctum` + `active` + `throttle:api`)
 

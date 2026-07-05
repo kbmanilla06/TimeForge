@@ -224,6 +224,8 @@ Run through this before any real deployment — it consolidates every environmen
 - [ ] `php artisan config:cache` run **last**, after every other `.env` value above is finalized (see the `config:cache` gotcha above — changing `.env` afterward silently does nothing until `config:clear`)
 - [ ] Demo/seed data (`DemoDataSeeder`) never run against this environment; every demo credential changed or removed
 - [ ] `/horizon` confirmed inaccessible (its allowlist is empty by default — access only in `local`)
+- [ ] `LOG_LEVEL` raised above `debug` (e.g. `error` or `warning`) — see "Production Logging Expectations" below
+- [ ] `GET /health` returns `200` with every check `"status": "ok"` before declaring the deployment live — see "Health Check" below
 
 ## Backup and Restore
 
@@ -234,6 +236,94 @@ committed, a disaster recovery checklist, and a restore verification
 checklist. Take a database backup before any risky production migration
 or credential rotation, in addition to whatever automatic backups your
 Supabase plan provides.
+
+## Health Check (Sprint 52)
+
+`GET /health` — public, unauthenticated (standard for monitoring/load-balancer tooling that can't authenticate), rate-limited via the existing `throttle:lookup` bucket (30 requests/minute per IP, Sprint 19) as defense-in-depth. Point an uptime monitor, Kubernetes liveness/readiness probe, or load balancer health check at this URL.
+
+Checks three dependencies with a cheap, safe operation each:
+
+- **database** — a trivial `select 1`.
+- **redis** — `Redis::connection()->ping()`. This is what Horizon/the queue actually depend on (`QUEUE_CONNECTION=redis`), which is a separate thing from the cache store (`CACHE_STORE=database` by default) — checking Redis directly is more useful than checking the cache facade, which may not touch Redis at all.
+- **storage** — a real put/read/delete round-trip against a small marker file on the configured default disk (`FILESYSTEM_DISK`). This is the only check that works identically whether the disk is `local` or Supabase Storage (`s3`) — the two drivers have no shared "is the directory writable" primitive, so a real round-trip is the only reliable cross-driver check.
+
+Response shape:
+
+```json
+{
+  "status": "ok",
+  "checks": {
+    "database": { "status": "ok" },
+    "redis": { "status": "ok" },
+    "storage": { "status": "ok" }
+  },
+  "timestamp": "2026-07-05T12:00:00.000000Z"
+}
+```
+
+HTTP status is `200` only if every check passes; `503` if any fails, so a monitor can act on the status code alone without parsing the body. **Never includes hostnames, credentials, DSNs, or raw exception messages** — a failing check reports its real exception via `report()` (so it still reaches logs/whatever error monitoring is wired up, see below) and the public response only ever says `"status": "error"`, nothing more specific.
+
+**Known gap surfaced by this check, not fixed this sprint:** running `/health` against this environment's own Docker container currently reports `redis: error` — `QUEUE_CONNECTION=redis` is configured, but neither the `phpredis` PHP extension nor the `predis/predis` Composer package is actually installed in the image (confirmed: `Redis::connection()->ping()` throws `Class "Redis" not found`, not a connectivity error). This means Horizon/queued work would currently fail if actually exercised. Fixing this is a Docker image/dependency change, out of this documentation-and-monitoring sprint's scope — flagging it here since the health check is precisely what surfaced it.
+
+## Error Monitoring — Sentry/Bugsnag Setup (Documentation Only, Sprint 52)
+
+No error monitoring provider is installed. This section documents how to add one later — per this sprint's non-scope, nothing here is wired up now.
+
+This app already has an established pattern, used extensively since Sprint 45 (mail-failure resilience) and Sprint 46 (audit logging), of catching failures at every resilience point and calling `report($e)` rather than letting them surface as raw errors or silently disappearing:
+
+```php
+try {
+    // ...
+} catch (\Throwable $e) {
+    report($e);
+}
+```
+
+Every one of these call sites already flows through Laravel's exception handler (`bootstrap/app.php`'s `withExceptions()`), which is the exact integration point Sentry/Bugsnag hook into. **Wiring up a real provider later requires zero changes to any existing `report()` call site** — only a package install and one bootstrap hook.
+
+**Sentry** (recommended — widest Laravel-specific tooling and docs):
+
+```bash
+composer require sentry/sentry-laravel
+php artisan sentry:publish --dsn=your-dsn-here
+```
+
+Add to `.env`:
+
+```
+SENTRY_LARAVEL_DSN=https://your-key@your-org.ingest.sentry.io/your-project
+SENTRY_TRACES_SAMPLE_RATE=0.2
+```
+
+The published config auto-registers Sentry's exception handler integration; no manual edit to `bootstrap/app.php` is required by default with recent `sentry-laravel` versions (the package's service provider hooks in automatically).
+
+**Bugsnag** (alternative):
+
+```bash
+composer require bugsnag/bugsnag-laravel
+```
+
+Add to `.env`:
+
+```
+BUGSNAG_API_KEY=your-api-key-here
+```
+
+Both require installing a new Composer package not currently in `composer.json` — treat that as its own decision when the time comes, the same framing Sprint 45 used for mail providers beyond the generic SMTP transport.
+
+## Production Logging Expectations (Sprint 52)
+
+`LOG_LEVEL=debug` is `.env.example`'s default — appropriate for local development, **not for production**. Debug-level logging is noisy and can log more request/query detail than a production environment should retain. Raise it:
+
+```
+LOG_LEVEL=error
+```
+
+(`warning` is a reasonable middle ground if you want deprecation/warning-level signal without full debug noise.)
+
+`LOG_CHANNEL=stack` (default, unchanged) fans out to whatever channels `LOG_STACK` lists — `single` (one rotating file at `storage/logs/laravel.log`) by default. For a containerized deployment, consider pointing the stack at `stderr` instead (Laravel's built-in `stderr` channel) so logs are captured by your container platform's own log aggregation rather than a file inside the container that disappears when the container is replaced.
+
+Once an error monitoring provider is wired up (see above), it typically adds itself as an additional channel in the `stack` list — logs continue going wherever they already go, and also reach the monitoring provider, with no change to any of the `report()` call sites already throughout this codebase.
 
 ## Rollback
 
