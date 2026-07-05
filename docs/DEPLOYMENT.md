@@ -225,6 +225,16 @@ Run through this before any real deployment — it consolidates every environmen
 - [ ] Demo/seed data (`DemoDataSeeder`) never run against this environment; every demo credential changed or removed
 - [ ] `/horizon` confirmed inaccessible (its allowlist is empty by default — access only in `local`)
 
+## Backup and Restore
+
+See `docs/BACKUP_RESTORE.md` (Sprint 47) for the full runbook: `pg_dump`/
+`pg_restore` commands for Docker local and Supabase, storage backup
+guidance for local/Supabase/S3, what must be backed up vs. never
+committed, a disaster recovery checklist, and a restore verification
+checklist. Take a database backup before any risky production migration
+or credential rotation, in addition to whatever automatic backups your
+Supabase plan provides.
+
 ## Rollback
 
 Supabase Postgres and Supabase Storage are both used through Laravel's own generic, unmodified `pgsql` connection and `s3` disk driver — there's no Supabase-specific code to unwind. Reverting to a different Postgres host (or, with more work, a different engine) is purely an environment-variable change plus, for a different engine, re-validating migration portability the same way this sprint did.

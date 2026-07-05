@@ -456,6 +456,17 @@ Approved for the Sprint 45 (Reliable Production Email Readiness) plan. Resolves 
 - **Mail provider choice stays undecided, deliberately:** `docs/DEPLOYMENT.md` now documents Google SMTP, SES, Postmark, Resend, and Mailgun as options with honest tradeoffs rather than presenting Google SMTP as the only choice. Only the generic `smtp` transport (Google's relay) works today with zero new dependencies; SES/Postmark/Resend/Mailgun each require an additional Composer package not currently installed — explicitly flagged as its own future decision, not silently added.
 - **Still open, unchanged:** the Google SMTP credentials in the local `.env` are still rejected by Google (535 bad credentials) — a credential-rotation problem, not something a code sprint can fix.
 
+## Sprint 47 Implementation Decisions (Approved)
+
+Approved for the Sprint 47 (Backup and Restore Readiness) plan. Documentation and verification only — no application code, migrations, or `docker-compose.yml` changes; no new infrastructure or paid backup service.
+
+- **Custom-format `pg_dump` (`-F c`), not plain SQL:** compressed, and supports `pg_restore`'s selective/parallel restore. Same command shape for Docker local and Supabase — only the connection target changes.
+- **Restore-to-disposable-database as the standard verification pattern, not overwrite-in-place:** every restore documented in `docs/BACKUP_RESTORE.md` defaults to restoring into a brand-new, throwaway database name, with the destructive overwrite-the-real-database variant documented separately and explicitly labeled "only during an actual incident, never as a drill."
+- **Local storage backup needs no Docker-specific step:** `docker-compose.yml` bind-mounts `./backend:/var/www/html` rather than using a named volume for the backend container, so `storage/app/private`/`storage/app/public` already exist directly on the host — confirmed via `config/filesystems.php`'s `local` disk root. A plain `tar` of that host path is a complete backup.
+- **Supabase Dashboard-managed backups as the primary safety net, manual `pg_dump` as a supplementary on-demand snapshot:** rather than only documenting one or the other. Dashboard backups need no tooling and cover the general case; a manual dump is recommended immediately before a risky migration or credential rotation.
+- **Backup dump files are gitignored by pattern, not by relying on people remembering not to commit them:** root `.gitignore` now excludes `backups/`, `*.dump`, `*.sql`, `*.sql.gz` (Sprint 47) — confirmed no such file was tracked in the repo before adding the rule, so this couldn't silently un-ignore something already committed.
+- **Verified live, not just documented from memory:** a real `pg_dump` of the actual local Postgres database was restored into a disposable database (`timeforge_restore_test_sprint47`) and compared against the real one — table count, row counts on `users`/`timesheets`/`audit_logs`/`departments`, and field-level content (not just counts) all matched exactly. The disposable database was then dropped; the real `timeforge` database was never overwritten, dropped, or modified at any point. Full detail in `docs/BACKUP_RESTORE.md`'s "Verification Performed (Sprint 47)" section.
+
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
 Recorded for when each of these specific sprints is opened; none of this work has been started or approved for implementation yet, per the "plan one sprint at a time" workflow rule.

@@ -72,6 +72,7 @@ cd frontend && npm run build && npm run lint && npm run test   # 186 tests, zero
 | `docs/QA_CHECKLIST.md` | The consolidated manual regression pass |
 | `docs/USER_GUIDE.md` | Role-by-role user manual |
 | `docs/DEMO.md` | Demo script + demo dataset |
+| `docs/BACKUP_RESTORE.md` | Backup/restore runbook, disaster recovery + restore verification checklists |
 | `sprints/SPRINT_00–14.md` | Sprint-by-sprint plans, decisions, and reviews |
 
 ## Known Limitations (handoff summary)
