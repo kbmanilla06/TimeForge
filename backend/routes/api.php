@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Admin\CompanySettingController as AdminCompanySettingController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\HolidayController as AdminHolidayController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController;
@@ -17,8 +18,10 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyScrumController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\KpiAssignmentController;
 use App\Http\Controllers\KpiController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProfileController;
@@ -53,6 +56,8 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
 
     Route::get('company-settings', [CompanySettingController::class, 'index']);
     Route::get('company-logo', [CompanySettingController::class, 'logo']);
+
+    Route::get('holidays', [HolidayController::class, 'index']);
 
     Route::patch('profile', [ProfileController::class, 'update']);
     Route::post('profile/picture', [ProfileController::class, 'uploadPicture']);
@@ -97,6 +102,10 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
 
         Route::patch('company-settings', [AdminCompanySettingController::class, 'update']);
         Route::post('company-settings/logo', [AdminCompanySettingController::class, 'uploadLogo']);
+
+        Route::post('holidays', [AdminHolidayController::class, 'store']);
+        Route::patch('holidays/{holiday}', [AdminHolidayController::class, 'update']);
+        Route::delete('holidays/{holiday}', [AdminHolidayController::class, 'destroy']);
     });
 
     Route::get('projects', [ProjectController::class, 'index']);
@@ -126,6 +135,12 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
     Route::patch('timesheets/{timesheet}/reject', [TimesheetController::class, 'reject']);
     Route::patch('timesheets/{timesheet}/request-revision', [TimesheetController::class, 'requestRevision']);
     Route::patch('timesheets/{timesheet}/reopen', [TimesheetController::class, 'reopen']);
+
+    Route::get('leave-requests', [LeaveRequestController::class, 'index']);
+    Route::get('leave-requests/team', [LeaveRequestController::class, 'teamIndex']);
+    Route::post('leave-requests', [LeaveRequestController::class, 'store']);
+    Route::patch('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve']);
+    Route::patch('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject']);
 
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::patch('notifications/read-all', [NotificationController::class, 'markAllRead']);

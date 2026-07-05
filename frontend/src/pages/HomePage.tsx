@@ -1,5 +1,6 @@
 import { useAuth } from '../context/useAuth'
 import { AttendanceWidget } from '../components/AttendanceWidget'
+import { TodayLeaveHolidayBanner } from '../components/TodayLeaveHolidayBanner'
 import { Avatar } from '../components/ui/Avatar'
 import { Card } from '../components/ui/Card'
 
@@ -12,6 +13,8 @@ export function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
+      <TodayLeaveHolidayBanner />
+
       <Card className="p-8">
         <div className="flex flex-wrap items-center gap-5">
           <Avatar name={user.name} pictureUrl={pictureUrl} size="lg" />

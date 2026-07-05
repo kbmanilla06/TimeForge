@@ -52,6 +52,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('Manage Clients')).toBeInTheDocument()
     expect(screen.getByText('Manage Projects')).toBeInTheDocument()
     expect(screen.getByText('Manage KPIs')).toBeInTheDocument()
+    expect(screen.getByText('Manage Holidays')).toBeInTheDocument()
   })
 
   it('hides admin nav links for non-admin users', () => {
@@ -64,6 +65,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Manage Clients')).not.toBeInTheDocument()
     expect(screen.queryByText('Manage Projects')).not.toBeInTheDocument()
     expect(screen.queryByText('Manage KPIs')).not.toBeInTheDocument()
+    expect(screen.queryByText('Manage Holidays')).not.toBeInTheDocument()
   })
 
   it('shows the Time Tracking, Notifications, My KPIs, and Daily Scrum links to every authenticated role', () => {
@@ -75,6 +77,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('Notifications')).toBeInTheDocument()
     expect(screen.getByText('My KPIs')).toBeInTheDocument()
     expect(screen.getByText('Daily Scrum')).toBeInTheDocument()
+    expect(screen.getByText('My Leave')).toBeInTheDocument()
   })
 
   it('shows Team Timesheets, Team KPIs, and Team Scrum to supervisors and admins but not employees', () => {
@@ -83,6 +86,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('Team Timesheets')).toBeInTheDocument()
     expect(screen.getByText('Team KPIs')).toBeInTheDocument()
     expect(screen.getByText('Team Scrum')).toBeInTheDocument()
+    expect(screen.getByText('Team Leave')).toBeInTheDocument()
     unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
@@ -90,6 +94,7 @@ describe('AppLayout', () => {
     expect(adminRender.getByText('Team Timesheets')).toBeInTheDocument()
     expect(adminRender.getByText('Team KPIs')).toBeInTheDocument()
     expect(adminRender.getByText('Team Scrum')).toBeInTheDocument()
+    expect(adminRender.getByText('Team Leave')).toBeInTheDocument()
     adminRender.unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
@@ -97,6 +102,7 @@ describe('AppLayout', () => {
     expect(screen.queryByText('Team Timesheets')).not.toBeInTheDocument()
     expect(screen.queryByText('Team KPIs')).not.toBeInTheDocument()
     expect(screen.queryByText('Team Scrum')).not.toBeInTheDocument()
+    expect(screen.queryByText('Team Leave')).not.toBeInTheDocument()
   })
 
   it('shows Payroll to admin and hr_finance but not supervisors or employees', () => {

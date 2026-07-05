@@ -13,12 +13,14 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { HomePage } from './pages/HomePage'
 import { LandingPage } from './pages/LandingPage'
 import { MyKpisPage } from './pages/MyKpisPage'
+import { MyLeavePage } from './pages/MyLeavePage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { PayrollPage } from './pages/PayrollPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TeamKpisPage } from './pages/TeamKpisPage'
+import { TeamLeavePage } from './pages/TeamLeavePage'
 import { TeamScrumPage } from './pages/TeamScrumPage'
 import { TeamTimesheetsPage } from './pages/TeamTimesheetsPage'
 import { TimeTrackingPage } from './pages/TimeTrackingPage'
@@ -27,6 +29,7 @@ import { AuditLogsPage } from './pages/admin/AuditLogsPage'
 import { ClientsPage } from './pages/admin/ClientsPage'
 import { CompanySettingsPage } from './pages/admin/CompanySettingsPage'
 import { DepartmentsPage } from './pages/admin/DepartmentsPage'
+import { HolidaysPage } from './pages/admin/HolidaysPage'
 import { KpisPage } from './pages/admin/KpisPage'
 import { ProjectsPage } from './pages/admin/ProjectsPage'
 import { UserFormPage } from './pages/admin/UserFormPage'
@@ -48,11 +51,13 @@ function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/my-kpis" element={<MyKpisPage />} />
           <Route path="/daily-scrum" element={<DailyScrumPage />} />
+          <Route path="/my-leave" element={<MyLeavePage />} />
 
           <Route element={<SupervisorRoute />}>
             <Route path="/team-timesheets" element={<TeamTimesheetsPage />} />
             <Route path="/team-kpis" element={<TeamKpisPage />} />
             <Route path="/team-scrum" element={<TeamScrumPage />} />
+            <Route path="/team-leave" element={<TeamLeavePage />} />
           </Route>
 
           <Route element={<PayrollRoute />}>
@@ -78,6 +83,7 @@ function App() {
             <Route path="/admin/kpis" element={<KpisPage />} />
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
             <Route path="/admin/company-settings" element={<CompanySettingsPage />} />
+            <Route path="/admin/holidays" element={<HolidaysPage />} />
           </Route>
         </Route>
       </Route>

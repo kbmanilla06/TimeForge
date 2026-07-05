@@ -126,6 +126,9 @@ export function AppLayout() {
             <NavItem to="/daily-scrum" onNavigate={closeNav}>
               Daily Scrum
             </NavItem>
+            <NavItem to="/my-leave" onNavigate={closeNav}>
+              My Leave
+            </NavItem>
             <NavItem to="/ai-insights" onNavigate={closeNav}>
               AI Insights
             </NavItem>
@@ -141,6 +144,9 @@ export function AppLayout() {
               </NavItem>
               <NavItem to="/team-scrum" onNavigate={closeNav} badge={badgeCounts?.team_scrum}>
                 Team Scrum
+              </NavItem>
+              <NavItem to="/team-leave" onNavigate={closeNav}>
+                Team Leave
               </NavItem>
             </NavGroup>
           )}
@@ -185,6 +191,9 @@ export function AppLayout() {
               </NavItem>
               <NavItem to="/admin/company-settings" onNavigate={closeNav}>
                 Company Settings
+              </NavItem>
+              <NavItem to="/admin/holidays" onNavigate={closeNav}>
+                Manage Holidays
               </NavItem>
             </NavGroup>
           )}

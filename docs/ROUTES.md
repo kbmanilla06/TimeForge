@@ -25,6 +25,7 @@ As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancem
 | GET | `/api/me` | Any active user (no `hourly_rate`/password exposure) | 1 |
 | GET | `/api/company-settings` | Any active user — read-only; company name/logo shown in the sidebar for every role | 48 |
 | GET | `/api/company-logo` | Any active user — streams the logo file (404 if none set) | 48 |
+| GET | `/api/holidays` | Any active user — needed for attendance/reporting display context, not just Admin | 49 |
 
 ## Admin Portal (`role:admin`)
 
@@ -38,6 +39,7 @@ As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancem
 | POST | `/api/admin/kpis` | Admin only | 6 |
 | PATCH | `/api/admin/company-settings` | Admin only — name/contact email/default timezone only; overtime multiplier and payroll period stay config-only, not accepted here | 48 |
 | POST | `/api/admin/company-settings/logo` | Admin only — replaces the existing logo if one is set | 48 |
+| POST/PATCH/DELETE | `/api/admin/holidays[/{holiday}]` | Admin only — one row per calendar date, no recurrence rule | 49 |
 
 ## Account Approvals (`role:admin`)
 
@@ -78,6 +80,16 @@ Admin user responses are the only surface that serializes `hourly_rate` (Sprint 
 | GET | `/api/timesheets/{timesheet}` | Owner / own-department Supervisor / Admin | 5 |
 | PATCH | `/api/timesheets/{t}/approve`, `/reject`, `/request-revision` | Supervisor (own department) / Admin; never one's own | 5 |
 | PATCH | `/api/timesheets/{t}/reopen` | Admin only | 5 |
+
+## Leave Requests (Sprint 49)
+
+| Method | Path | Access | Sprint |
+| --- | --- | --- | --- |
+| GET/POST | `/api/leave-requests` | Owner (submit own request) | 49 |
+| GET | `/api/leave-requests/team` | Supervisor (own department) / Admin | 49 |
+| PATCH | `/api/leave-requests/{lr}/approve`, `/reject` | Supervisor (own department) / Admin; never one's own | 49 |
+
+Purely informational for payroll/hours purposes — not read by `HoursSummaryCalculator`, `PayrollController`, `DashboardController`, or `PayrollValidationGatherer` this sprint (no accrual balances, no paid/unpaid deduction automation).
 
 ## Notifications (Sprint 5)
 
