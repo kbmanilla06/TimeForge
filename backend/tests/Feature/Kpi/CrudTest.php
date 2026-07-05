@@ -34,6 +34,7 @@ class CrudTest extends TestCase
             'target_value' => 10,
             'created_by' => $admin->id,
         ]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'kpi.created', 'subject_id' => $response->json('id')]);
     }
 
     public function test_kpi_target_and_unit_are_optional(): void

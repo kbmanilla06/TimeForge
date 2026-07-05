@@ -3,6 +3,7 @@
 namespace Tests\Feature\Timesheet;
 
 use App\Enums\UserRole;
+use App\Models\AuditLog;
 use App\Models\Department;
 use App\Models\TimeEntry;
 use App\Models\Timesheet;
@@ -75,6 +76,7 @@ class ReviewTest extends TestCase
         ]);
 
         Notification::assertSentTo($employee, TimesheetApproved::class);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'timesheet.approved', 'subject_id' => $timesheet->id]);
     }
 
     public function test_supervisor_cannot_review_a_timesheet_outside_their_department(): void
@@ -148,6 +150,7 @@ class ReviewTest extends TestCase
             ->assertJsonPath('status', 'rejected');
 
         Notification::assertSentTo($employee, TimesheetRejected::class);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'timesheet.rejected', 'subject_id' => $timesheet->id]);
     }
 
     public function test_request_revision_requires_a_comment_and_unlocks_entries(): void
@@ -170,6 +173,7 @@ class ReviewTest extends TestCase
             ->assertJsonPath('status', 'revision_requested');
 
         Notification::assertSentTo($employee, TimesheetRevisionRequested::class);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'timesheet.revision_requested', 'subject_id' => $timesheet->id]);
 
         $this->withAuth($employee)
             ->patchJson("/api/time-entries/{$entry->id}", [
@@ -237,6 +241,7 @@ class ReviewTest extends TestCase
             'timesheet_id' => $timesheet->id,
             'action' => 'reopened',
         ]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'timesheet.reopened', 'subject_id' => $timesheet->id]);
     }
 
     public function test_cannot_reopen_a_timesheet_that_is_not_approved(): void

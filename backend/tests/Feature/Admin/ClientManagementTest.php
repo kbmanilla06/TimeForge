@@ -27,6 +27,7 @@ class ClientManagementTest extends TestCase
             ->postJson('/api/admin/clients', ['name' => 'Acme Corp']);
         $create->assertCreated();
         $clientId = $create->json('id');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'client.created', 'subject_id' => $clientId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/admin/clients')
@@ -38,10 +39,12 @@ class ClientManagementTest extends TestCase
             ->patchJson("/api/admin/clients/{$clientId}", ['name' => 'Acme Corporation'])
             ->assertOk()
             ->assertJsonPath('name', 'Acme Corporation');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'client.updated', 'subject_id' => $clientId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->deleteJson("/api/admin/clients/{$clientId}")
             ->assertStatus(204);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'client.deleted', 'subject_id' => $clientId]);
     }
 
     public function test_client_index_reports_accurate_project_counts(): void

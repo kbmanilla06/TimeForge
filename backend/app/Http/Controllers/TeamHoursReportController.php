@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserStatus;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\ExcelExporter;
 use App\Support\HoursSummaryCalculator;
@@ -22,6 +23,12 @@ class TeamHoursReportController extends Controller
         [$periodStart, $periodEnd] = $this->resolvePeriod($request);
         $rows = $this->buildSummary($request, $periodStart, $periodEnd);
 
+        AuditLog::record('team_hours_report.exported', metadata: [
+            'format' => 'pdf',
+            'period_start' => $periodStart->toDateString(),
+            'period_end' => $periodEnd->toDateString(),
+        ]);
+
         return Pdf::loadView('reports.team-hours', [
             'rows' => $rows,
             'periodStart' => $periodStart->toDateString(),
@@ -33,6 +40,12 @@ class TeamHoursReportController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+
+        AuditLog::record('team_hours_report.exported', metadata: [
+            'format' => 'excel',
+            'period_start' => $periodStart->toDateString(),
+            'period_end' => $periodEnd->toDateString(),
+        ]);
 
         $rows = $this->buildSummary($request, $periodStart, $periodEnd)
             ->map(fn (array $row) => [

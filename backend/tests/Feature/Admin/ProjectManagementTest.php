@@ -28,6 +28,7 @@ class ProjectManagementTest extends TestCase
             ->postJson('/api/admin/projects', ['name' => 'Website Redesign', 'client_id' => $client->id]);
         $create->assertCreated();
         $projectId = $create->json('id');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'project.created', 'subject_id' => $projectId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/admin/projects')
@@ -40,10 +41,12 @@ class ProjectManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('name', 'Website Redesign v2')
             ->assertJsonPath('client', null);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'project.updated', 'subject_id' => $projectId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->deleteJson("/api/admin/projects/{$projectId}")
             ->assertStatus(204);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'project.deleted', 'subject_id' => $projectId]);
     }
 
     public function test_project_can_be_created_without_a_client(): void

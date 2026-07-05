@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Rules\ValidCaptcha;
 use Illuminate\Auth\Events\PasswordReset;
@@ -26,18 +27,24 @@ class AuthController extends Controller
         $user = User::where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            AuditLog::record('login.failed', $user, ['email' => $credentials['email']]);
+
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
         if (! $user->isActive()) {
+            AuditLog::record('login.failed', $user, ['email' => $credentials['email'], 'reason' => 'inactive']);
+
             throw ValidationException::withMessages([
                 'email' => ['Your account is not active yet. Contact your administrator.'],
             ]);
         }
 
         $token = $user->createToken('api')->plainTextToken;
+
+        AuditLog::record('login.success', $user, actor: $user);
 
         return response()->json([
             'user' => $user->load('department'),
@@ -47,6 +54,8 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        AuditLog::record('logout', $request->user());
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out.']);
@@ -93,14 +102,24 @@ class AuthController extends Controller
             'captcha_token' => $this->captchaRules(),
         ]);
 
+        $resetUser = null;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password): void {
+            function (User $user, string $password) use (&$resetUser): void {
                 $user->forceFill(['password' => $password])->save();
+                $resetUser = $user;
 
                 event(new PasswordReset($user));
             }
         );
+
+        if ($status === Password::PASSWORD_RESET && $resetUser) {
+            // The user has no live Bearer token at this point, but their
+            // identity is proven by possession of a valid reset token —
+            // reasonable to record them as both subject and actor.
+            AuditLog::record('password.reset', $resetUser, actor: $resetUser);
+        }
 
         return $status === Password::PASSWORD_RESET
             ? response()->json(['message' => __($status)])

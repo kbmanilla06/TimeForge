@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\AuditLog;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,6 +75,43 @@ class UserManagementTest extends TestCase
         $deactivate = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
             ->patchJson("/api/admin/users/{$employee->id}/deactivate");
         $deactivate->assertOk()->assertJsonPath('status', 'deactivated');
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user.activated', 'subject_id' => $employee->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user.deactivated', 'subject_id' => $employee->id]);
+    }
+
+    public function test_changing_role_or_department_is_audit_logged(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $oldDepartment = Department::factory()->create();
+        $newDepartment = Department::factory()->create();
+        $employee = User::factory()->create(['role' => UserRole::Employee, 'department_id' => $oldDepartment->id]);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/users/{$employee->id}", [
+                'role' => 'supervisor',
+                'department_id' => $newDepartment->id,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user.role_changed', 'subject_id' => $employee->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'user.department_changed', 'subject_id' => $employee->id]);
+
+        $roleChange = AuditLog::where('action', 'user.role_changed')->where('subject_id', $employee->id)->sole();
+        $this->assertSame(['old' => 'employee', 'new' => 'supervisor'], $roleChange->metadata);
+    }
+
+    public function test_updating_unrelated_fields_does_not_create_role_or_department_audit_entries(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $employee = User::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson("/api/admin/users/{$employee->id}", ['hourly_rate' => 30])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'user.role_changed']);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'user.department_changed']);
     }
 
     public function test_admin_cannot_deactivate_themselves(): void

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreClientRequest;
 use App\Http\Requests\Admin\UpdateClientRequest;
+use App\Models\AuditLog;
 use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 
@@ -21,12 +22,16 @@ class ClientController extends Controller
     {
         $client = Client::create($request->validated());
 
+        AuditLog::record('client.created', $client, $request->validated());
+
         return response()->json($client, 201);
     }
 
     public function update(UpdateClientRequest $request, Client $client): JsonResponse
     {
         $client->update($request->validated());
+
+        AuditLog::record('client.updated', $client, $request->validated());
 
         return response()->json($client);
     }
@@ -36,6 +41,8 @@ class ClientController extends Controller
         $this->authorize('delete', $client);
 
         $client->delete();
+
+        AuditLog::record('client.deleted', $client, ['name' => $client->name]);
 
         return response()->json(status: 204);
     }

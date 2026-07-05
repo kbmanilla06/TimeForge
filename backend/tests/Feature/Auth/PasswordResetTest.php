@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Notifications\Dispatcher;
@@ -87,6 +88,7 @@ class PasswordResetTest extends TestCase
         ]);
 
         $response->assertOk();
+        $this->assertDatabaseHas('audit_logs', ['action' => 'password.reset', 'actor_id' => $user->id]);
 
         $login = $this->postJson('/api/login', [
             'email' => $user->email,

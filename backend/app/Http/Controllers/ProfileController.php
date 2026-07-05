@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\UpdateProfilePictureRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Models\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +31,7 @@ class ProfileController extends Controller
     public function uploadPicture(UpdateProfilePictureRequest $request): JsonResponse
     {
         $user = $request->user();
+        $replaced = (bool) $user->profile_picture_path;
 
         if ($user->profile_picture_path) {
             Storage::delete($user->profile_picture_path);
@@ -37,6 +39,8 @@ class ProfileController extends Controller
 
         $path = $request->file('file')->store('profile-pictures/'.$user->id);
         $user->update(['profile_picture_path' => $path]);
+
+        AuditLog::record('profile_picture.uploaded', $user, ['replaced' => $replaced], actor: $user);
 
         return response()->json(['message' => 'Profile picture updated.']);
     }
@@ -64,6 +68,10 @@ class ProfileController extends Controller
         }
 
         $user->update(['password' => $validated['password']]);
+
+        // Never log the password itself — the action + actor + timestamp
+        // is the meaningful signal, no further metadata needed.
+        AuditLog::record('password.changed', $user, actor: $user);
 
         return response()->json(['message' => 'Password updated.']);
     }

@@ -75,6 +75,9 @@ class TeamHoursReportExportTest extends TestCase
         $employeeRow = collect($rows)->firstWhere(0, 'Jane Employee');
         $this->assertNotNull($employeeRow);
         $this->assertEquals(8, $employeeRow[2]);
+
+        $this->assertDatabaseCount('audit_logs', 2); // pdf + excel
+        $this->assertDatabaseHas('audit_logs', ['action' => 'team_hours_report.exported']);
     }
 
     public function test_supervisor_cannot_export_another_departments_hours(): void

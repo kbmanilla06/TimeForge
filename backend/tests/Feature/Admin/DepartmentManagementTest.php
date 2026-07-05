@@ -26,6 +26,7 @@ class DepartmentManagementTest extends TestCase
             ->postJson('/api/admin/departments', ['name' => 'Engineering']);
         $create->assertCreated();
         $departmentId = $create->json('id');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'department.created', 'subject_id' => $departmentId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/admin/departments')
@@ -37,10 +38,12 @@ class DepartmentManagementTest extends TestCase
             ->patchJson("/api/admin/departments/{$departmentId}", ['name' => 'Engineering & Product'])
             ->assertOk()
             ->assertJsonPath('name', 'Engineering & Product');
+        $this->assertDatabaseHas('audit_logs', ['action' => 'department.updated', 'subject_id' => $departmentId]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->deleteJson("/api/admin/departments/{$departmentId}")
             ->assertStatus(204);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'department.deleted', 'subject_id' => $departmentId]);
     }
 
     public function test_department_index_reports_accurate_user_counts(): void

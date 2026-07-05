@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountRequestController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\KpiController as AdminKpiController;
@@ -86,6 +87,8 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
         Route::delete('projects/{project}', [AdminProjectController::class, 'destroy']);
 
         Route::post('kpis', [AdminKpiController::class, 'store']);
+
+        Route::get('audit-logs', [AuditLogController::class, 'index']);
     });
 
     Route::get('projects', [ProjectController::class, 'index']);

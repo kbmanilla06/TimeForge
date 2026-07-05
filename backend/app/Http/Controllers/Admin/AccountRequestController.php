@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproveAccountRequestRequest;
 use App\Http\Requests\Admin\RejectAccountRequestRequest;
 use App\Models\AccountRequest;
+use App\Models\AuditLog;
 use App\Notifications\AccountApproved;
 use App\Notifications\AccountRejected;
 use Illuminate\Http\JsonResponse;
@@ -82,6 +83,8 @@ class AccountRequestController extends Controller
             $accountRequest->user->update(['status' => UserStatus::Active]);
         });
 
+        AuditLog::record('account_request.approved', $accountRequest, ['applicant_email' => $accountRequest->user->email]);
+
         // Sprint 45: the status change above already succeeded — a mail
         // failure here must not surface as a 500 that could make the admin
         // think the approval itself failed and retry (hitting the
@@ -113,6 +116,11 @@ class AccountRequestController extends Controller
 
             $accountRequest->user->update(['status' => UserStatus::Deactivated]);
         });
+
+        AuditLog::record('account_request.rejected', $accountRequest, [
+            'applicant_email' => $accountRequest->user->email,
+            'remarks' => $accountRequest->rejection_reason,
+        ]);
 
         $this->notifySafely(fn () => $accountRequest->user->notify(new AccountRejected($accountRequest->rejection_reason)));
 

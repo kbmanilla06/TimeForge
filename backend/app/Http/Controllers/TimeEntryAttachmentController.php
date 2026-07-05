@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTimeEntryAttachmentRequest;
+use App\Models\AuditLog;
 use App\Models\TimeEntry;
 use App\Models\TimeEntryAttachment;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,11 @@ class TimeEntryAttachmentController extends Controller
             'uploaded_by' => $request->user()->id,
         ]);
 
+        AuditLog::record('attachment.uploaded', $attachment, [
+            'time_entry_id' => $timeEntry->id,
+            'original_name' => $attachment->original_name,
+        ]);
+
         return response()->json($attachment, 201);
     }
 
@@ -42,6 +48,11 @@ class TimeEntryAttachmentController extends Controller
     public function download(TimeEntry $timeEntry, TimeEntryAttachment $attachment): StreamedResponse
     {
         $this->authorize('downloadAttachment', $timeEntry);
+
+        AuditLog::record('attachment.downloaded', $attachment, [
+            'time_entry_id' => $timeEntry->id,
+            'original_name' => $attachment->original_name,
+        ]);
 
         return Storage::download($attachment->path, $attachment->original_name);
     }
@@ -55,6 +66,14 @@ class TimeEntryAttachmentController extends Controller
         $this->authorize('update', $timeEntry);
 
         $attachment->delete();
+
+        // $attachment stays a valid in-memory object after delete() (only
+        // the DB row is gone), so subject_type/id still correctly
+        // reference the now-deleted attachment for lookup purposes.
+        AuditLog::record('attachment.deleted', $attachment, [
+            'time_entry_id' => $timeEntry->id,
+            'original_name' => $attachment->original_name,
+        ]);
 
         return response()->json(status: 204);
     }

@@ -74,6 +74,9 @@ class PayrollExportTest extends TestCase
                 $excelResponse->headers->get('Content-Type'),
             );
         }
+
+        $this->assertDatabaseCount('audit_logs', 4); // 2 users x (pdf + excel)
+        $this->assertDatabaseHas('audit_logs', ['action' => 'payroll.exported']);
     }
 
     public function test_supervisor_and_employee_cannot_export_payroll(): void

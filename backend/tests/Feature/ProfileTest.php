@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -72,6 +73,11 @@ class ProfileTest extends TestCase
         $this->assertNotNull($path);
         $this->assertStringStartsWith("profile-pictures/{$user->id}/", $path);
         Storage::disk('local')->assertExists($path);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'profile_picture.uploaded',
+            'subject_id' => $user->id,
+            'metadata' => json_encode(['replaced' => false]),
+        ]);
     }
 
     public function test_profile_picture_path_is_never_exposed_in_me(): void
@@ -173,6 +179,11 @@ class ProfileTest extends TestCase
             'password' => 'new-password-456',
             'password_confirmation' => 'new-password-456',
         ])->assertOk();
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'password.changed', 'actor_id' => $user->id]);
+        // Never the password itself, in any form.
+        $entry = AuditLog::where('action', 'password.changed')->sole();
+        $this->assertStringNotContainsString('new-password-456', json_encode($entry->toArray()));
 
         $this->assertTrue(Hash::check('new-password-456', $user->fresh()->password));
     }

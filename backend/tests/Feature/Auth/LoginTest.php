@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,6 +21,7 @@ class LoginTest extends TestCase
         ]);
 
         $response->assertOk()->assertJsonStructure(['user', 'token']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'login.success', 'actor_id' => $user->id]);
     }
 
     public function test_login_fails_with_wrong_password(): void
@@ -32,6 +34,7 @@ class LoginTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'login.failed', 'subject_id' => $user->id]);
     }
 
     public function test_pending_user_cannot_log_in(): void
@@ -137,5 +140,6 @@ class LoginTest extends TestCase
         // result even though the token row is gone. A fresh request in a
         // real deployment would correctly receive a 401.
         $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'logout', 'actor_id' => $user->id]);
     }
 }

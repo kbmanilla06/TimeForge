@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Enums\AccountRequestStatus;
 use App\Enums\UserStatus;
 use App\Models\AccountRequest;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Notifications\AccountApproved;
 use App\Notifications\AccountRejected;
@@ -99,6 +100,7 @@ class AccountRequestTest extends TestCase
         $this->assertSame($admin->id, $accountRequest->reviewed_by);
         $this->assertNotNull($accountRequest->reviewed_at);
         $this->assertSame(UserStatus::Active, $accountRequest->user->fresh()->status);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'account_request.approved', 'subject_id' => $accountRequest->id]);
     }
 
     public function test_rejecting_a_submitted_request_deactivates_the_user_and_stores_the_remark(): void
@@ -117,6 +119,7 @@ class AccountRequestTest extends TestCase
         $this->assertSame(AccountRequestStatus::Rejected, $accountRequest->status);
         $this->assertSame('Could not verify employment.', $accountRequest->rejection_reason);
         $this->assertSame(UserStatus::Deactivated, $accountRequest->user->fresh()->status);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'account_request.rejected', 'subject_id' => $accountRequest->id]);
     }
 
     public function test_rejection_remarks_are_optional(): void

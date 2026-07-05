@@ -10,6 +10,7 @@ use App\Http\Requests\RejectTimesheetRequest;
 use App\Http\Requests\ReopenTimesheetRequest;
 use App\Http\Requests\RequestRevisionTimesheetRequest;
 use App\Http\Requests\SubmitTimesheetRequest;
+use App\Models\AuditLog;
 use App\Models\KpiAssignment;
 use App\Models\TimeEntry;
 use App\Models\Timesheet;
@@ -123,6 +124,8 @@ class TimesheetController extends Controller
             'comment' => $comment,
         ]);
 
+        AuditLog::record('timesheet.approved', $timesheet, ['comment' => $comment]);
+
         $timesheet->user->notify(new TimesheetApproved($timesheet, $comment));
 
         return response()->json($timesheet->fresh(self::RELATIONS));
@@ -168,6 +171,8 @@ class TimesheetController extends Controller
             'comment' => $comment,
         ]);
 
+        AuditLog::record('timesheet.rejected', $timesheet, ['comment' => $comment]);
+
         $timesheet->user->notify(new TimesheetRejected($timesheet, $comment));
 
         return response()->json($timesheet->fresh(self::RELATIONS));
@@ -189,6 +194,8 @@ class TimesheetController extends Controller
             'action' => TimesheetCommentAction::RevisionRequested,
             'comment' => $comment,
         ]);
+
+        AuditLog::record('timesheet.revision_requested', $timesheet, ['comment' => $comment]);
 
         $timesheet->user->notify(new TimesheetRevisionRequested($timesheet, $comment));
 
@@ -212,6 +219,8 @@ class TimesheetController extends Controller
         if ($timesheet->reviewed_by && $timesheet->reviewed_by !== $request->user()->id) {
             $recipients->push($timesheet->reviewer);
         }
+
+        AuditLog::record('timesheet.reopened', $timesheet, ['comment' => $comment]);
 
         Notification::send($recipients->unique('id'), new TimesheetReopened($timesheet, $comment));
 

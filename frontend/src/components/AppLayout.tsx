@@ -175,6 +175,9 @@ export function AppLayout() {
               <NavItem to="/admin/kpis" onNavigate={closeNav}>
                 Manage KPIs
               </NavItem>
+              <NavItem to="/admin/audit-logs" onNavigate={closeNav}>
+                Audit Log
+              </NavItem>
             </NavGroup>
           )}
         </nav>

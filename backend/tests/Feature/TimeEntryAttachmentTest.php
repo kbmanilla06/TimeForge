@@ -91,6 +91,7 @@ class TimeEntryAttachmentTest extends TestCase
         $this->assertSame($owner->id, $attachment->uploaded_by);
         $this->assertStringStartsWith("time-entry-attachments/{$entry->id}/", $attachment->path);
         Storage::disk('local')->assertExists($attachment->path);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'attachment.uploaded', 'subject_id' => $attachment->id]);
     }
 
     /**
@@ -118,11 +119,13 @@ class TimeEntryAttachmentTest extends TestCase
         $download = $this->withAuth($owner)->get("/api/time-entries/{$entry->id}/attachments/{$attachment->id}/download");
         $download->assertOk();
         $this->assertSame('%PDF-1.4 hello sprint 44', $download->streamedContent());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'attachment.downloaded', 'subject_id' => $attachment->id]);
 
         $this->withAuth($owner)
             ->deleteJson("/api/time-entries/{$entry->id}/attachments/{$attachment->id}")
             ->assertStatus(204);
         Storage::disk('s3')->assertMissing($attachment->path);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'attachment.deleted', 'subject_id' => $attachment->id]);
     }
 
     public function test_upload_rejects_bad_extension_mismatched_content_and_oversize(): void
