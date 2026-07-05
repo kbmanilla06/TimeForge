@@ -141,6 +141,8 @@ One resource serves all seven capability types; access is per type:
 | | | `recurring_blockers`, `kpi_performance_analysis`, `supervisor_recommendations` (department subject): own-department Supervisor / Admin | 11-12 |
 | | | `payroll_validation` (organization subject): Admin / HR-Finance only — HR/Finance's sole AI capability | 12 |
 
+Every response includes `source_summary` (Sprint 51) — a safe, derived view of the audit-snapshot `source_data` (counts and categorical facts only, never free text, raw values, or employee name lists), gated by the same access rule as the rest of the output since it's computed after `authorizeAccess()` has already run.
+
 ## Framework Routes
 
 | Path | Access | Note |

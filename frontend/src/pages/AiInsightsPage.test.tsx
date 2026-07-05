@@ -30,6 +30,12 @@ function output(overrides: Partial<AiOutput> = {}): AiOutput {
     generated_by: 1,
     generated_by_name: 'Jane Employee',
     generated_at: '2026-01-05T10:00:00.000Z',
+    source_summary: {
+      entry_count: 2,
+      total_minutes: 450,
+      timesheet_status: 'approved',
+      has_scrum_entry: true,
+    },
     ...overrides,
   }
 }
@@ -53,11 +59,31 @@ describe('AiInsightsPage', () => {
     expect(await screen.findByText(/Daily work summary for Jane Employee/)).toBeInTheDocument()
     expect(screen.getByText('AI-generated')).toBeInTheDocument()
     expect(screen.getByText(/provider: stub/)).toBeInTheDocument()
+    expect(screen.getByText(/prompt: daily_work_summary\.v1/)).toBeInTheDocument()
     expect(screen.queryByText('Recurring Blockers')).not.toBeInTheDocument()
     expect(kpiApi.listTeamMembers).not.toHaveBeenCalled()
     expect(aiApi.listAiOutputs).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'daily_work_summary', user_id: 1 }),
     )
+
+    // Sprint 51: "Generated from" renders source_summary's counts/facts.
+    expect(screen.getByText('Generated from')).toBeInTheDocument()
+    expect(screen.getByText('Entry Count: 2')).toBeInTheDocument()
+    expect(screen.getByText('Total Minutes: 450')).toBeInTheDocument()
+    expect(screen.getByText('Timesheet Status: approved')).toBeInTheDocument()
+    expect(screen.getByText('Has Scrum Entry: Yes')).toBeInTheDocument()
+  })
+
+  it('does not show a "Generated from" section when source_summary is empty', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: 'Jane Employee', role: 'employee', department_id: null },
+    })
+    vi.mocked(aiApi.listAiOutputs).mockResolvedValue([output({ source_summary: {} })])
+
+    render(<AiInsightsPage />)
+
+    await screen.findByText(/Daily work summary for Jane Employee/)
+    expect(screen.queryByText('Generated from')).not.toBeInTheDocument()
   })
 
   it('generates on demand and switches the button to Regenerate', async () => {

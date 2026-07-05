@@ -20,6 +20,12 @@ export interface AiOutput {
   generated_by: number
   generated_by_name: string
   generated_at: string
+  /**
+   * Safe, derived "what data was used" facts (Sprint 51) — counts and
+   * categorical facts only, shape varies by type. Never the raw
+   * source_data audit snapshot, which stays server-side only.
+   */
+  source_summary: Record<string, unknown>
 }
 
 /**

@@ -9,6 +9,7 @@ use App\Http\Requests\AiOutputRequest;
 use App\Models\AiOutput;
 use App\Models\Department;
 use App\Models\User;
+use App\Support\AiSourceSummary;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 
@@ -138,8 +139,12 @@ class AiOutputController extends Controller
     /**
      * Explicit response mapping — never serializes whole related models,
      * so nothing beyond the generator's name (no rates, emails, etc.) can
-     * leak into the payload. source_data stays server-side as the audit
-     * snapshot; the UI has no need for it.
+     * leak into the payload. The full source_data audit snapshot stays
+     * server-side; source_summary (Sprint 51) is a derived, safe view of
+     * it — counts and categorical facts only, never free text or raw
+     * values — computed by AiSourceSummary. Authorization has already
+     * run by the time this is called (authorizeAccess()), so this never
+     * introduces a new exposure surface for an unauthorized viewer.
      *
      * @return array<string, mixed>
      */
@@ -158,6 +163,7 @@ class AiOutputController extends Controller
             'generated_by' => $output->generated_by,
             'generated_by_name' => $output->generator->name,
             'generated_at' => $output->created_at->toISOString(),
+            'source_summary' => AiSourceSummary::summarize($output->type, $output->source_data),
         ];
     }
 }

@@ -13,6 +13,32 @@ import { Select, TextInput } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { LoadingState } from '../components/ui/states'
 
+function formatSourceSummaryLabel(key: string): string {
+  return key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function formatSourceSummaryValue(value: unknown): string {
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (value === null || value === undefined) return '—'
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '—'
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+    return entries.length ? entries.map(([k, v]) => `${k}: ${v}`).join(', ') : '—'
+  }
+  return String(value)
+}
+
+/** Renders source_summary's counts/facts (Sprint 51) as "Label: value" lines. */
+function formatSourceSummary(summary: Record<string, unknown>): Array<{ label: string; value: string }> {
+  return Object.entries(summary).map(([key, value]) => ({
+    label: formatSourceSummaryLabel(key),
+    value: formatSourceSummaryValue(value),
+  }))
+}
+
 const TAB_LABELS: Record<AiOutputType, string> = {
   daily_work_summary: 'Daily Summary',
   weekly_productivity_report: 'Weekly Report',
@@ -267,11 +293,23 @@ export function AiInsightsPage() {
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-primary px-2.5 py-1 font-medium text-white">AI-generated</span>
             <span className="text-muted">
-              provider: {latest.provider} · {new Date(latest.generated_at).toLocaleString()} · by{' '}
-              {latest.generated_by_name}
+              provider: {latest.provider} · prompt: {latest.prompt_version} ·{' '}
+              {new Date(latest.generated_at).toLocaleString()} · by {latest.generated_by_name}
             </span>
           </div>
           <div className="mt-3 whitespace-pre-wrap text-sm text-ink">{latest.content}</div>
+          {Object.keys(latest.source_summary).length > 0 && (
+            <div className="mt-3 border-t border-line pt-3 text-xs text-muted">
+              <p className="font-medium text-ink">Generated from</p>
+              <ul className="mt-1 space-y-0.5">
+                {formatSourceSummary(latest.source_summary).map(({ label, value }) => (
+                  <li key={label}>
+                    {label}: {value}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
       )}
 
@@ -283,9 +321,21 @@ export function AiInsightsPage() {
               <details key={output.id} className="rounded-2xl border border-line bg-white p-4 shadow-card">
                 <summary className="cursor-pointer text-sm text-muted">
                   AI-generated on {new Date(output.generated_at).toLocaleString()} by{' '}
-                  {output.generated_by_name}
+                  {output.generated_by_name} · prompt: {output.prompt_version}
                 </summary>
                 <div className="mt-2 whitespace-pre-wrap text-sm text-ink">{output.content}</div>
+                {Object.keys(output.source_summary).length > 0 && (
+                  <div className="mt-2 border-t border-line pt-2 text-xs text-muted">
+                    <p className="font-medium text-ink">Generated from</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {formatSourceSummary(output.source_summary).map(({ label, value }) => (
+                        <li key={label}>
+                          {label}: {value}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </details>
             ))}
           </div>
