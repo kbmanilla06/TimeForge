@@ -109,21 +109,25 @@ describe('AppLayout', () => {
     mockUseAuth.mockReturnValue({ user: { role: 'admin', name: 'Ada' }, logout: vi.fn() })
     const { unmount } = renderLayout()
     expect(screen.getByText('Payroll')).toBeInTheDocument()
+    expect(screen.getByText('Payroll Exceptions')).toBeInTheDocument()
     unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'hr_finance', name: 'Hana' }, logout: vi.fn() })
     const hrRender = renderLayout()
     expect(hrRender.getByText('Payroll')).toBeInTheDocument()
+    expect(hrRender.getByText('Payroll Exceptions')).toBeInTheDocument()
     hrRender.unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'supervisor', name: 'Sam' }, logout: vi.fn() })
     const supervisorRender = renderLayout()
     expect(supervisorRender.queryByText('Payroll')).not.toBeInTheDocument()
+    expect(supervisorRender.queryByText('Payroll Exceptions')).not.toBeInTheDocument()
     supervisorRender.unmount()
 
     mockUseAuth.mockReturnValue({ user: { role: 'employee', name: 'Bob' }, logout: vi.fn() })
     renderLayout()
     expect(screen.queryByText('Payroll')).not.toBeInTheDocument()
+    expect(screen.queryByText('Payroll Exceptions')).not.toBeInTheDocument()
   })
 
   it('shows Dashboard to supervisor, admin, and hr_finance but not employees', () => {

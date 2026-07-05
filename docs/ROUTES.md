@@ -122,6 +122,8 @@ Purely informational for payroll/hours purposes — not read by `HoursSummaryCal
 | GET | `/api/payroll` | Admin / HR-Finance only | 8 |
 | GET | `/api/payroll/export/pdf`, `/export/excel` | Admin / HR-Finance only | 9 |
 | GET | `/api/team-hours-report/export/pdf`, `/export/excel` | Supervisor (own department) / Admin / HR-Finance (any); no rates or pay figures | 9 |
+| GET | `/api/payroll/exceptions` | Admin / HR-Finance only — read-only problem detection; only employees with at least one flagged exception are returned | 50 |
+| GET | `/api/payroll/exceptions/export/pdf`, `/export/excel` | Admin / HR-Finance only | 50 |
 
 ## Dashboard (Sprint 10)
 

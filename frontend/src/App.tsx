@@ -15,6 +15,7 @@ import { LandingPage } from './pages/LandingPage'
 import { MyKpisPage } from './pages/MyKpisPage'
 import { MyLeavePage } from './pages/MyLeavePage'
 import { NotificationsPage } from './pages/NotificationsPage'
+import { PayrollExceptionsPage } from './pages/PayrollExceptionsPage'
 import { PayrollPage } from './pages/PayrollPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -62,6 +63,7 @@ function App() {
 
           <Route element={<PayrollRoute />}>
             <Route path="/payroll" element={<PayrollPage />} />
+            <Route path="/payroll/exceptions" element={<PayrollExceptionsPage />} />
           </Route>
 
           <Route element={<DashboardRoute />}>

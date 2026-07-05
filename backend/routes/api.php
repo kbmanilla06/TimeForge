@@ -24,6 +24,7 @@ use App\Http\Controllers\KpiController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\PayrollExceptionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SidebarBadgeController;
@@ -162,6 +163,10 @@ Route::middleware(['auth:sanctum', 'active', 'throttle:api'])->group(function ()
     Route::get('payroll', [PayrollController::class, 'index']);
     Route::get('payroll/export/pdf', [PayrollController::class, 'exportPdf']);
     Route::get('payroll/export/excel', [PayrollController::class, 'exportExcel']);
+
+    Route::get('payroll/exceptions', [PayrollExceptionController::class, 'index']);
+    Route::get('payroll/exceptions/export/pdf', [PayrollExceptionController::class, 'exportPdf']);
+    Route::get('payroll/exceptions/export/excel', [PayrollExceptionController::class, 'exportExcel']);
 
     Route::get('team-hours-report/export/pdf', [TeamHoursReportController::class, 'exportPdf']);
     Route::get('team-hours-report/export/excel', [TeamHoursReportController::class, 'exportExcel']);

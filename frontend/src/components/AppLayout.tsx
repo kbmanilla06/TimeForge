@@ -158,6 +158,11 @@ export function AppLayout() {
                   Payroll
                 </NavItem>
               )}
+              {canSeePayroll && (
+                <NavItem to="/payroll/exceptions" onNavigate={closeNav}>
+                  Payroll Exceptions
+                </NavItem>
+              )}
               {canSeeDashboard && (
                 <NavItem to="/dashboard" onNavigate={closeNav}>
                   Dashboard

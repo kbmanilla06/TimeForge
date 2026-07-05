@@ -4,7 +4,7 @@ import { downloadBlob } from '../lib/download'
 import { exportPayrollExcel, exportPayrollPdf, getPayrollSummary } from '../lib/payrollApi'
 import type { PayrollSummaryRow } from '../types/payroll'
 import { Alert } from '../components/ui/Alert'
-import { Button } from '../components/ui/Button'
+import { Button, ButtonLink } from '../components/ui/Button'
 import { TextInput } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { LoadingState } from '../components/ui/states'
@@ -101,6 +101,9 @@ export function PayrollPage() {
             <Button variant="secondary" onClick={handleExportExcel} disabled={isExporting}>
               Export Excel
             </Button>
+            <ButtonLink to="/payroll/exceptions" variant="secondary">
+              View Exceptions
+            </ButtonLink>
           </>
         }
       />

@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as download from '../lib/download'
 import * as payrollApi from '../lib/payrollApi'
@@ -7,6 +8,14 @@ import { PayrollPage } from './PayrollPage'
 
 vi.mock('../lib/payrollApi')
 vi.mock('../lib/download')
+
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <PayrollPage />
+    </MemoryRouter>,
+  )
+}
 
 const baseRow = {
   user_id: 1,
@@ -32,7 +41,7 @@ describe('PayrollPage', () => {
   it('renders the payroll summary table with formatted hours and currency', async () => {
     vi.mocked(payrollApi.getPayrollSummary).mockResolvedValue([baseRow])
 
-    render(<PayrollPage />)
+    renderPage()
 
     expect(await screen.findByText('Jane Employee')).toBeInTheDocument()
     expect(screen.getByText('Engineering')).toBeInTheDocument()
@@ -41,6 +50,10 @@ describe('PayrollPage', () => {
     expect(screen.getByText('2.00')).toBeInTheDocument()
     expect(screen.getByText('$370.00')).toBeInTheDocument()
     expect(screen.getByText('Period: 2026-01-01 – 2026-01-15')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'View Exceptions' })).toHaveAttribute(
+      'href',
+      '/payroll/exceptions',
+    )
   })
 
   it('shows a dash for a missing hourly rate and estimated payroll', async () => {
@@ -48,7 +61,7 @@ describe('PayrollPage', () => {
       { ...baseRow, hourly_rate: null, estimated_payroll: null },
     ])
 
-    render(<PayrollPage />)
+    renderPage()
     await screen.findByText('Jane Employee')
 
     const dashes = screen.getAllByText('—')
@@ -59,7 +72,7 @@ describe('PayrollPage', () => {
     const user = userEvent.setup()
     vi.mocked(payrollApi.getPayrollSummary).mockResolvedValue([baseRow])
 
-    render(<PayrollPage />)
+    renderPage()
     await screen.findByText('Jane Employee')
 
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement
@@ -73,7 +86,7 @@ describe('PayrollPage', () => {
   it('shows an empty state when there are no active employees', async () => {
     vi.mocked(payrollApi.getPayrollSummary).mockResolvedValue([])
 
-    render(<PayrollPage />)
+    renderPage()
 
     expect(await screen.findByText('No active employees found.')).toBeInTheDocument()
   })
@@ -84,7 +97,7 @@ describe('PayrollPage', () => {
     const blob = new Blob(['pdf'])
     vi.mocked(payrollApi.exportPayrollPdf).mockResolvedValue(blob)
 
-    render(<PayrollPage />)
+    renderPage()
     await screen.findByText('Jane Employee')
 
     await user.click(screen.getByRole('button', { name: 'Export PDF' }))
@@ -101,7 +114,7 @@ describe('PayrollPage', () => {
     const blob = new Blob(['xlsx'])
     vi.mocked(payrollApi.exportPayrollExcel).mockResolvedValue(blob)
 
-    render(<PayrollPage />)
+    renderPage()
     await screen.findByText('Jane Employee')
 
     await user.click(screen.getByRole('button', { name: 'Export Excel' }))
