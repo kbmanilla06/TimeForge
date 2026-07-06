@@ -527,7 +527,13 @@ Approved for the Sprint 52 (Health Checks and Error Monitoring Readiness) plan.
 - **Public and unauthenticated, rate-limited via the existing `throttle:lookup` bucket:** standard convention for monitoring/load-balancer tooling, which generally can't authenticate. No new rate limiter — reuses the Sprint 19 "harmless public read" bucket (30/min per IP) rather than inventing a new one.
 - **200 if every check passes, 503 if any fails:** standard health-check convention so a monitor can act on the HTTP status code alone without parsing the response body.
 - **Error monitoring (Sentry/Bugsnag) is documentation-only, per explicit non-scope:** no package installed, nothing wired up. Documented that every existing `catch (\Throwable $e) { report($e); }` call site (Sprint 45 mail resilience, Sprint 46 audit logging) already flows through Laravel's exception handler — the same hook point a real provider would use — so wiring one up later requires zero changes to any of that existing code, only a package install and one bootstrap step.
-- **`LOG_LEVEL=debug` flagged as a production concern, not changed in `.env.example`:** the local-dev default is appropriate for local dev; documented that it should be raised (`error` or `warning`) in production, added as a new line item in the existing Production Environment Checklist (Sprint 43) rather than a new standalone checklist.
+## Sprint 53 Implementation Decisions (Approved)
+
+Approved for the Sprint 53 (Fix Redis Runtime Gap) plan.
+
+- **`predis/predis` selected as the Redis client:** It is a native PHP Composer package, avoiding the need to compile and configure the `phpredis` PECL C extension in the Docker image. This keeps the [docker/php/Dockerfile](file:///Users/kbmanilla/Desktop/TimeForge/docker/php/Dockerfile) clean and ensures portability for host-direct environments without requiring the host system to compile extra extensions.
+- **`REDIS_CLIENT` set to `predis` in environment configuration:** Both [.env](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env) and [.env.example](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env.example) updated to set `REDIS_CLIENT=predis`.
+- **Health check gap resolved:** The `/health` endpoint now returns `200 OK` with Redis status reporting `ok` and successfully performing pings.
 
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 

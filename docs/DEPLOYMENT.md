@@ -263,7 +263,7 @@ Response shape:
 
 HTTP status is `200` only if every check passes; `503` if any fails, so a monitor can act on the status code alone without parsing the body. **Never includes hostnames, credentials, DSNs, or raw exception messages** — a failing check reports its real exception via `report()` (so it still reaches logs/whatever error monitoring is wired up, see below) and the public response only ever says `"status": "error"`, nothing more specific.
 
-**Known gap surfaced by this check, not fixed this sprint:** running `/health` against this environment's own Docker container currently reports `redis: error` — `QUEUE_CONNECTION=redis` is configured, but neither the `phpredis` PHP extension nor the `predis/predis` Composer package is actually installed in the image (confirmed: `Redis::connection()->ping()` throws `Class "Redis" not found`, not a connectivity error). This means Horizon/queued work would currently fail if actually exercised. Fixing this is a Docker image/dependency change, out of this documentation-and-monitoring sprint's scope — flagging it here since the health check is precisely what surfaced it.
+**Resolved Gap (Sprint 53):** The Redis connectivity gap has been resolved by installing the `predis/predis` package and setting `REDIS_CLIENT=predis` in the environment configuration. Running `/health` against the Docker container now reports `redis: ok` and Redis pings successfully, enabling Horizon, queues, and health checks to function correctly.
 
 ## Error Monitoring — Sentry/Bugsnag Setup (Documentation Only, Sprint 52)
 
