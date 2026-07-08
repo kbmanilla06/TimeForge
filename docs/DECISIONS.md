@@ -592,7 +592,7 @@ The following remain open and must be resolved before their related sprint begin
 - Malware scanning revisit for uploads (Sprint 13 decision explicitly deferred this "to be revisited at deployment/security hardening" — Sprint 39 was that moment but it wasn't in its approved scope, so this stays open).
 - ~~AI provider selection and external data privacy rules~~ — resolved in Sprint 58 (Local Deterministic Engine default, strict privacy guardrails); see "Sprint 58 Implementation Decisions" above and `docs/AI.md`.
 - ~~Whether to raise the password minimum length beyond Laravel's bare 8-character default~~ — resolved in Sprint 57 (minimum 10 characters, mixed case, and numbers); see "Sprint 57 Implementation Decisions" above.
-- Whether to publish an explicit `config/cors.php` allowed-origins allowlist instead of relying on Laravel's framework defaults (Sprint 19, defense-in-depth — no known exploit path today given the stateless Bearer-token architecture).
+- ~~Whether to publish an explicit config/cors.php allowed-origins allowlist beyond defaults~~ — resolved in Sprint 43 (CORS_ALLOWED_ORIGINS environment variable and config/cors.php configuration).
 - ~~Real SMTP/mail provider selection~~ — resolved in Sprint 36 (Google SMTP relay); see "Sprint 36 Implementation Decisions" above. `MAIL_MAILER` stays `log` by default until real credentials are supplied.
 
 Full question text and traceability: `docs/QUESTIONS.md`.
