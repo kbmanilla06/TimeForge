@@ -176,16 +176,16 @@ class ProfileTest extends TestCase
 
         $this->withAuth($user)->patchJson('/api/profile/password', [
             'current_password' => 'old-password-123',
-            'password' => 'new-password-456',
-            'password_confirmation' => 'new-password-456',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ])->assertOk();
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'password.changed', 'actor_id' => $user->id]);
         // Never the password itself, in any form.
         $entry = AuditLog::where('action', 'password.changed')->sole();
-        $this->assertStringNotContainsString('new-password-456', json_encode($entry->toArray()));
+        $this->assertStringNotContainsString('NewSecur3Pass!', json_encode($entry->toArray()));
 
-        $this->assertTrue(Hash::check('new-password-456', $user->fresh()->password));
+        $this->assertTrue(Hash::check('NewSecur3Pass!', $user->fresh()->password));
     }
 
     public function test_change_password_rejects_wrong_current_password(): void
@@ -194,8 +194,8 @@ class ProfileTest extends TestCase
 
         $this->withAuth($user)->patchJson('/api/profile/password', [
             'current_password' => 'wrong-password',
-            'password' => 'new-password-456',
-            'password_confirmation' => 'new-password-456',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ])->assertStatus(422)->assertJsonValidationErrors(['current_password']);
 
         $this->assertTrue(Hash::check('old-password-123', $user->fresh()->password));

@@ -39,7 +39,7 @@ class UserManagementTest extends TestCase
             ->postJson('/api/admin/users', [
                 'name' => 'New Employee',
                 'email' => 'new.employee@example.com',
-                'password' => 'password',
+                'password' => 'Str0ng!Passw0rd',
                 'role' => 'employee',
                 'department_id' => $department->id,
             ]);
@@ -138,7 +138,7 @@ class UserManagementTest extends TestCase
                 ->postJson('/api/admin/users', [
                     'name' => 'Someone',
                     'email' => "someone-{$role}@example.com",
-                    'password' => 'password',
+                    'password' => 'Str0ng!Passw0rd',
                     'role' => 'employee',
                 ])
                 ->assertStatus(403);

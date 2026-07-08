@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -83,6 +84,14 @@ class AppServiceProvider extends ServiceProvider
         // bucket.
         RateLimiter::for('lookup', function (Request $request) {
             return Limit::perMinute(30)->by($request->ip());
+        });
+
+        // Sprint 57: Global Password Complexity Policy
+        Password::defaults(function () {
+            return Password::min(10)
+                ->letters()
+                ->mixedCase()
+                ->numbers();
         });
     }
 }

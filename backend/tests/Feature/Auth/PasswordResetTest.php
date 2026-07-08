@@ -83,8 +83,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ]);
 
         $response->assertOk();
@@ -92,7 +92,7 @@ class PasswordResetTest extends TestCase
 
         $login = $this->postJson('/api/login', [
             'email' => $user->email,
-            'password' => 'new-password',
+            'password' => 'NewSecur3Pass!',
         ]);
 
         $login->assertOk();
@@ -105,8 +105,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => 'not-a-real-token',
             'email' => $user->email,
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ]);
 
         $response->assertStatus(422);
@@ -120,15 +120,15 @@ class PasswordResetTest extends TestCase
         $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ])->assertOk();
 
         $replay = $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'another-password',
-            'password_confirmation' => 'another-password',
+            'password' => 'AnotherSecur3!',
+            'password_confirmation' => 'AnotherSecur3!',
         ]);
 
         $replay->assertStatus(422);
@@ -186,8 +186,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['captcha_token']);
@@ -203,8 +203,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => $user->email,
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewSecur3Pass!',
+            'password_confirmation' => 'NewSecur3Pass!',
             'captcha_token' => 'a-real-widget-token',
         ]);
 
