@@ -543,6 +543,37 @@ Approved for the Sprint 54 (Real Mail Delivery Readiness) plan.
 - **Guidance on transactional mailers added to environment configurations**: Updated [.env.example](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env.example) to warn against Google SMTP pitfalls in production and document the standard options for transactional mailers (Resend, Postmark, SES).
 - **Mail verification checklists added to deployment documentation**: Updated [DEPLOYMENT.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/DEPLOYMENT.md) with a clear pre-flight verification checklist for mail delivery.
 - **Preserved existing local/development behavior**: Default mail driver remains `MAIL_MAILER=log` to prevent local development email attempts from throwing errors or leaking information. Anti-enumeration and graceful error catch rules remain completely intact.
+- **Mail-failure resilience (Sprint 45)**: registration (OTP issue/verify/resend), account approve/reject, and forgot-password were all previously vulnerable to an unguarded `notify()`/`sendResetLink()` call surfacing a raw 500 on a mail-provider failure — worse, `forgotPassword()` specifically had a real, confirmed enumeration side-channel under mail failure (a real email could 500 while a fake one always returned the generic 200). All six call sites are now wrapped, logged via `report()` on failure, and returning the exact same response the endpoint already gives on success. Each fix was proven, not assumed: a test exists per call site that simulates a mail outage by mocking the notification dispatcher — each test was independently verified to fail against the un-fixed code before confirming it passes against the fix.
+
+## Sprint 55 Implementation Decisions (Approved)
+
+Approved for the Sprint 55 (Error Monitoring Integration) plan.
+
+- **Sentry chosen as default error monitoring provider**: Native integration with Laravel exception pipeline and React error boundaries is robust and low-risk.
+- **Configuration-gated and disabled by default**: Integrations remain dormant unless `SENTRY_LARAVEL_DSN` and `VITE_SENTRY_DSN` are set.
+- **Enforced strict PII scrub boundaries**: Configured `send_default_pii => false` on both backend and frontend, and disabled SQL query/binding logs inside Sentry's breadcrumbs.
+
+## Sprint 56 Implementation Decisions (Approved)
+
+Approved for the Sprint 56 (Real Production Credential Cutover Checklist) plan.
+
+- **Created production credential cutover checklist**: Documented in [DEPLOYMENT.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/DEPLOYMENT.md) with strict warnings against copying dev environment secrets.
+- **Formulated group verification runbook**: Provided step-by-step commands for testing DB, Redis, S3 private storage round-trips, mail delivery (`mail:test`), Cloudflare site keys, and Sentry mock exceptions.
+
+## Sprint 57 Implementation Decisions (Approved)
+
+Approved for the Sprint 57 (Password Policy Decision and Implementation) plan.
+
+- **Strengthened default password rules globally**: Set minimum length to **10 characters**, requiring **lowercase, uppercase letters, and numbers** in [AppServiceProvider.php](file:///Users/kbmanilla/Desktop/TimeForge/backend/app/Providers/AppServiceProvider.php).
+- **Preserved seeder and login backward compatibility**: Database seeders (running in dev/demo) and login endpoints bypass complexity validation checks, keeping user passwords as `'password'` for local demo convenience.
+- **Updated unit test payloads**: Adjusted all test payloads to compliant passwords.
+
+## Sprint 58 Implementation Decisions (Approved)
+
+Approved for the Sprint 58 (AI Provider Decision and Privacy Guardrails) plan.
+
+- **Local Deterministic Stub chosen for production**: Retained `StubAiProvider` as the active AI generator to ensure 100% data privacy, zero latency, and $0 token costs.
+- **Established privacy guardrails guide**: Formulated [AI.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/AI.md) defining strict data exclusion blocklists (credentials, raw PII, rates) and token mapping guidelines for potential future cloud AI migrations.
 
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
@@ -559,10 +590,9 @@ The following remain open and must be resolved before their related sprint begin
 
 - ~~Deployment target and production hosting details~~ — resolved in Sprint 39 (Supabase Postgres + Supabase Storage); see "Sprint 39 Implementation Decisions" above and `docs/DEPLOYMENT.md`.
 - Malware scanning revisit for uploads (Sprint 13 decision explicitly deferred this "to be revisited at deployment/security hardening" — Sprint 39 was that moment but it wasn't in its approved scope, so this stays open).
-- AI provider selection and external data privacy rules (Sprint 11 is stub-only per its approved decisions; this item now gates only the future swap to a real external provider).
-- Whether to raise the password minimum length beyond Laravel's bare 8-character default (Sprint 19 flagged this as recommended, not required — the seeded demo password and every QA doc referencing it would need to change too, so it needs an explicit decision, not a default assumption).
+- ~~AI provider selection and external data privacy rules~~ — resolved in Sprint 58 (Local Deterministic Engine default, strict privacy guardrails); see "Sprint 58 Implementation Decisions" above and `docs/AI.md`.
+- ~~Whether to raise the password minimum length beyond Laravel's bare 8-character default~~ — resolved in Sprint 57 (minimum 10 characters, mixed case, and numbers); see "Sprint 57 Implementation Decisions" above.
 - Whether to publish an explicit `config/cors.php` allowed-origins allowlist instead of relying on Laravel's framework defaults (Sprint 19, defense-in-depth — no known exploit path today given the stateless Bearer-token architecture).
 - ~~Real SMTP/mail provider selection~~ — resolved in Sprint 36 (Google SMTP relay); see "Sprint 36 Implementation Decisions" above. `MAIL_MAILER` stays `log` by default until real credentials are supplied.
 
 Full question text and traceability: `docs/QUESTIONS.md`.
-
