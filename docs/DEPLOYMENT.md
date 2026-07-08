@@ -291,65 +291,155 @@ HTTP status is `200` only if every check passes; `503` if any fails, so a monito
 
 **Resolved Gap (Sprint 53):** The Redis connectivity gap has been resolved by installing the `predis/predis` package and setting `REDIS_CLIENT=predis` in the environment configuration. Running `/health` against the Docker container now reports `redis: ok` and Redis pings successfully, enabling Horizon, queues, and health checks to function correctly.
 
-## Error Monitoring — Sentry/Bugsnag Setup (Documentation Only, Sprint 52)
+## Error Monitoring (Sprint 55)
 
-No error monitoring provider is installed. This section documents how to add one later — per this sprint's non-scope, nothing here is wired up now.
+Centralized error monitoring is fully integrated into both the backend and frontend codebases via the Sentry SDK.
 
-This app already has an established pattern, used extensively since Sprint 45 (mail-failure resilience) and Sprint 46 (audit logging), of catching failures at every resilience point and calling `report($e)` rather than letting them surface as raw errors or silently disappearing:
+### Configuration Gating
+By default, Sentry integrations are dormant. They will not execute or send any external requests unless DSN environment variables are supplied:
+* **Backend Sentry**: Controlled by the `SENTRY_LARAVEL_DSN` variable in `.env`.
+* **Frontend Sentry**: Controlled by the `VITE_SENTRY_DSN` variable at build/compilation time.
 
-```php
-try {
-    // ...
-} catch (\Throwable $e) {
-    report($e);
-}
+### PII Controls
+To safeguard user data privacy, both configurations have default PII settings disabled (`send_default_pii` set to `false`). Database queries and bindings are also excluded to prevent sql injection or transaction parameter leakage into breadcrumbs. Refer to `docs/MONITORING.md` for the complete privacy policy and scrubbing rules.
+
+## Production Credential Cutover Checklist (Sprint 56)
+
+This checklist provides the verification runbook and final go-live checklists to safely transition TimeForge from local development configurations to verified production credentials.
+
+### ⚠️ Warning: Do Not Copy Development Credentials
+Never copy configuration keys directly from local `.env` files. Reusing development secrets, local SMTP passwords, or Turnstile test keys in production can cause service disruption, bypass CAPTCHA rules, or expose sensitive databases to external networks.
+
+### Production `.env` Template (No Secrets)
+
+Use the template below to build the production environment configuration. All values must be swapped for real production endpoints and credentials:
+
+```env
+# Application
+APP_NAME=TimeForge
+APP_ENV=production
+APP_KEY=                        # Must be a freshly generated 32-byte key
+APP_DEBUG=false                  # Must be false to hide stack traces on errors
+APP_URL=https://api.your-domain.example
+FRONTEND_URL=https://app.your-domain.example
+CORS_ALLOWED_ORIGINS=https://app.your-domain.example
+TRUSTED_PROXIES=                 # Set to proxy IP/CIDR or '*' if behind load balancer
+
+# Logging
+LOG_LEVEL=warning                # Raise from debug to warning/error to keep logs clean
+LOG_CHANNEL=stack
+LOG_STACK=single
+
+# Database (Supabase PG)
+DB_CONNECTION=pgsql
+DB_HOST=db.your-project-ref.supabase.co
+DB_PORT=6543                     # Use pooler port 6543 for serverless/high workers
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=your-real-db-password
+DB_SSLMODE=require
+
+# Storage (Supabase S3)
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=your-s3-access-key-id
+AWS_SECRET_ACCESS_KEY=your-s3-secret-access-key
+AWS_DEFAULT_REGION=your-supabase-region
+AWS_BUCKET=your-private-bucket-name
+AWS_ENDPOINT=https://your-project-ref.supabase.co/storage/v1/s3
+AWS_USE_PATH_STYLE_ENDPOINT=true
+
+# Cache & Redis
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=redis
+REDIS_CLIENT=predis
+REDIS_HOST=127.0.0.1             # Production Redis service
+REDIS_PORT=6379
+
+# Mail (Transactional SMTP - e.g. Resend, Postmark, SES)
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.resend.com        # Swapped to production provider
+MAIL_PORT=587
+MAIL_USERNAME=resend
+MAIL_PASSWORD=your-real-provider-api-or-smtp-password
+MAIL_FROM_ADDRESS=notifications@your-verified-domain.com
+MAIL_FROM_NAME="TimeForge"
+
+# CAPTCHA (Cloudflare Turnstile)
+CAPTCHA_ENABLED=true
+CAPTCHA_PROVIDER=turnstile
+TURNSTILE_SITE_KEY=your-real-turnstile-site-key
+TURNSTILE_SECRET_KEY=your-real-turnstile-secret-key
+
+# Error Monitoring (Sentry)
+SENTRY_LARAVEL_DSN=https://your-public-key@o0.ingest.sentry.io/your-project-id
+SENTRY_TRACES_SAMPLE_RATE=0.0
 ```
 
-Every one of these call sites already flows through Laravel's exception handler (`bootstrap/app.php`'s `withExceptions()`), which is the exact integration point Sentry/Bugsnag hook into. **Wiring up a real provider later requires zero changes to any existing `report()` call site** — only a package install and one bootstrap hook.
+---
 
-**Sentry** (recommended — widest Laravel-specific tooling and docs):
+### Step-by-Step Credential Verification Runbook
 
+Before enabling public access, execute the following commands in the server or container context to verify each credential group:
+
+#### 1. Database Connectivity & Schema
+Verify the database connection can resolve queries and that the schema is fully up-to-date:
 ```bash
-composer require sentry/sentry-laravel
-php artisan sentry:publish --dsn=your-dsn-here
+php artisan db:show
+php artisan migrate:status
 ```
+*Expected*: The connection resolves successfully, and all migrations report a status of `Ran`.
 
-Add to `.env`:
-
-```
-SENTRY_LARAVEL_DSN=https://your-key@your-org.ingest.sentry.io/your-project
-SENTRY_TRACES_SAMPLE_RATE=0.2
-```
-
-The published config auto-registers Sentry's exception handler integration; no manual edit to `bootstrap/app.php` is required by default with recent `sentry-laravel` versions (the package's service provider hooks in automatically).
-
-**Bugsnag** (alternative):
-
+#### 2. Redis & Queue Health
+Verify Redis handles connectivity pings:
 ```bash
-composer require bugsnag/bugsnag-laravel
+php artisan tinker --execute="echo Redis::connection()->ping() === 'PONG' ? 'Redis OK' : 'Redis FAIL';"
 ```
+*Expected*: Outputs `Redis OK`.
 
-Add to `.env`:
-
+#### 3. S3-Compatible Production Storage (Round-Trip)
+Verify the S3 bucket is private (objects are not accessible directly via URL) and writable by running the Health Check test loop:
+```bash
+curl -s http://localhost:8000/health | grep -q '"storage":{"status":"ok"}' && echo "Storage OK" || echo "Storage FAIL"
 ```
-BUGSNAG_API_KEY=your-api-key-here
+*Expected*: Outputs `Storage OK`. Verify on your cloud console that the temporary S3 health check object (e.g. `health-check-*`) was successfully deleted from the bucket after the write/read test.
+
+#### 4. Transactional Mail Delivery
+Test outbound mail delivery using the console test utility:
+```bash
+php artisan mail:test check-email@your-domain.com
 ```
+*Expected*: Outputs a success notification. Check the recipient's inbox to verify the email arrived. If SMTPS/API restrictions are active, inspect the provider dashboard for logs.
 
-Both require installing a new Composer package not currently in `composer.json` — treat that as its own decision when the time comes, the same framing Sprint 45 used for mail providers beyond the generic SMTP transport.
-
-## Production Logging Expectations (Sprint 52)
-
-`LOG_LEVEL=debug` is `.env.example`'s default — appropriate for local development, **not for production**. Debug-level logging is noisy and can log more request/query detail than a production environment should retain. Raise it:
-
+#### 5. Cloudflare Turnstile CAPTCHA Keys
+Ensure the Turnstile configuration does not use Cloudflare's published development test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`), which automatically bypass validation.
+```bash
+php artisan tinker --execute="echo str_starts_with(config('captcha.turnstile.site_key'), '1x0000') ? 'Test Keys Found' : 'Production Keys OK';"
 ```
-LOG_LEVEL=error
+*Expected*: Outputs `Production Keys OK`.
+
+#### 6. Sentry Error Logging
+Trigger a mock test exception to verify Sentry receives payload reports (if a Sentry DSN is set):
+```bash
+php artisan tinker --execute="report(new \Exception('Sentry Go-Live Verification Exception'));"
 ```
+*Expected*: The terminal returns successfully (the exception is caught and reported rather than crashing). Open the Sentry dashboard to confirm the verification issue is captured.
 
-(`warning` is a reasonable middle ground if you want deprecation/warning-level signal without full debug noise.)
+---
 
-`LOG_CHANNEL=stack` (default, unchanged) fans out to whatever channels `LOG_STACK` lists — `single` (one rotating file at `storage/logs/laravel.log`) by default. For a containerized deployment, consider pointing the stack at `stderr` instead (Laravel's built-in `stderr` channel) so logs are captured by your container platform's own log aggregation rather than a file inside the container that disappears when the container is replaced.
+### Pre-Go-Live Final Checklist
 
-Once an error monitoring provider is wired up (see above), it typically adds itself as an additional channel in the `stack` list — logs continue going wherever they already go, and also reach the monitoring provider, with no change to any of the `report()` call sites already throughout this codebase.
+Before routing production traffic to the web hosts, check off all of the following deployment safety steps:
+
+- [ ] **Debug Disabled**: Confirm `APP_DEBUG=false` in `.env` to prevent database schema and traceback exposure.
+- [ ] **Log Level Raised**: Confirm `LOG_LEVEL` is set to `warning` or `error` to avoid logs flooding.
+- [ ] **Fresh Key Generated**: Confirm a new `APP_KEY` was generated for the production instance and not copied from dev.
+- [ ] **HTTPS Enforced**: Confirm `APP_URL` and `FRONTEND_URL` start with `https://`.
+- [ ] **CORS Origins Gated**: Confirm `CORS_ALLOWED_ORIGINS` is configured with the production frontend URL (and is not `*`).
+- [ ] **Turnstile Matched**: Confirm the frontend build environment variables (`VITE_TURNSTILE_SITE_KEY`) match the backend `TURNSTILE_SITE_KEY`.
+- [ ] **Private Storage**: Verify that the S3 storage bucket is private and has no public read access.
+- [ ] **Configuration Cache**: Run `php artisan config:cache` to freeze all environment values. Remember to run `config:clear` before updating any `.env` parameters in the future.
+- [ ] **Health Endpoint Returns 200**: Query `/health` from an external probe and verify the response status code is `200` and all sub-checks are `"ok"`.
 
 ## Rollback
 
