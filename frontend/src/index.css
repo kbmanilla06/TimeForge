@@ -1,19 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /*
- * TimeForge design tokens (from the Figma auth direction):
- * white surfaces, #dae0e7 borders, #1876f2 primary, #f9fafb fields,
- * enterprise density. Referenced as Tailwind utilities, e.g. bg-primary,
- * border-line, text-ink, text-muted, bg-field, bg-canvas.
+ * TimeForge Design Tokens & Theme Extensions
  */
 @theme {
-  --color-primary: #1876f2;
-  --color-primary-dark: #1565d8;
-  --color-ink: #131820;
-  --color-muted: #65758b;
-  --color-line: #dae0e7;
-  --color-field: #f9fafb;
-  --color-canvas: #f7f9fb;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  --color-primary: #4f46e5;
+  --color-primary-dark: #4338ca;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-line: #e2e8f0;
+  --color-field: #f8fafc;
+  --color-canvas: #f1f5f9;
 
-  --shadow-card: 0px 1px 1px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.03), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+  --shadow-hover: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+}
+
+/*
+ * Global Base Reset and Improvements
+ */
+html,
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Custom Thin Scrollbar
+ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/*
+ * Smooth Tactile Interactive Elements
+ */
+button,
+a,
+input,
+select,
+textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active,
+a.button:active {
+  transform: scale(0.98);
+}
+
+/*
+ * Input Fields Focus Transitions and Glows
+ */
+input,
+select,
+textarea {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08) !important;
+}
+
+/*
+ * Card Hover Scale & Transition Animations
+ */
+.shadow-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shadow-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+/*
+ * Tables Visual Formatting
+ */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  background-color: var(--color-field);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1.25rem;
+}
+
+td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+tbody tr:hover {
+  background-color: rgba(79, 70, 229, 0.015);
+}
+
+/*
+ * Navigation Badge Glow
+ */
+.bg-primary\/15 {
+  background-color: rgba(79, 70, 229, 0.1) !important;
+  color: var(--color-primary) !important;
+  border: 1px solid rgba(79, 70, 229, 0.15);
+}
+
+.bg-primary\/10 {
+  background-color: rgba(79, 70, 229, 0.08) !important;
+  color: var(--color-primary) !important;
 }

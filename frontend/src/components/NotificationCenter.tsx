@@ -127,7 +127,7 @@ export function NotificationCenter({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-80 rounded-xl border border-line bg-white p-2 shadow-card">
+        <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-xl border border-line bg-white p-2 shadow-card">
           <div className="flex items-center justify-between px-2 py-1">
             <p className="text-sm font-semibold text-ink">Notifications</p>
             {displayCount > 0 && (
