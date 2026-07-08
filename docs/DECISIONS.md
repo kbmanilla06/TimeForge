@@ -535,6 +535,15 @@ Approved for the Sprint 53 (Fix Redis Runtime Gap) plan.
 - **`REDIS_CLIENT` set to `predis` in environment configuration:** Both [.env](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env) and [.env.example](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env.example) updated to set `REDIS_CLIENT=predis`.
 - **Health check gap resolved:** The `/health` endpoint now returns `200 OK` with Redis status reporting `ok` and successfully performing pings.
 
+## Sprint 54 Implementation Decisions (Approved)
+
+Approved for the Sprint 54 (Real Mail Delivery Readiness) plan.
+
+- **Artisan command `mail:test` added for testing connectivity**: Registered in [routes/console.php](file:///Users/kbmanilla/Desktop/TimeForge/backend/routes/console.php) to allow testing any configured mail driver safely with email validation and verbose error printing on failure.
+- **Guidance on transactional mailers added to environment configurations**: Updated [.env.example](file:///Users/kbmanilla/Desktop/TimeForge/backend/.env.example) to warn against Google SMTP pitfalls in production and document the standard options for transactional mailers (Resend, Postmark, SES).
+- **Mail verification checklists added to deployment documentation**: Updated [DEPLOYMENT.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/DEPLOYMENT.md) with a clear pre-flight verification checklist for mail delivery.
+- **Preserved existing local/development behavior**: Default mail driver remains `MAIL_MAILER=log` to prevent local development email attempts from throwing errors or leaking information. Anti-enumeration and graceful error catch rules remain completely intact.
+
 ## Approved Guardrails For Future Feature-Adjustment Sprints (Not Yet Scheduled Or Implemented)
 
 Recorded for when each of these specific sprints is opened; none of this work has been started or approved for implementation yet, per the "plan one sprint at a time" workflow rule.

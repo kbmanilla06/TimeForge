@@ -78,10 +78,26 @@ This app's mail config (`config/mail.php`) is Laravel's stock, unmodified config
 | **Postmark** | Requires `composer require symfony/postmark-mailer symfony/http-client` (not currently installed) | Purpose-built for transactional mail (not marketing/bulk), excellent deliverability reputation and dashboards out of the box; paid |
 | **Resend** | Requires `composer require resend/resend-php` or the Symfony bridge (not currently installed) | Newer, developer-friendly API and dashboard; smaller track record than SES/Postmark |
 | **Mailgun** | Requires `composer require symfony/mailgun-mailer symfony/http-client` (not currently installed) | Established, flexible; historically stricter about sender domain verification |
+| **Resend** | Built-in via generic SMTP or API integrations | Highly recommended for modern stacks, generous free tier |
+| **Postmark** | Built-in via SMTP or API integrations | Focuses entirely on high deliverability for transactional mail |
 
-Adding any provider beyond the generic `smtp` transport (i.e. SES/Postmark/Resend/Mailgun) means installing a new Composer package first — treat that as its own decision, not something to do silently mid-deploy.
+#### Recommended Production SMTP Configuration (Resend/Postmark/SES)
 
-**Google SMTP example** (works today, no new dependencies):
+Dedicated transactional providers are highly recommended for production due to superior deliverability, IP reputation management, and API access controls:
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.resend.com # or smtp.postmarkapp.com, email-smtp.us-east-1.amazonaws.com
+MAIL_PORT=587
+MAIL_USERNAME=resend # or your SMTP username
+MAIL_PASSWORD=your-api-or-smtp-password
+MAIL_FROM_ADDRESS=notifications@your-verified-domain.com
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+#### Google SMTP Configuration (Not Recommended for Production)
+
+Standard password authentication is deprecated. Personal Gmail accounts are heavily rate-limited and will fail when called from cloud host IPs. If used for testing, it requires a 16-character **Gmail App Password** and 2-Step Verification enabled:
 
 ```
 MAIL_MAILER=smtp
@@ -93,7 +109,17 @@ MAIL_FROM_ADDRESS=your-gmail-address@gmail.com
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-The password is a 16-character **Gmail App Password**, not the account's normal login password — requires 2-Step Verification enabled on the Google account: https://myaccount.google.com/apppasswords. Leave `MAIL_SCHEME` unset; this app's `config/mail.php` doesn't read `MAIL_ENCRYPTION` — port 587 auto-negotiates STARTTLS.
+### Production Mail Verification Checklist
+
+Before deploying, complete the following steps to verify mail delivery:
+1. **Domain Alignment**: Confirm that SPF, DKIM, and DMARC records are configured on your DNS for the `MAIL_FROM_ADDRESS` domain.
+2. **Provider Sandbox**: Ensure the transactional mail provider is active and out of sandbox mode (many restrict sending to unverified addresses by default).
+3. **Connectivity Verification**: Run the `mail:test` Artisan command inside the app container:
+   ```bash
+   php artisan mail:test target-email@example.com
+   ```
+   Confirm the command outputs a success status and that the email arrives in the recipient's inbox.
+4. **Resilience Test**: Verify that the application continues to respond with success even if the mail server is temporarily down (mail sending failures should be caught and reported via `report()`, per Sprint 45).
 
 ### Mail-Failure Resilience (Sprint 45)
 
@@ -218,7 +244,7 @@ Run through this before any real deployment — it consolidates every environmen
 - [ ] `TRUSTED_PROXIES` set if a TLS-terminating reverse proxy/load balancer sits in front of the app; confirmed generated URLs are `https://` afterward
 - [ ] `DB_*` point at the real production Postgres instance, `DB_SSLMODE=require` for Supabase
 - [ ] `FILESYSTEM_DISK=s3` with real Supabase Storage credentials (not local disk)
-- [ ] `MAIL_MAILER=smtp` with a real, working Google App Password — verify by actually sending one email, not just checking the variable is set
+- [ ] `MAIL_MAILER` set to a transactional mail provider or SMTP server — verified via `php artisan mail:test` that emails successfully deliver to the inbox
 - [ ] `CAPTCHA_ENABLED=true` with real Turnstile keys (not the published test key pair) and the frontend's `VITE_TURNSTILE_SITE_KEY` matches
 - [ ] `php artisan migrate --force` run and confirmed clean (`php artisan migrate:status` shows nothing pending)
 - [ ] `php artisan config:cache` run **last**, after every other `.env` value above is finalized (see the `config:cache` gotcha above — changing `.env` afterward silently does nothing until `config:clear`)
