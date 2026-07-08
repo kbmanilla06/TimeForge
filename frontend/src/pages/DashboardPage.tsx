@@ -21,7 +21,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { LoadingState } from '../components/ui/states'
 import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
 
-const CHART_COLOR = '#1876f2'
+const CHART_COLOR = '#4f46e5'
 
 function formatHours(minutes: number): string {
   return (minutes / 60).toFixed(2)

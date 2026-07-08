@@ -16,11 +16,11 @@ import { TableCard, TableHead, Td, Th, Tr } from '../components/ui/Table'
 
 type TargetType = 'user' | 'department'
 
-const CHART_COLOR = '#1876f2'
+const CHART_COLOR = '#4f46e5'
 
-const CATEGORY_META: Record<KpiCategory, { label: string; tone: 'green' | 'blue' | 'amber' }> = {
+const CATEGORY_META: Record<KpiCategory, { label: string; tone: 'green' | 'violet' | 'amber' }> = {
   completed: { label: 'Completed', tone: 'green' },
-  current: { label: 'Current', tone: 'blue' },
+  current: { label: 'Current', tone: 'violet' },
   pending: { label: 'Pending', tone: 'amber' },
 }
 

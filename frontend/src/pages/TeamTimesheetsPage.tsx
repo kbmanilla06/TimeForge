@@ -29,7 +29,7 @@ import { Select, Textarea, TextInput } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { EmptyState, LoadingState } from '../components/ui/states'
 
-const CHART_COLOR = '#1876f2'
+const CHART_COLOR = '#4f46e5'
 
 const STATUS_OPTIONS: Array<{ value: TimesheetStatus | 'all'; label: string }> = [
   { value: 'all', label: 'All Statuses' },

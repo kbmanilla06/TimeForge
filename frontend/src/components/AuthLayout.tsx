@@ -25,13 +25,13 @@ export function BeakerIcon({ className = 'size-8' }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="18" cy="21" r="1.5" fill="#1876f2" />
-      <circle cx="23" cy="23" r="1" fill="#1876f2" />
-      <circle cx="17" cy="26" r="2" fill="#1876f2" />
-      <circle cx="21" cy="27" r="1.5" fill="#1876f2" />
+      <circle cx="18" cy="21" r="1.5" fill="#4f46e5" />
+      <circle cx="23" cy="23" r="1" fill="#4f46e5" />
+      <circle cx="17" cy="26" r="2" fill="#4f46e5" />
+      <circle cx="21" cy="27" r="1.5" fill="#4f46e5" />
       <path
         d="M13.5 23.5C13.5 23.5 16 22 20 23.5C24 25 26.5 23.5 26.5 23.5"
-        stroke="#1876f2"
+        stroke="#4f46e5"
         strokeWidth="2"
         strokeLinecap="round"
       />

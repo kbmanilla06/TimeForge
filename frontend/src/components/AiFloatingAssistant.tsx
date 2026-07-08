@@ -8,7 +8,7 @@ import { Button } from './ui/Button'
 import { TextInput } from './ui/fields'
 import { TableCard, TableHead, Td, Th, Tr } from './ui/Table'
 
-const CHART_COLOR = '#1876f2'
+const CHART_COLOR = '#4f46e5'
 
 const EXAMPLE_QUESTIONS = [
   "What is my team's progress?",

@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->admin()->create([
             'name' => 'TimeForge Admin',
             'email' => 'admin@timeforge.test',
-            'password' => 'password',
+            'password' => 'Passw0rd123!',
         ]);
     }
 }

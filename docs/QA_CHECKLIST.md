@@ -2,7 +2,7 @@
 
 The single, ordered end-to-end regression pass over every module, consolidated from the per-module walkthroughs in `docs/SETUP.md` (which keep the step-by-step detail). Execute top to bottom on a fresh database with both seeders; check items off as they pass. Best run on a date that is the 3rd day (or later) of a payroll period so the seeded "unsubmitted day" example exists.
 
-Demo credentials (all passwords `password`, dev-only): `admin@` / `supervisor@` / `employee@` / `intern@` / `marketer@` / `hr@` — all `…@timeforge.test`.
+Demo credentials (all passwords `Passw0rd123!`, dev-only): `admin@` / `supervisor@` / `employee@` / `intern@` / `marketer@` / `hr@` — all `…@timeforge.test`.
 
 ## Phase 0 — Environment (Docker/Postgres runbook)
 
@@ -159,7 +159,7 @@ Covers profile picture repair, dashboard sidebar layout, department descriptions
 
 ### Browser Checklist (copy-paste executable — a human still needs to perform these)
 
-1. Open `http://localhost:5173`, log in as `admin@timeforge.test` / `password`; confirm the Home Dashboard renders with no console errors.
+1. Open `http://localhost:5173`, log in as `admin@timeforge.test` / `Passw0rd123!`; confirm the Home Dashboard renders with no console errors.
 2. Go to Profile, upload a picture, confirm it appears in the sidebar immediately, then hard-refresh (F5) and confirm it's still there.
 3. Go to Manage Departments, edit a description, then log in as an employee in that department and confirm it displays on their Home Dashboard.
 4. On the Home Dashboard, click Time In → Pause Break → Resume Break → Time Out, confirming the button set updates correctly at each step with no stale buttons.

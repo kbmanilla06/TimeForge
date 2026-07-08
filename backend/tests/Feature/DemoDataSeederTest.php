@@ -40,7 +40,7 @@ class DemoDataSeederTest extends TestCase
 
             $this->postJson('/api/login', [
                 'email' => $email,
-                'password' => 'password',
+                'password' => 'Passw0rd123!',
             ])->assertOk()->assertJsonStructure(['user', 'token']);
         }
     }

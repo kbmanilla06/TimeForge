@@ -16,7 +16,7 @@ npm run dev                                           # http://localhost:5173
 
 Have a small PDF on the desktop ready to upload live. Best demoed on the 3rd day (or later) of a payroll period, so the seeded "logged but never submitted" example exists; on days 1-2 that one example is naturally absent (nothing is ever seeded in the future).
 
-## Demo Credentials (dev/demo only — password is `password` for all)
+## Demo Credentials (dev/demo only — password is `Passw0rd123!` for all)
 
 | Login | Role | Notes |
 | --- | --- | --- |

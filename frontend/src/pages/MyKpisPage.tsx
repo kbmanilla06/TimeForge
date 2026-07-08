@@ -10,9 +10,9 @@ import { Card, SectionCard } from '../components/ui/Card'
 import { PageHeader } from '../components/ui/PageHeader'
 import { EmptyState, LoadingState } from '../components/ui/states'
 
-const CATEGORY_META: Record<KpiCategory, { label: string; tone: 'green' | 'blue' | 'amber'; color: string }> = {
+const CATEGORY_META: Record<KpiCategory, { label: string; tone: 'green' | 'violet' | 'amber'; color: string }> = {
   completed: { label: 'Completed', tone: 'green', color: '#10b981' },
-  current: { label: 'Current', tone: 'blue', color: '#1876f2' },
+  current: { label: 'Current', tone: 'violet', color: '#4f46e5' },
   pending: { label: 'Pending', tone: 'amber', color: '#f59e0b' },
 }
 

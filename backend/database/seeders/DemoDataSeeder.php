@@ -113,7 +113,7 @@ class DemoDataSeeder extends Seeder
     {
         return User::firstOrCreate(['email' => $email], [
             'name' => $name,
-            'password' => 'password',
+            'password' => 'Passw0rd123!',
             'role' => $role,
             'status' => UserStatus::Active,
             'department_id' => $departmentId,
