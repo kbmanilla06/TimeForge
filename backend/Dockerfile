@@ -25,7 +25,7 @@ COPY . .
 RUN composer install --no-dev --no-scripts --optimize-autoloader --ignore-platform-reqs
 
 # Expose port (Render overrides this with $PORT)
-EXPOSE 8000
+EXPOSE 10000
 
 # Set start command
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000} --no-reload
+CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000} --no-reload
