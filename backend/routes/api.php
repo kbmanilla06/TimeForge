@@ -35,6 +35,23 @@ use App\Http\Controllers\TimeEntryController;
 use App\Http\Controllers\TimesheetController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/diagnostic', function () {
+    $results = [];
+    $results['php_version'] = PHP_VERSION;
+    $results['app_key_set'] = !empty(config('app.key'));
+    try {
+        $dbHost = config('database.connections.pgsql.host');
+        $dbPort = config('database.connections.pgsql.port');
+        $results['db_host'] = $dbHost;
+        $results['db_port'] = $dbPort;
+        $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $results['database_connection'] = 'SUCCESS';
+    } catch (\Throwable $e) {
+        $results['database_connection'] = 'FAILED: ' . $e->getMessage();
+    }
+    return response()->json($results);
+});
+
 Route::middleware(['throttle:auth', 'timezone'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/login/verify-2fa', [AuthController::class, 'verify2Fa']);
