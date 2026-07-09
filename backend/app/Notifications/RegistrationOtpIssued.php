@@ -31,6 +31,8 @@ class RegistrationOtpIssued extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        \Illuminate\Support\Facades\Log::info("Registration OTP for {$notifiable->email}: {$this->code}");
+
         return (new MailMessage)
             ->subject('TimeForge — Verify Your Email')
             ->greeting("Hi {$notifiable->name},")
