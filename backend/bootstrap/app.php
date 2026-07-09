@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'role' => EnsureUserHasRole::class,
+            'timezone' => \App\Http\Middleware\SetUserTimezone::class,
         ]);
 
         // Sprint 43: trusts no proxies by default (unchanged behavior)

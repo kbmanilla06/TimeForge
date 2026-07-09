@@ -33,4 +33,20 @@ final class ExcelExporter
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
+
+    /**
+     * @param  string[]  $headings
+     * @param  array<int, array<int, mixed>>  $rows
+     */
+    public static function save(string $sheetTitle, array $headings, array $rows, string $filePath): void
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle($sheetTitle);
+        $sheet->fromArray($headings, null, 'A1');
+        $sheet->fromArray($rows, null, 'A2');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+    }
 }

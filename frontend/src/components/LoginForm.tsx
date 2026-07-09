@@ -77,7 +77,7 @@ function LockIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function LoginForm({ id = 'login-form' }: { id?: string }) {
-  const { login } = useAuth()
+  const { login, verify2Fa } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -86,19 +86,97 @@ export function LoginForm({ id = 'login-form' }: { id?: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false)
+  const [twoFactorCode, setTwoFactorCode] = useState('')
+  const [isVerifying2Fa, setIsVerifying2Fa] = useState(false)
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)
 
     try {
-      await login(email, password)
-      setIsSuccess(true)
-      navigate('/', { replace: true })
+      const res = await login(email, password)
+      if (res?.two_factor_required) {
+        setTwoFactorRequired(true)
+        setIsSubmitting(false)
+      } else {
+        setIsSuccess(true)
+        navigate('/', { replace: true })
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Unable to log in.')
       setIsSubmitting(false)
     }
+  }
+
+  async function handle2FaSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    setIsVerifying2Fa(true)
+
+    try {
+      await verify2Fa(email, twoFactorCode)
+      setIsSuccess(true)
+      navigate('/', { replace: true })
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Invalid or expired code.')
+      setIsVerifying2Fa(false)
+    }
+  }
+
+  if (twoFactorRequired) {
+    return (
+      <form onSubmit={handle2FaSubmit} className="space-y-5" noValidate>
+        <div className="text-center">
+          <h3 className="text-base font-bold text-ink">Two-Factor Authentication</h3>
+          <p className="mt-1 text-xs text-muted">
+            A verification code has been sent to your email. Enter the 6-digit code below to log in.
+          </p>
+        </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-red-600 text-center">
+            {error}
+          </p>
+        )}
+
+        <div>
+          <label htmlFor="2fa-code" className={authLabelClass}>
+            Verification Code
+          </label>
+          <input
+            id="2fa-code"
+            type="text"
+            required
+            pattern="[0-9]{6}"
+            placeholder="123456"
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            className="w-full h-10 rounded-lg border border-line bg-field px-3 text-center tracking-widest text-lg font-bold text-ink placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isVerifying2Fa || twoFactorCode.length !== 6}
+          className="flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+        >
+          {isVerifying2Fa ? 'Verifying…' : 'Verify & Log In'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setTwoFactorRequired(false)
+            setTwoFactorCode('')
+          }}
+          className="flex h-10 w-full items-center justify-center rounded-lg border border-line bg-white px-4 text-sm font-semibold text-ink shadow-sm hover:bg-field focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+        >
+          Back to Sign In
+        </button>
+      </form>
+    )
   }
 
   return (

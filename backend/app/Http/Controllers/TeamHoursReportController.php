@@ -16,55 +16,77 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+use App\Jobs\GenerateExportJob;
+
 class TeamHoursReportController extends Controller
 {
-    public function exportPdf(Request $request): Response
+    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
     {
-        [$periodStart, $periodEnd] = $this->resolvePeriod($request);
-        $rows = $this->buildSummary($request, $periodStart, $periodEnd);
+        if ($request->query('sync') || app()->environment('testing')) {
+            [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+            $rows = $this->buildSummary($request, $periodStart, $periodEnd);
 
-        AuditLog::record('team_hours_report.exported', metadata: [
-            'format' => 'pdf',
-            'period_start' => $periodStart->toDateString(),
-            'period_end' => $periodEnd->toDateString(),
-        ]);
+            AuditLog::record('team_hours_report.exported', metadata: [
+                'format' => 'pdf',
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+            ]);
 
-        return Pdf::loadView('reports.team-hours', [
-            'rows' => $rows,
-            'periodStart' => $periodStart->toDateString(),
-            'periodEnd' => $periodEnd->toDateString(),
-            'generatedAt' => now()->toDateTimeString(),
-        ])->download('team-hours-report.pdf');
+            return Pdf::loadView('reports.team-hours', [
+                'rows' => $rows,
+                'periodStart' => $periodStart->toDateString(),
+                'periodEnd' => $periodEnd->toDateString(),
+                'generatedAt' => now()->toDateTimeString(),
+            ])->download('team-hours-report.pdf');
+        }
+
+        GenerateExportJob::dispatch(
+            $request->user()->id,
+            'team_hours_pdf',
+            $request->query('date')
+        );
+
+        return response()->json(['message' => 'Your export is being generated in the background. You will be notified in-app when it is ready.']);
     }
 
-    public function exportExcel(Request $request): StreamedResponse
+    public function exportExcel(Request $request): \Symfony\Component\HttpFoundation\Response
     {
-        [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+        if ($request->query('sync') || app()->environment('testing')) {
+            [$periodStart, $periodEnd] = $this->resolvePeriod($request);
 
-        AuditLog::record('team_hours_report.exported', metadata: [
-            'format' => 'excel',
-            'period_start' => $periodStart->toDateString(),
-            'period_end' => $periodEnd->toDateString(),
-        ]);
+            AuditLog::record('team_hours_report.exported', metadata: [
+                'format' => 'excel',
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+            ]);
 
-        $rows = $this->buildSummary($request, $periodStart, $periodEnd)
-            ->map(fn (array $row) => [
-                $row['name'],
-                $row['department'] ?? '',
-                round($row['approved_minutes'] / 60, 2),
-                round($row['overtime_minutes'] / 60, 2),
-                round($row['pending_minutes'] / 60, 2),
-                round($row['rejected_minutes'] / 60, 2),
-                $row['attendance_days'],
-            ])
-            ->all();
+            $rows = $this->buildSummary($request, $periodStart, $periodEnd)
+                ->map(fn (array $row) => [
+                    $row['name'],
+                    $row['department'] ?? '',
+                    round($row['approved_minutes'] / 60, 2),
+                    round($row['overtime_minutes'] / 60, 2),
+                    round($row['pending_minutes'] / 60, 2),
+                    round($row['rejected_minutes'] / 60, 2),
+                    $row['attendance_days'],
+                ])
+                ->all();
 
-        return ExcelExporter::download(
-            'Team Hours Report',
-            ['Employee', 'Department', 'Approved Hrs', 'Overtime Hrs', 'Pending Hrs', 'Rejected Hrs', 'Attendance'],
-            $rows,
-            'team-hours-report.xlsx',
+            return ExcelExporter::download(
+                'Team Hours Report',
+                ['Employee', 'Department', 'Approved Hrs', 'Overtime Hrs', 'Pending Hrs', 'Rejected Hrs', 'Attendance'],
+                $rows,
+                'team-hours-report.xlsx',
+            );
+        }
+
+        GenerateExportJob::dispatch(
+            $request->user()->id,
+            'team_hours_excel',
+            $request->query('date')
         );
+
+        return response()->json(['message' => 'Your export is being generated in the background. You will be notified in-app when it is ready.']);
     }
 
     /**

@@ -1,10 +1,11 @@
 import { createContext, useContext } from 'react'
-import type { User } from '../types/auth'
+import type { LoginResponse, User } from '../types/auth'
 
 export interface AuthContextValue {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<LoginResponse>
+  verify2Fa: (email: string, code: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   pictureUrl: string | null

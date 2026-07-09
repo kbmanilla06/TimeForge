@@ -17,6 +17,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+use App\Jobs\GenerateExportJob;
+
 class PayrollController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -28,59 +30,79 @@ class PayrollController extends Controller
         return response()->json($summaries->values());
     }
 
-    public function exportPdf(Request $request): Response
+    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeView($request);
 
-        [$periodStart, $periodEnd] = $this->resolvePeriod($request);
-        $rows = $this->buildPayrollSummary([$periodStart, $periodEnd]);
+        if ($request->query('sync') || app()->environment('testing')) {
+            [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+            $rows = $this->buildPayrollSummary([$periodStart, $periodEnd]);
 
-        AuditLog::record('payroll.exported', metadata: [
-            'format' => 'pdf',
-            'period_start' => $periodStart->toDateString(),
-            'period_end' => $periodEnd->toDateString(),
-        ]);
+            AuditLog::record('payroll.exported', metadata: [
+                'format' => 'pdf',
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+            ]);
 
-        return Pdf::loadView('reports.payroll', [
-            'rows' => $rows,
-            'periodStart' => $periodStart->toDateString(),
-            'periodEnd' => $periodEnd->toDateString(),
-            'generatedAt' => now()->toDateTimeString(),
-        ])->download('payroll-report.pdf');
+            return Pdf::loadView('reports.payroll', [
+                'rows' => $rows,
+                'periodStart' => $periodStart->toDateString(),
+                'periodEnd' => $periodEnd->toDateString(),
+                'generatedAt' => now()->toDateTimeString(),
+            ])->download('payroll-report.pdf');
+        }
+
+        GenerateExportJob::dispatch(
+            $request->user()->id,
+            'payroll_pdf',
+            $request->query('date')
+        );
+
+        return response()->json(['message' => 'Your export is being generated in the background. You will be notified in-app when it is ready.']);
     }
 
-    public function exportExcel(Request $request): StreamedResponse
+    public function exportExcel(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeView($request);
 
-        [$periodStart, $periodEnd] = $this->resolvePeriod($request);
+        if ($request->query('sync') || app()->environment('testing')) {
+            [$periodStart, $periodEnd] = $this->resolvePeriod($request);
 
-        AuditLog::record('payroll.exported', metadata: [
-            'format' => 'excel',
-            'period_start' => $periodStart->toDateString(),
-            'period_end' => $periodEnd->toDateString(),
-        ]);
+            AuditLog::record('payroll.exported', metadata: [
+                'format' => 'excel',
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+            ]);
 
-        $rows = $this->buildPayrollSummary([$periodStart, $periodEnd])
-            ->map(fn (array $row) => [
-                $row['name'],
-                $row['department'] ?? '',
-                $row['hourly_rate'],
-                round($row['approved_minutes'] / 60, 2),
-                round($row['overtime_minutes'] / 60, 2),
-                round($row['pending_minutes'] / 60, 2),
-                round($row['rejected_minutes'] / 60, 2),
-                $row['attendance_days'],
-                $row['estimated_payroll'],
-            ])
-            ->all();
+            $rows = $this->buildPayrollSummary([$periodStart, $periodEnd])
+                ->map(fn (array $row) => [
+                    $row['name'],
+                    $row['department'] ?? '',
+                    $row['hourly_rate'],
+                    round($row['approved_minutes'] / 60, 2),
+                    round($row['overtime_minutes'] / 60, 2),
+                    round($row['pending_minutes'] / 60, 2),
+                    round($row['rejected_minutes'] / 60, 2),
+                    $row['attendance_days'],
+                    $row['estimated_payroll'],
+                ])
+                ->all();
 
-        return ExcelExporter::download(
-            'Payroll Report',
-            ['Employee', 'Department', 'Hourly Rate', 'Approved Hrs', 'Overtime Hrs', 'Pending Hrs', 'Rejected Hrs', 'Attendance', 'Estimated Payroll'],
-            $rows,
-            'payroll-report.xlsx',
+            return ExcelExporter::download(
+                'Payroll Report',
+                ['Employee', 'Department', 'Hourly Rate', 'Approved Hrs', 'Overtime Hrs', 'Pending Hrs', 'Rejected Hrs', 'Attendance', 'Estimated Payroll'],
+                $rows,
+                'payroll-report.xlsx',
+            );
+        }
+
+        GenerateExportJob::dispatch(
+            $request->user()->id,
+            'payroll_excel',
+            $request->query('date')
         );
+
+        return response()->json(['message' => 'Your export is being generated in the background. You will be notified in-app when it is ready.']);
     }
 
     private function authorizeView(Request $request): void

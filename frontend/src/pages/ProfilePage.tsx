@@ -5,9 +5,22 @@ import { changePassword, updateProfile, uploadProfilePicture } from '../lib/prof
 import { Alert } from '../components/ui/Alert'
 import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
-import { Field, TextInput } from '../components/ui/fields'
+import { Field, TextInput, Select } from '../components/ui/fields'
 import { PageHeader } from '../components/ui/PageHeader'
 import { SectionCard } from '../components/ui/Card'
+
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (New York)' },
+  { value: 'America/Chicago', label: 'Central Time (Chicago)' },
+  { value: 'America/Denver', label: 'Mountain Time (Denver)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (Los Angeles)' },
+  { value: 'Europe/London', label: 'London / GMT' },
+  { value: 'Europe/Paris', label: 'Central European Time (Paris)' },
+  { value: 'Asia/Singapore', label: 'Singapore Time' },
+  { value: 'Asia/Manila', label: 'Manila Time' },
+  { value: 'Asia/Tokyo', label: 'Tokyo Time' },
+]
 
 const ACCEPTED_PICTURE_TYPES = ['image/png', 'image/jpeg']
 const MAX_PICTURE_BYTES = 2 * 1024 * 1024 // matches UpdateProfilePictureRequest's server-side 2MB limit
@@ -29,6 +42,7 @@ export function ProfilePage() {
 
   const [contactNumber, setContactNumber] = useState(user?.contact_number ?? '')
   const [position, setPosition] = useState(user?.position ?? '')
+  const [timezone, setTimezone] = useState(user?.timezone ?? 'UTC')
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null)
@@ -51,7 +65,11 @@ export function ProfilePage() {
     setProfileSuccess(null)
     setIsSavingProfile(true)
     try {
-      await updateProfile({ contact_number: contactNumber || null, position: position || null })
+      await updateProfile({
+        contact_number: contactNumber || null,
+        position: position || null,
+        timezone: timezone || 'UTC',
+      })
       await refreshUser()
       setProfileSuccess('Profile updated.')
     } catch (err) {
@@ -168,6 +186,19 @@ export function ProfilePage() {
               value={contactNumber}
               onChange={(e) => setContactNumber(e.target.value)}
             />
+          </Field>
+          <Field label="Timezone" htmlFor="profile-timezone">
+            <Select
+              id="profile-timezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Button type="submit" disabled={isSavingProfile}>
             Save Changes

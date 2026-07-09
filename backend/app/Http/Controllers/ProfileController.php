@@ -31,13 +31,21 @@ class ProfileController extends Controller
     public function uploadPicture(UpdateProfilePictureRequest $request): JsonResponse
     {
         $user = $request->user();
+        $file = $request->file('file');
+
+        if (! \App\Support\MalwareScanner::scan($file->getRealPath())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['Malware detected in the uploaded file.'],
+            ]);
+        }
+
         $replaced = (bool) $user->profile_picture_path;
 
         if ($user->profile_picture_path) {
             Storage::delete($user->profile_picture_path);
         }
 
-        $path = $request->file('file')->store('profile-pictures/'.$user->id);
+        $path = $file->store('profile-pictures/'.$user->id);
         $user->update(['profile_picture_path' => $path]);
 
         AuditLog::record('profile_picture.uploaded', $user, ['replaced' => $replaced], actor: $user);

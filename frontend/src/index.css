@@ -141,3 +141,46 @@ tbody tr:hover {
   background-color: rgba(79, 70, 229, 0.08) !important;
   color: var(--color-primary) !important;
 }
+
+/*
+ * Dark Mode Theme Overrides
+ */
+.dark {
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-line: #334155;
+  --color-field: #1e293b;
+  --color-canvas: #0f172a;
+}
+
+.dark .bg-white,
+.dark aside,
+.dark header {
+  background-color: #1e293b !important;
+}
+
+.dark input, 
+.dark select, 
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(79, 70, 229, 0.04) !important;
+}
+

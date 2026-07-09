@@ -68,6 +68,7 @@ describe('ProfilePage', () => {
       expect(profileApi.updateProfile).toHaveBeenCalledWith({
         contact_number: '555-0100',
         position: 'Staff Engineer',
+        timezone: 'UTC',
       })
     })
     expect(refreshUser).toHaveBeenCalled()

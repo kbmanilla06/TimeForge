@@ -18,11 +18,14 @@ export interface User {
   department?: UserDepartment | null
   position?: string | null
   contact_number?: string | null
+  timezone?: string | null
 }
 
 export interface LoginResponse {
-  user: User
-  token: string
+  user?: User
+  token?: string
+  two_factor_required?: boolean
+  email?: string
 }
 
 export interface MeResponse {

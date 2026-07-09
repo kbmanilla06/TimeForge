@@ -22,6 +22,13 @@ class TimeEntryAttachmentController extends Controller
         $this->authorize('update', $timeEntry);
 
         $file = $request->file('file');
+
+        if (! \App\Support\MalwareScanner::scan($file->getRealPath())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'file' => ['Malware detected in the uploaded file.'],
+            ]);
+        }
+
         $path = $file->store('time-entry-attachments/'.$timeEntry->id);
 
         $attachment = $timeEntry->attachments()->create([

@@ -4,6 +4,7 @@ import { apiFetch, apiFetchBlob, apiFetchUpload } from './apiClient'
 export interface UpdateProfilePayload {
   contact_number?: string | null
   position?: string | null
+  timezone?: string | null
 }
 
 export function updateProfile(payload: UpdateProfilePayload): Promise<User> {

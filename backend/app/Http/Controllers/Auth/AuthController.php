@@ -42,7 +42,29 @@ class AuthController extends Controller
             ]);
         }
 
+        // Two-factor authentication on first login for all roles
+        if (env('TWO_FACTOR_ENABLED', true) && $user->login_count === 0) {
+            $code = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $user->update([
+                'two_factor_code' => $code,
+                'two_factor_expires_at' => now()->addMinutes(10),
+            ]);
+
+            try {
+                $user->notify(new \App\Notifications\TwoFactorOtpIssued($code));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            return response()->json([
+                'two_factor_required' => true,
+                'email' => $user->email,
+            ]);
+        }
+
         $token = $user->createToken('api')->plainTextToken;
+
+        $user->increment('login_count');
 
         AuditLog::record('login.success', $user, actor: $user);
 
@@ -145,5 +167,38 @@ class AuthController extends Controller
             'string',
             new ValidCaptcha,
         ];
+    }
+
+    public function verify2Fa(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $request->input('email'))->first();
+
+        if (! $user || $user->two_factor_code !== $request->input('code') || ! $user->two_factor_expires_at || $user->two_factor_expires_at->isPast()) {
+            AuditLog::record('2fa.failed', $user, ['email' => $request->input('email')]);
+            throw ValidationException::withMessages([
+                'code' => ['The verification code is incorrect or has expired.'],
+            ]);
+        }
+
+        // Clear code and increment login count
+        $user->update([
+            'two_factor_code' => null,
+            'two_factor_expires_at' => null,
+            'login_count' => $user->login_count + 1,
+        ]);
+
+        $token = $user->createToken('api')->plainTextToken;
+
+        AuditLog::record('login.success', $user, actor: $user);
+
+        return response()->json([
+            'user' => $user->load('department'),
+            'token' => $token,
+        ]);
     }
 }

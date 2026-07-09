@@ -223,6 +223,27 @@ export function AppLayout() {
   const canSeeDashboard =
     user?.role === 'supervisor' || user?.role === 'admin' || user?.role === 'hr_finance'
 
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark') {
+      document.documentElement.classList.add('dark')
+      return true
+    }
+    return false
+  })
+
+  const toggleDarkMode = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+      setIsDarkMode(false)
+    } else {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+      setIsDarkMode(true)
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
       {isNavOpen && (
@@ -437,6 +458,24 @@ export function AppLayout() {
 
             {/* Notification center bell menu */}
             <NotificationCenter unreadCount={badgeCounts?.notifications} onNewNotification={handleNewNotification} />
+
+            {/* Dark Mode toggle */}
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              aria-label="Toggle Dark Mode"
+              className="hidden sm:flex size-9 items-center justify-center rounded-full border border-transparent hover:border-line text-muted hover:text-ink hover:bg-field transition-all cursor-pointer animate-fade-in"
+            >
+              {isDarkMode ? (
+                <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                </svg>
+              ) : (
+                <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
 
             {/* Settings gear shortcut */}
             <Link

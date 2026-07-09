@@ -125,6 +125,7 @@ const EMPTY_FORM = {
 
 export function RegisterPage() {
   const [departments, setDepartments] = useState<Department[]>([])
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true)
   const [form, setForm] = useState(EMPTY_FORM)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -155,9 +156,16 @@ export function RegisterPage() {
   const isTestMode = import.meta.env.MODE === 'test'
 
   useEffect(() => {
+    setIsLoadingDepartments(true)
     listPublicDepartments()
-      .then(setDepartments)
-      .catch(() => setDepartments([]))
+      .then((data) => {
+        setDepartments(data)
+        setIsLoadingDepartments(false)
+      })
+      .catch(() => {
+        setDepartments([])
+        setIsLoadingDepartments(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -208,6 +216,11 @@ export function RegisterPage() {
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         setErrors(err.errors)
+        const step1Keys = ['first_name', 'middle_name', 'last_name', 'email', 'password', 'password_confirmation']
+        const hasStep1Error = Object.keys(err.errors).some(key => step1Keys.includes(key))
+        if (hasStep1Error) {
+          setSubStep(1)
+        }
       } else {
         setFormError(err instanceof ApiError ? err.message : 'Unable to submit your registration.')
       }
@@ -408,7 +421,9 @@ export function RegisterPage() {
                   onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
                   className={authInputClass}
                 >
-                  <option value="">Select a department</option>
+                  <option value="">
+                    {isLoadingDepartments ? 'Loading departments...' : 'Select a department'}
+                  </option>
                   {departments.map((department) => (
                     <option key={department.id} value={department.id}>
                       {department.name}
@@ -792,7 +807,9 @@ export function RegisterPage() {
               onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
               className={authInputClass}
             >
-              <option value="">Select...</option>
+              <option value="">
+                {isLoadingDepartments ? 'Loading departments...' : 'Select...'}
+              </option>
               {departments.map((department) => (
                 <option key={department.id} value={department.id}>
                   {department.name}

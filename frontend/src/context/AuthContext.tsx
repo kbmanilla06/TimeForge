@@ -83,14 +83,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string): Promise<LoginResponse> {
     const response = await apiFetch<LoginResponse>('/login', {
       method: 'POST',
       body: { email, password },
     })
 
-    setToken(response.token)
-    setUser(response.user)
+    if (response.two_factor_required) {
+      return response
+    }
+
+    setToken(response.token || null)
+    setUser(response.user || null)
+    void refreshPicture()
+
+    return response
+  }
+
+  async function verify2Fa(email: string, code: string): Promise<void> {
+    const response = await apiFetch<LoginResponse>('/login/verify-2fa', {
+      method: 'POST',
+      body: { email, code },
+    })
+
+    setToken(response.token || null)
+    setUser(response.user || null)
     void refreshPicture()
   }
 
@@ -109,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser, pictureUrl, refreshPicture }}>
+    <AuthContext.Provider value={{ user, isLoading, login, verify2Fa, logout, refreshUser, pictureUrl, refreshPicture }}>
       {children}
     </AuthContext.Provider>
   )

@@ -29,8 +29,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AiProvider::class, function () {
             return match ($provider = config('ai.provider')) {
                 'stub' => new StubAiProvider,
+                'gemini' => new \App\Ai\GeminiAiProvider,
                 default => throw new InvalidArgumentException(
-                    "Unsupported AI provider [{$provider}]; only [stub] is implemented."
+                    "Unsupported AI provider [{$provider}]; only [stub, gemini] are implemented."
                 ),
             };
         });

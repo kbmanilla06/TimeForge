@@ -8,13 +8,14 @@ services:
     volumes:
       - ./backend:/var/www/html
     environment:
-      DB_HOST: postgres
       REDIS_HOST: redis
     depends_on:
       - postgres
       - redis
     networks:
       - timeforge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   webserver:
     image: nginx:stable-alpine
@@ -61,6 +62,15 @@ services:
     container_name: timeforge-redis
     ports:
       - "6379:6379"
+    networks:
+      - timeforge
+
+  clamav:
+    image: clamav/clamav:latest
+    container_name: timeforge-clamav
+    platform: linux/x86_64
+    ports:
+      - "3310:3310"
     networks:
       - timeforge
 

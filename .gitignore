@@ -8,3 +8,7 @@ backups/
 *.dump
 *.sql
 *.sql.gz
+
+# Python virtual environment
+docx-builder/venv/
+docx-builder/proxy.py

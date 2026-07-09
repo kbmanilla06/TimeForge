@@ -19,6 +19,7 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable([
     'name', 'email', 'password', 'role', 'status', 'department_id', 'hourly_rate',
     'employee_id', 'position', 'contact_number', 'profile_picture_path',
+    'timezone', 'two_factor_code', 'two_factor_expires_at', 'login_count',
 ])]
 // hourly_rate is payroll data (Admin/HR-Finance only per Sprint 8): hidden
 // from every serialization by default; only the Admin user-management
@@ -45,6 +46,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'status' => UserStatus::class,
+            'two_factor_expires_at' => 'datetime',
+            'login_count' => 'integer',
         ];
     }
 

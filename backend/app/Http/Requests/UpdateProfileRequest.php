@@ -25,6 +25,7 @@ class UpdateProfileRequest extends FormRequest
         return [
             'contact_number' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
+            'timezone' => ['nullable', 'string', 'timezone'],
         ];
     }
 }
