@@ -21,6 +21,9 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
+# Set permissions for Laravel storage and cache
+RUN chmod -R 777 storage bootstrap/cache
+
 # Install PHP dependencies
 RUN composer install --no-dev --no-scripts --optimize-autoloader --ignore-platform-reqs
 
