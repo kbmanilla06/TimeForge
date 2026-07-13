@@ -1,6 +1,8 @@
 # TimeForge
 
-An AI-powered Workforce Performance Management System: time tracking, smart timesheets with supervisor approval, daily scrum reporting, KPI management, payroll preparation with PDF/Excel exports, management dashboards, file attachments, and seven on-demand AI insight capabilities — built sprint-by-sprint as a feature-complete MVP (Sprints 0–14).
+[![Continuous Integration](https://github.com/kbmanilla06/TimeForge/actions/workflows/ci.yml/badge.svg)](https://github.com/kbmanilla06/TimeForge/actions/workflows/ci.yml)
+
+A workforce performance management system covering time tracking, supervisor-approved timesheets, daily scrum reporting, KPI management, payroll preparation with PDF/Excel exports, management dashboards, protected file attachments, and seven auditable insight capabilities. It was built sprint-by-sprint as a feature-complete MVP and continues to be hardened through documented follow-up sprints.
 
 Prepared for StartupLab Business Center & AI Consulting Services OPC. Requirements: `docs/PRD.md`.
 
@@ -18,16 +20,16 @@ Prepared for StartupLab Business Center & AI Consulting Services OPC. Requiremen
 
 ## Tech Stack
 
-Laravel 13 (PHP 8.5, PostgreSQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind CSS + React Router + Recharts · PHPUnit & Vitest · Docker Compose (app, nginx, PostgreSQL, Redis). Production runs on Supabase-hosted Postgres + Supabase Storage (Sprint 39) — see `docs/DEPLOYMENT.md`.
+Laravel 13 (PHP 8.3+, PostgreSQL, Sanctum) · React 19 + TypeScript + Vite + Tailwind CSS + React Router + Recharts · PHPUnit & Vitest · Docker Compose (app, nginx, PostgreSQL, Redis) · GitHub Actions. The production configuration uses Supabase-hosted PostgreSQL and Supabase Storage — see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Repository Layout
 
 | Path | Contents |
 | --- | --- |
-| `backend/` | Laravel API (app, migrations, seeders, 211 tests) |
-| `frontend/` | React SPA (pages, role guards, API clients, 186 tests) |
+| `backend/` | Laravel API (app, migrations, seeders, 370 tests) |
+| `frontend/` | React SPA (pages, role guards, API clients, 347 tests) |
 | `docs/` | PRD, decisions, questions, setup, routes, database, QA checklist, user guide, demo script |
-| `sprints/` | The per-sprint plans and records (Sprint 0–14) — the project's history |
+| `sprints/` | Per-sprint plans, decisions, and reviews documenting the project history |
 | `docker-compose.yml`, `docker/` | Local container stack (see Docker status below) |
 | `prompts/`, `CLAUDE.md` | The Claude Code working kit used to build the project sprint-by-sprint |
 
@@ -47,13 +49,13 @@ npm install && cp .env.example .env
 npm run dev                              # http://localhost:5173
 ```
 
-**Option B — Docker** (`docker compose up -d --build`, then the same artisan commands inside the `app` container). **Status:** the compose stack has never been executed on the development machine (Docker Desktop not installed); it is a documented, ready-to-run runbook — see `docs/SETUP.md` Option B and `docs/QA_CHECKLIST.md` Phase 0.
+**Option B — Docker** (`docker compose up -d --build`, then the same artisan commands inside the `app` container). The container stack has been exercised end-to-end and was revalidated against PostgreSQL during the production-parity work. See [`docs/SETUP.md`](docs/SETUP.md) Option B and [`docs/QA_CHECKLIST.md`](docs/QA_CHECKLIST.md) Phase 0.
 
 **Validation:**
 
 ```bash
-cd backend && php artisan test          # 211 tests, no DB required (SQLite in-memory)
-cd frontend && npm run build && npm run lint && npm run test   # 186 tests, zero lint warnings
+cd backend && php artisan test          # 370 tests, no external DB required (SQLite in-memory)
+cd frontend && npm run build && npm run lint && npm run test   # 347 tests
 ```
 
 ## Demo
@@ -73,16 +75,16 @@ cd frontend && npm run build && npm run lint && npm run test   # 186 tests, zero
 | `docs/USER_GUIDE.md` | Role-by-role user manual |
 | `docs/DEMO.md` | Demo script + demo dataset |
 | `docs/BACKUP_RESTORE.md` | Backup/restore runbook, disaster recovery + restore verification checklists |
-| `sprints/SPRINT_00–14.md` | Sprint-by-sprint plans, decisions, and reviews |
+| `sprints/SPRINT_*.md` | Sprint-by-sprint plans, decisions, and reviews |
 
 ## Known Limitations (handoff summary)
 
 The deliberate MVP boundaries, each backed by a recorded decision (details: `docs/SETUP.md` Known Deferred Items, `docs/DECISIONS.md`):
 
 - **Docker end-to-end has now run** (first on MySQL, 2026-07-03 — see `docs/QA_RUN_2026-07-03.md`; the stack moved to PostgreSQL in Sprint 39 for dev/prod parity with Supabase-hosted production, re-verified live against Postgres during Sprints 39–40) — including the post-MVP auth/onboarding enhancement (Sprints 15–19) exercised live against the real stack.
-- **AI runs on a local deterministic stub** — the decided production engine to guarantee 100% data privacy and zero operating costs, with future cloud migration guardrails documented in [AI.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/AI.md).
+- **AI runs on a local deterministic stub** — the current engine keeps workforce data out of external model calls and avoids provider cost. Future cloud-migration guardrails are documented in [`docs/AI.md`](docs/AI.md).
 - **No malware scanning on uploads** (accepted risk with compensating controls: type/content validation, size cap, private storage, authorized download-only) — revisit at deployment hardening. Attachments retained indefinitely as audit evidence.
-- **Email supports transactional SMTP mailers** (Resend, Postmark, SES, Google SMTP) configured in `config/mail.php`, with pre-flight verification tools and lists in [DEPLOYMENT.md](file:///Users/kbmanilla/Desktop/TimeForge/docs/DEPLOYMENT.md). It defaults to the log driver in development. Mail also sends synchronously — `QUEUE_CONNECTION=redis` is reachable, but no queue worker runs by default, so queuing is deferred rather than silently broken. Business-module events (Timesheets, Daily Scrum, KPIs) remain in-app-only via the Notifications page, no email.
+- **Email supports transactional SMTP mailers** (Resend, Postmark, SES, Google SMTP) configured in `config/mail.php`, with pre-flight verification guidance in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). It defaults to the log driver in development. Mail sends synchronously; Redis is available, but no queue worker runs by default. Business-module events (Timesheets, Daily Scrum, KPIs) remain in-app-only through the Notifications page.
 - **No CAPTCHA on registration** — evaluated (Turnstile/reCAPTCHA v3/hCaptcha) and deliberately not added; the admin-approval gate is the primary anti-abuse control, since no self-registered account can gain access without a human Admin approving it.
 - **No email verification before admin review** — evaluated and deferred; the Admin's manual review already serves as the identity check.
 - Single company, one role per user, no leave/holidays, taxes or deductions (payroll = estimates), no multi-tenancy — all explicit MVP scope decisions.
