@@ -26,9 +26,9 @@ class RegistrationReceived extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('TimeForge — Registration Received')
+            ->subject('All in Time — Registration Received')
             ->greeting("Hi {$notifiable->name},")
-            ->line('Thanks for registering for TimeForge. Your request has been submitted and is pending administrator approval.')
+            ->line('Thanks for registering for All in Time. Your request has been submitted and is pending administrator approval.')
             ->line("You'll receive another email once a decision has been made. There's nothing else for you to do right now.");
     }
 }

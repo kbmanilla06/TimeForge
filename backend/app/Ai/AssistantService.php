@@ -264,7 +264,7 @@ final class AssistantService
         $rates = DashboardMetrics::kpiCompletionRates($departmentIds)->sortBy('completion_rate')->values();
 
         return [
-            'executive_summary' => "TimeForge doesn't track KPI progress history, so \"decline\" can't be measured — showing the KPIs furthest below their target instead.",
+            'executive_summary' => "All in Time doesn't track KPI progress history, so \"decline\" can't be measured — showing the KPIs furthest below their target instead.",
             'detail' => $rates->isEmpty()
                 ? 'No KPI assignments with a numeric target are in scope.'
                 : sprintf('Lowest completion rate in scope: %s%%.', $this->number((float) $rates->first()['completion_rate'])),

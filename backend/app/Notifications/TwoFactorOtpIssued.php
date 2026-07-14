@@ -39,8 +39,8 @@ class TwoFactorOtpIssued extends Notification
         Log::info("Two-Factor Authentication OTP for {$notifiable->email}: {$this->code}");
 
         return (new MailMessage)
-            ->subject('TimeForge 2FA Verification Code')
-            ->line("Your TimeForge 2FA verification code is: {$this->code}")
+            ->subject('All in Time 2FA Verification Code')
+            ->line("Your All in Time 2FA verification code is: {$this->code}")
             ->line('This code will expire in 10 minutes.');
     }
 }

@@ -7,7 +7,7 @@
     th { color: #64748b; font-weight: bold; }
 </style>
 
-<h1>TimeForge — {{ $reportTitle }}</h1>
+<h1>All in Time — {{ $reportTitle }}</h1>
 <p class="meta">
     Period: {{ $periodStart }} &ndash; {{ $periodEnd }} &middot; Generated {{ $generatedAt }}
 </p>

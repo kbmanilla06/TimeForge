@@ -26,9 +26,9 @@ class AccountApproved extends Notification
         $loginUrl = rtrim(config('app.frontend_url'), '/').'/login';
 
         return (new MailMessage)
-            ->subject('TimeForge — Account Approved')
+            ->subject('All in Time — Account Approved')
             ->greeting("Hi {$notifiable->name},")
-            ->line('Your TimeForge account has been approved. You can now log in.')
+            ->line('Your All in Time account has been approved. You can now log in.')
             ->action('Log In', $loginUrl);
     }
 

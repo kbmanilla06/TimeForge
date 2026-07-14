@@ -1,4 +1,4 @@
-# TimeForge Manual QA Checklist
+# All in Time Manual QA Checklist
 
 The single, ordered end-to-end regression pass over every module, consolidated from the per-module walkthroughs in `docs/SETUP.md` (which keep the step-by-step detail). Execute top to bottom on a fresh database with both seeders; check items off as they pass. Best run on a date that is the 3rd day (or later) of a payroll period so the seeded "unsubmitted day" example exists.
 
@@ -11,7 +11,7 @@ Demo credentials (all passwords `Passw0rd123!`, dev-only): `admin@` / `superviso
 - [ ] `docker compose exec app php artisan migrate:fresh --seed`
 - [ ] `docker compose exec app php artisan db:seed --class=DemoDataSeeder`
 - [ ] Frontend: `cd frontend && npm install && npm run dev` → http://localhost:5173
-- [ ] Smoke: log in as `admin@timeforge.test`; the Home page greets "TimeForge Admin (admin)"
+- [ ] Smoke: log in as `admin@timeforge.test`; the Home page greets "All in Time Admin (admin)"
 
 *No Docker?* Option A (host PHP + a reachable PostgreSQL instance) with the same artisan commands. Automated suites (`php artisan test`, `npm run test/build/lint`) need no database and must be green before starting this checklist.
 
@@ -174,7 +174,7 @@ Covers profile picture repair, dashboard sidebar layout, department descriptions
 With `MAIL_MAILER=log` (the safe local default), every notification — including the registration OTP — writes to `storage/logs/laravel.log` instead of attempting real delivery:
 
 ```bash
-docker exec timeforge-app tail -60 storage/logs/laravel.log | grep -B2 -A2 "TimeForge"
+docker exec timeforge-app tail -60 storage/logs/laravel.log | grep -B2 -A2 "All in Time"
 ```
 
 Look for a 6-digit number inside a `<strong>` tag near "Enter this code to verify your email." The code expires in 10 minutes and allows 5 attempts; a resend is allowed after a 60-second cooldown.

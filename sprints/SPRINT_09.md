@@ -50,7 +50,7 @@ These were flagged as proposed defaults when this plan was first drafted and hav
 5. **Payroll report ready notification:** Not implemented in Sprint 9, because exports are synchronous and there is no delayed "ready" event to notify about. Since the requester already has the file by the time any notification could fire, this remains deferred, doubly confirming Sprint 8's original reasoning rather than reversing it.
 6. **Shared calculation:** Sprint 8's payroll/hour bucketing logic is extracted into a reusable calculator/service so the Payroll Report and Team Hours Report do not duplicate logic — see "Current Architecture" above.
 7. **Export UI placement:** Export buttons are added to the existing `PayrollPage` (Sprint 8) and `TeamTimesheetsPage` (Sprint 5). No new report browsing pages in Sprint 9 — Supervisors already have "Team Timesheets" for on-screen review, and a new browsable report-preview screen would encroach on the still-deferred Productivity Dashboards module (PRD §7.7).
-8. **Branding:** Text-only TimeForge branding in exported reports — a "TimeForge" text header plus a generated-at timestamp and the report's period; no logo required, no custom fonts, no styling beyond a simple table.
+8. **Branding:** Text-only All in Time branding in exported reports — a "All in Time" text header plus a generated-at timestamp and the report's period; no logo required, no custom fonts, no styling beyond a simple table.
 9. **Scope:** No dashboards, charts, stored reports, queued exports, AI summaries, or new report types in Sprint 9, restating Decisions 3, 4, and the general scope boundary explicitly.
 
 ## User Stories

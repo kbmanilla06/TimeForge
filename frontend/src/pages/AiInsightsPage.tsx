@@ -207,7 +207,7 @@ export function AiInsightsPage() {
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6">
       <PageHeader
         title="AI Insights"
-        subtitle="On-demand summaries derived only from stored TimeForge records. Every output is labeled AI-generated; regenerating keeps previous versions."
+        subtitle="On-demand summaries derived only from stored All in Time records. Every output is labeled AI-generated; regenerating keeps previous versions."
       />
 
       <div className="flex flex-wrap gap-2 border-b border-line pb-4">

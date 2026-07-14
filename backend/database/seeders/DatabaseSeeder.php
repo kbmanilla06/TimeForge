@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::factory()->admin()->create([
-            'name' => 'TimeForge Admin',
+            'name' => 'All in Time Admin',
             'email' => 'admin@timeforge.test',
             'password' => 'Passw0rd123!',
         ]);

@@ -2,7 +2,7 @@
 
 ## Sprint Goal
 
-Prepare the TimeForge project for safe implementation by validating requirements, confirming architecture, setting up the repository structure, and establishing development quality gates.
+Prepare the All in Time project for safe implementation by validating requirements, confirming architecture, setting up the repository structure, and establishing development quality gates.
 
 Sprint 0 must not implement full business modules. It exists to create a stable foundation.
 
@@ -152,7 +152,7 @@ For Sprint 0, manual testing means validating setup readiness:
 1. Open the project in VS Code.
 2. Confirm the folder structure is readable.
 3. Open `CLAUDE.md` and confirm operating rules are present.
-4. Open `docs/PRD.md` and confirm TimeForge requirements are present.
+4. Open `docs/PRD.md` and confirm All in Time requirements are present.
 5. Open `docs/QUESTIONS.md` and confirm resolved vs. open items are clearly distinguished.
 6. Open `docs/DECISIONS.md` and confirm approved MVP decisions are recorded.
 7. If backend is scaffolded, run the Laravel app locally.
@@ -212,7 +212,7 @@ Read:
 - sprints/SPRINT_00.md
 
 Objective:
-Prepare the TimeForge project foundation without implementing business modules.
+Prepare the All in Time project foundation without implementing business modules.
 
 Constraints:
 - Do not invent business requirements.

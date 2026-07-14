@@ -38,7 +38,7 @@ class DemoDataSeeder extends Seeder
         $engineering = Department::firstOrCreate(['name' => 'Engineering']);
         $marketing = Department::firstOrCreate(['name' => 'Marketing']);
 
-        $admin = $this->ensureUser('admin@timeforge.test', 'TimeForge Admin', UserRole::Admin, null, null);
+        $admin = $this->ensureUser('admin@timeforge.test', 'All in Time Admin', UserRole::Admin, null, null);
         $supervisor = $this->ensureUser('supervisor@timeforge.test', 'Sam Supervisor', UserRole::Supervisor, $engineering->id, null);
         $eve = $this->ensureUser('employee@timeforge.test', 'Eve Employee', UserRole::Employee, $engineering->id, 20);
         $iris = $this->ensureUser('intern@timeforge.test', 'Iris Intern', UserRole::Employee, $engineering->id, null);

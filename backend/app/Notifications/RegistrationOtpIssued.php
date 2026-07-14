@@ -34,9 +34,9 @@ class RegistrationOtpIssued extends Notification
         \Illuminate\Support\Facades\Log::info("Registration OTP for {$notifiable->email}: {$this->code}");
 
         return (new MailMessage)
-            ->subject('TimeForge — Verify Your Email')
+            ->subject('All in Time — Verify Your Email')
             ->greeting("Hi {$notifiable->name},")
-            ->line('Enter this code to verify your email and continue your TimeForge registration:')
+            ->line('Enter this code to verify your email and continue your All in Time registration:')
             ->line(new HtmlString("<strong style=\"font-size: 24px; letter-spacing: 4px;\">{$this->code}</strong>"))
             ->line("This code expires in ".OtpPolicy::TTL_MINUTES.' minutes.')
             ->line("If you didn't request this, you can safely ignore this email.");

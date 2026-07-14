@@ -32,9 +32,9 @@ class NewAccountRequestSubmitted extends Notification
         $reviewUrl = rtrim(config('app.frontend_url'), '/').'/admin/account-requests';
 
         return (new MailMessage)
-            ->subject('TimeForge — New Account Request')
+            ->subject('All in Time — New Account Request')
             ->greeting("Hi {$notifiable->name},")
-            ->line("{$applicant->name} ({$applicant->email}) has requested a TimeForge account and is awaiting your review.")
+            ->line("{$applicant->name} ({$applicant->email}) has requested a All in Time account and is awaiting your review.")
             ->line('Department: '.($applicant->department?->name ?? '—'))
             ->action('Review Account Requests', $reviewUrl);
     }
@@ -50,7 +50,7 @@ class NewAccountRequestSubmitted extends Notification
             'account_request_id' => $this->accountRequest->id,
             'applicant_name' => $applicant->name,
             'applicant_email' => $applicant->email,
-            'message' => "{$applicant->name} requested a TimeForge account.",
+            'message' => "{$applicant->name} requested a All in Time account.",
         ];
     }
 }

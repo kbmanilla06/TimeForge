@@ -2,7 +2,7 @@
 
 ## Sprint Goal
 
-Take the feature-complete TimeForge MVP (Sprints 0-13: every PRD business module built, tested, and checkpointed) and make it **verifiable, demonstrable, documented, and handoff-ready**. No new business features: this sprint verifies what exists (full regression, security review, Docker/MySQL validation), polishes only what the approved hardening budget allows, seeds a demo dataset, and produces the documentation and demo artifacts a handoff requires.
+Take the feature-complete All in Time MVP (Sprints 0-13: every PRD business module built, tested, and checkpointed) and make it **verifiable, demonstrable, documented, and handoff-ready**. No new business features: this sprint verifies what exists (full regression, security review, Docker/MySQL validation), polishes only what the approved hardening budget allows, seeds a demo dataset, and produces the documentation and demo artifacts a handoff requires.
 
 ## Status
 
@@ -106,7 +106,7 @@ Approved as part of the Sprint 14 plan approval; the four Clarification Question
 
 ## Documentation Backlog
 
-- `README.md` refresh: what TimeForge is, stack, screenshots-optional, quickstart (Option A/B), demo credentials pointer, Known Limitations, production notes, doc index.
+- `README.md` refresh: what All in Time is, stack, screenshots-optional, quickstart (Option A/B), demo credentials pointer, Known Limitations, production notes, doc index.
 - `docs/ROUTES.md`, `docs/DATABASE.md`, `docs/QA_CHECKLIST.md`, `docs/DEMO.md`, `docs/USER_GUIDE.md` per CQ3.
 - `docs/SETUP.md` accuracy pass (every command re-verified; stale statements corrected).
 - Final deliverables ledger (PRD §8) in the sprint review, including user-action items (e.g., pushing the local repository to GitHub — the repo currently exists locally only).

@@ -27,7 +27,7 @@ def main():
     # Title Section
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_run = title.add_run("TimeForge Workforce Workspace")
+    title_run = title.add_run("All in Time Workforce Workspace")
     title_run.font.name = 'Arial'
     title_run.font.size = Pt(28)
     title_run.font.bold = True
@@ -50,7 +50,7 @@ def main():
     h1_run.font.size = Pt(18)
     h1_run.font.color.rgb = RGBColor(0x0f, 0x17, 0x2a) # Slate 900
     
-    p = doc.add_paragraph("TimeForge is built as a decoupled web application with a Laravel API backend, React frontend SPA, PostgreSQL database, Redis caching, and ClamAV upload scanner. Follow these instructions to initialize and run the system locally.")
+    p = doc.add_paragraph("All in Time is built as a decoupled web application with a Laravel API backend, React frontend SPA, PostgreSQL database, Redis caching, and ClamAV upload scanner. Follow these instructions to initialize and run the system locally.")
     p.paragraph_format.space_after = Pt(12)
 
     doc.add_heading("Prerequisites", level=2)
@@ -126,7 +126,7 @@ def main():
     h1_run.font.color.rgb = RGBColor(0x0f, 0x17, 0x2a)
 
     doc.add_heading("A. Employee Role", level=2)
-    p = doc.add_paragraph("As an Employee, you use TimeForge to capture your daily productivity metrics, log timesheets, and review KPI targets.")
+    p = doc.add_paragraph("As an Employee, you use All in Time to capture your daily productivity metrics, log timesheets, and review KPI targets.")
     
     p = doc.add_paragraph()
     p.add_run("1. Punch In/Out: ").bold = True
@@ -192,7 +192,7 @@ def main():
     h1_run.font.size = Pt(18)
     h1_run.font.color.rgb = RGBColor(0x0f, 0x17, 0x2a)
 
-    p = doc.add_paragraph("TimeForge includes strict security controls to safeguard proprietary business details:")
+    p = doc.add_paragraph("All in Time includes strict security controls to safeguard proprietary business details:")
     p = doc.add_paragraph()
     p.add_run("- Malware Scanning: ").bold = True
     p.add_run("All uploaded files (avatars, timesheet attachments) are streamed to a ClamAV scanner socket before being committed to storage. Viruses are automatically blocked and return a warning.\n")
@@ -203,8 +203,8 @@ def main():
     p.paragraph_format.left_indent = Inches(0.25)
 
     # Save Manual
-    doc.save("TimeForge_User_Manual.docx")
-    print("TimeForge_User_Manual.docx generated successfully!")
+    doc.save("All in Time_User_Manual.docx")
+    print("All in Time_User_Manual.docx generated successfully!")
 
 if __name__ == '__main__':
     main()

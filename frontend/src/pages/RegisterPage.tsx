@@ -75,7 +75,7 @@ function TermsAndConditionsContent() {
       <section>
         <h3 className="font-medium text-ink">1. Acceptance of Terms</h3>
         <p className="mt-1 text-muted text-sm leading-relaxed">
-          By creating a TimeForge account, you agree to use the platform in accordance with these terms and
+          By creating a All in Time account, you agree to use the platform in accordance with these terms and
           your organization&rsquo;s policies. Your account request is subject to administrator approval before
           you may sign in.
         </p>
@@ -83,7 +83,7 @@ function TermsAndConditionsContent() {
       <section>
         <h3 className="font-medium text-ink">2. Use of the Platform</h3>
         <p className="mt-1 text-muted text-sm leading-relaxed">
-          TimeForge is provided for time tracking, timesheet approval, KPI management, daily scrum reporting,
+          All in Time is provided for time tracking, timesheet approval, KPI management, daily scrum reporting,
           and related workforce management functions. Access is limited to authorized employees, supervisors,
           HR/Finance staff, and administrators of your organization.
         </p>
@@ -93,7 +93,7 @@ function TermsAndConditionsContent() {
         <p className="mt-1 text-muted text-sm leading-relaxed">
           Information you submit — including time entries, timesheets, scrum updates, and KPI progress — is
           visible to your supervisor, HR/Finance, and system administrators as needed to operate the platform.
-          Data is stored and processed only within TimeForge; it is not shared with external services.
+          Data is stored and processed only within All in Time; it is not shared with external services.
         </p>
       </section>
     </div>

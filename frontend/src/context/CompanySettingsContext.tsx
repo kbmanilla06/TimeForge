@@ -3,7 +3,7 @@ import { useAuth } from './useAuth'
 import { getCompanyLogoBlob, getCompanySettings } from '../lib/companySettingsApi'
 import { CompanySettingsContext } from './useCompanySettings'
 
-const DEFAULT_COMPANY_NAME = 'TimeForge'
+const DEFAULT_COMPANY_NAME = 'All in Time'
 
 /**
  * Shared company branding (name + logo), mirroring AuthContext's
@@ -42,7 +42,7 @@ export function CompanySettingsProvider({ children }: { children: ReactNode }) {
     } catch {
       // Company settings are cosmetic display data — a failed fetch
       // (network blip, not-yet-authenticated) just keeps the default
-      // "TimeForge" branding rather than surfacing an error anywhere.
+      // "All in Time" branding rather than surfacing an error anywhere.
       setCompanyName(DEFAULT_COMPANY_NAME)
       setLogoUrl(null)
     }

@@ -1,4 +1,4 @@
-# TimeForge Demo Script
+# All in Time Demo Script
 
 A ~17-minute, role-by-role walkthrough of the complete MVP plus the post-MVP auth/onboarding enhancement, built on the demo dataset. Dress-rehearse once before presenting.
 
@@ -46,7 +46,7 @@ Have a small PDF on the desktop ready to upload live. Best demoed on the 3rd day
 
 ## Act 1 — The Employee's Day (employee@, ~4 min)
 
-1. **Time Tracking:** point out the summary cards and the date-grouped entries with statuses. Start a live timer ("Demo: presenting TimeForge"), let it tick, stop it.
+1. **Time Tracking:** point out the summary cards and the date-grouped entries with statuses. Start a live timer ("Demo: presenting All in Time"), let it tick, stop it.
 2. **Attachments:** on today's editable entry, *Attach file* → upload the PDF → download it back. Try a `.txt` or oversized file — clean rejection. *Talking point: extension + real content type validated; 10MB cap; private storage, never web-served.*
 3. **Daily Scrum:** show today's entry; add a blocker.
 4. **Submit:** submit today's timesheet — everything on the day locks, including attachments.

@@ -30,9 +30,9 @@ class AccountRejected extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('TimeForge — Account Request Update')
+            ->subject('All in Time — Account Request Update')
             ->greeting("Hi {$notifiable->name},")
-            ->line('Your TimeForge account request was not approved.');
+            ->line('Your All in Time account request was not approved.');
 
         if ($this->reason) {
             $message->line("Reason: {$this->reason}");

@@ -1,4 +1,4 @@
-# TimeForge Route And Feature Inventory
+# All in Time Route And Feature Inventory
 
 As of Sprint 19 (feature-complete MVP plus the post-MVP auth/onboarding enhancement). Generated from `php artisan route:list` and verified against controllers, policies, and feature tests. All `/api/*` routes return JSON. Rate limits: public auth endpoints (login/register/password) 5 requests/minute per email+IP (Sprint 14; extended to `/register` in Sprint 16); the public department lookup 30 requests/minute per IP (Sprint 19, deliberately separate from the anti-brute-force bucket); all authenticated endpoints 60 requests/minute per user.
 

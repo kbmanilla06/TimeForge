@@ -52,7 +52,7 @@ describe('CompanySettingsProvider', () => {
     renderProbe()
 
     expect(companySettingsApi.getCompanySettings).not.toHaveBeenCalled()
-    expect(screen.getByTestId('name')).toHaveTextContent('TimeForge')
+    expect(screen.getByTestId('name')).toHaveTextContent('All in Time')
   })
 
   it('does not fetch when there is no authenticated user', () => {
@@ -79,7 +79,7 @@ describe('CompanySettingsProvider', () => {
 
     renderProbe()
 
-    await waitFor(() => expect(screen.getByTestId('name')).toHaveTextContent('TimeForge'))
+    await waitFor(() => expect(screen.getByTestId('name')).toHaveTextContent('All in Time'))
   })
 
   it('fetches the logo blob and exposes it as an object URL when has_logo is true', async () => {
@@ -99,7 +99,7 @@ describe('CompanySettingsProvider', () => {
     renderProbe()
 
     await waitFor(() => expect(companySettingsApi.getCompanySettings).toHaveBeenCalled())
-    expect(screen.getByTestId('name')).toHaveTextContent('TimeForge')
+    expect(screen.getByTestId('name')).toHaveTextContent('All in Time')
     expect(screen.getByTestId('logo')).toHaveTextContent('none')
   })
 })

@@ -1,4 +1,4 @@
-# TimeForge Clarification Questions
+# All in Time Clarification Questions
 
 All sections (A-R) are now answered and approved — Sections A-P in the MVP decision round (with P.3-P.4 resolved at Sprint 13), Section Q at Sprint 10. The full decision text is the source of truth in `docs/DECISIONS.md`; this file is preserved for traceability between each original question and its approved answer.
 
@@ -6,7 +6,7 @@ Per the approved general policy (Section R), any future requirement that surface
 
 ## A. Business And SaaS Model — RESOLVED (MVP)
 
-1. Is TimeForge single-company only for the internship, or should it support multiple organizations as a true multi-tenant SaaS?
+1. Is All in Time single-company only for the internship, or should it support multiple organizations as a true multi-tenant SaaS?
    **Answer:** Single company only for MVP. Do not implement full multi-tenancy yet.
 2. If multi-tenant, should users, departments, projects, clients, KPIs, timesheets, and payroll records be isolated by organization?
    **Answer:** Not applicable for MVP. Design the database cleanly so multi-tenancy can be added later, but do not add organization isolation unless needed for MVP.
@@ -132,7 +132,7 @@ Per the approved general policy (Section R), any future requirement that surface
 1. What exact report formats are required for PDF and Excel?
    **Answer:** Layouts can be proposed during the reporting sprint.
 2. Are exported reports branded?
-   **Answer:** TimeForge branding text only for MVP; no final logo required yet.
+   **Answer:** All in Time branding text only for MVP; no final logo required yet.
 3. Who can export reports?
    **Answer:** System Administrator and HR/Finance can export reports. Supervisors can export team reports.
 4. Should exports be generated synchronously or through queues?

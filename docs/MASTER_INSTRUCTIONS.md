@@ -1,10 +1,10 @@
-# Master Instructions For TimeForge
+# Master Instructions For All in Time
 
 This file mirrors the operating rules in `CLAUDE.md` and exists as a human-readable reference for project governance.
 
 ## Project Name
 
-TimeForge
+All in Time
 
 ## Project Type
 

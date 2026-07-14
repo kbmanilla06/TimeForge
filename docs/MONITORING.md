@@ -1,6 +1,6 @@
 # Error Monitoring Configuration & PII Scrubbing
 
-This document outlines the setup, deployment guidelines, and privacy guards implemented for central error monitoring in TimeForge using Sentry.
+This document outlines the setup, deployment guidelines, and privacy guards implemented for central error monitoring in All in Time using Sentry.
 
 ---
 

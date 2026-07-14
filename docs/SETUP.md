@@ -1,4 +1,4 @@
-# TimeForge Local Development Setup
+# All in Time Local Development Setup
 
 This document covers Sprint 0 (project foundation), Sprint 1 (Authentication And Role Foundation), Sprint 2 (Admin User And Department Management UI), Sprint 3 (Client And Project Management Foundation), Sprint 4 (Time Tracking Foundation), Sprint 5 (Smart Timesheet Submission And Supervisor Approval Foundation), Sprint 6 (KPI Management Foundation), Sprint 7 (Daily Scrum Reporting Foundation), Sprint 8 (Payroll Preparation Foundation), Sprint 9 (Reporting And Exports Foundation), Sprint 10 (Dashboard And Analytics Foundation), Sprint 11 (AI Integration Foundation, stub provider only), Sprint 12 (AI Analysis Suite, stub provider only), Sprint 13 (Time Entry Attachments Foundation), and Sprint 14 (Final QA And Handoff — rate limiting, demo seeder, documentation set). Every PRD business module now exists; the handoff documentation index is in `README.md`.
 
@@ -69,7 +69,7 @@ Only a System Administrator can create other users (`docs/DECISIONS.md`), so `Da
 Once Postgres is reachable (Option B, or a locally installed Postgres) and both apps are running:
 
 1. Log in at `http://localhost:5173/login` with the seeded Admin credentials.
-2. You should land on `/` and see "Welcome, TimeForge Admin (admin)", with a top nav showing Home, Manage Users, Manage Departments, Manage Clients, and Manage Projects (admin-only links) plus a Log out button.
+2. You should land on `/` and see "Welcome, All in Time Admin (admin)", with a top nav showing Home, Manage Users, Manage Departments, Manage Clients, and Manage Projects (admin-only links) plus a Log out button.
 3. Go to Manage Departments; create a department (e.g., "Engineering").
 4. Go to Manage Users; click Create User, fill in name/email/initial password/role/department, and submit. Confirm the new user appears in the list with status `pending`.
 5. Click Activate on that user; confirm the status updates to `active` without a page reload.

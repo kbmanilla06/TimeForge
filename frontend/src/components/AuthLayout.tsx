@@ -76,10 +76,10 @@ export function BrandInfoColumn() {
     <div className="w-full lg:max-w-md space-y-8 py-4">
       <div className="flex items-center gap-3">
         <BeakerIcon className="size-12 text-primary" />
-        <span className="text-3xl font-extrabold tracking-tight text-ink">TimeForge</span>
+        <span className="text-3xl font-extrabold tracking-tight text-ink">All in Time</span>
       </div>
       <p className="text-lg leading-relaxed text-ink font-medium">
-        TimeForge unifies time tracking, scheduling, analytics, daily work, finance into a single platform.
+        All in Time unifies time tracking, scheduling, analytics, daily work, finance into a single platform.
       </p>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -117,7 +117,7 @@ export function AuthHeader() {
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
         <Link to="/login" className="flex items-center gap-2">
           <BeakerIcon className="size-8 text-primary" />
-          <span className="text-xl font-bold tracking-tight text-ink">TimeForge</span>
+          <span className="text-xl font-bold tracking-tight text-ink">All in Time</span>
         </Link>
         <a
           href="mailto:support@timeforge.com"
@@ -134,7 +134,7 @@ export function AuthFooter() {
   return (
     <footer className="w-full py-6 border-t border-line bg-white mt-auto">
       <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted">
-        <div>TimeForge &copy; 2026 TimeForge. All rights reserved.</div>
+        <div>All in Time &copy; 2026 All in Time. All rights reserved.</div>
         <div className="flex gap-6">
           <a href="#" className="hover:text-ink transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-ink transition-colors">Terms of Service</a>

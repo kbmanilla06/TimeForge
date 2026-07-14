@@ -20,9 +20,9 @@ Artisan::command('mail:test {email}', function (string $email) {
     }
 
     try {
-        Illuminate\Support\Facades\Mail::raw('This is a test email from TimeForge to verify mail delivery configuration.', function ($message) use ($email) {
+        Illuminate\Support\Facades\Mail::raw('This is a test email from All in Time to verify mail delivery configuration.', function ($message) use ($email) {
             $message->to($email)
-                ->subject('TimeForge Mail Delivery Test');
+                ->subject('All in Time Mail Delivery Test');
         });
 
         $this->info("Mail successfully sent/enqueued! Check logs or inbox.");

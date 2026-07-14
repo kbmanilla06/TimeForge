@@ -1,10 +1,10 @@
-# TimeForge Approved Decisions
+# All in Time Approved Decisions
 
 This file records confirmed project decisions. Claude Code must preserve these decisions unless the user explicitly changes them.
 
 ## Confirmed From Project Brief
 
-- Project name: TimeForge.
+- Project name: All in Time.
 - Project type: Enterprise SaaS web application.
 - Core purpose: AI-powered workforce performance, timesheet, daily scrum, and payroll preparation management.
 - Primary users:
@@ -282,7 +282,7 @@ Approved alongside the Sprint 9 (Reporting And Exports Foundation) plan. These r
 - **Payroll report ready notification:** Not implemented in Sprint 9, because exports are synchronous and there is no delayed "ready" event.
 - **Shared calculation:** Sprint 8's payroll/hour bucketing logic is extracted into a reusable calculator/service so the Payroll Report and Team Hours Report do not duplicate logic.
 - **Export UI placement:** Export buttons are added to the existing `PayrollPage` and `TeamTimesheetsPage`. No new report browsing pages in Sprint 9.
-- **Branding:** Text-only TimeForge branding in exported reports. No logo required.
+- **Branding:** Text-only All in Time branding in exported reports. No logo required.
 - **Scope:** No dashboards, charts, stored reports, queued exports, AI summaries, or new report types in Sprint 9.
 
 ## Sprint 10 Implementation Decisions (Approved)
@@ -475,7 +475,7 @@ Approved for the Sprint 48 (Admin Company Settings Foundation) plan.
 - **Payroll period type is a static read-only label, not a new setting:** `PayrollPeriod::resolve()`'s fixed semi-monthly algorithm has no config today, and adding one would be a payroll formula redesign — explicitly this sprint's own non-scope. `CompanySetting::toDisplayArray()` returns a hardcoded string ("Semi-monthly: 1st–15th, 16th–end of month") describing the current fixed behavior. Configurable payroll periods, if ever wanted, require a dedicated future payroll sprint.
 - **Default timezone is store-and-display only this sprint:** no per-organization timezone concept existed anywhere before this sprint (`config('app.timezone')` is hardcoded `'UTC'` and nothing reads it). Admins can set/view `default_timezone` in Company Settings, but it has zero effect on any date/time rendering anywhere else in the app yet — wiring it into actual display logic (e.g. formatting report timestamps) is left for a future sprint's explicit decision.
 - **Table-based singleton, not config-only and not a key-value/EAV table:** company name, contact email, timezone, and logo are meant to be admin-editable at runtime, which env/config files can't support without a redeploy. Since there's exactly one organization (no multi-tenancy), a single-row `company_settings` table with typed columns is simpler than a generic key-value settings table — `CompanySetting::current()` always returns/creates the one row.
-- **Read is broader than write:** `GET /api/company-settings` and `GET /api/company-logo` are available to any authenticated user (not admin-only), because the one approved "low-risk display area" — the AppLayout sidebar showing the configured company name/logo instead of a hardcoded "TimeForge" literal — renders for every role. Only the `PATCH`/logo-upload endpoints are gated `role:admin`, matching every other admin resource's existing middleware convention (no new Policy class).
+- **Read is broader than write:** `GET /api/company-settings` and `GET /api/company-logo` are available to any authenticated user (not admin-only), because the one approved "low-risk display area" — the AppLayout sidebar showing the configured company name/logo instead of a hardcoded "All in Time" literal — renders for every role. Only the `PATCH`/logo-upload endpoints are gated `role:admin`, matching every other admin resource's existing middleware convention (no new Policy class).
 - **Logo reuses the Sprint 44 profile-picture pattern exactly:** same private-disk storage, same replace-on-reupload behavior, same authenticated streamed-download approach (`Storage::response()`) rather than a public URL — consistent with this app's established "no public bucket access" security posture. A shared `CompanySettingsContext` (mirroring `AuthContext`'s `pictureUrl` pattern from Sprint 31) fetches the logo as an object URL once and shares it between the sidebar and the settings page, rather than each fetching independently.
 - **Audit logging extended, not introduced as new scope:** `company_settings.updated` (only the fields that actually changed, `updated_at` excluded) and `company_settings.logo_uploaded` are recorded via the existing Sprint 46 `AuditLog::record()` system, consistent with every other admin-editable resource already instrumented — not a new mechanism.
 

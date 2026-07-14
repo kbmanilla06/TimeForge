@@ -1,6 +1,6 @@
-# TimeForge
+# All in Time
 
-[![Continuous Integration](https://github.com/kbmanilla06/TimeForge/actions/workflows/ci.yml/badge.svg)](https://github.com/kbmanilla06/TimeForge/actions/workflows/ci.yml)
+[![Continuous Integration](https://github.com/kbmanilla06/All-in-Time/actions/workflows/ci.yml/badge.svg)](https://github.com/kbmanilla06/All-in-Time/actions/workflows/ci.yml)
 
 A workforce performance management system covering time tracking, supervisor-approved timesheets, daily scrum reporting, KPI management, payroll preparation with PDF/Excel exports, management dashboards, protected file attachments, and seven auditable insight capabilities. It was built sprint-by-sprint as a feature-complete MVP and continues to be hardened through documented follow-up sprints.
 

@@ -39,7 +39,7 @@ function renderLayout() {
 describe('AppLayout', () => {
   beforeEach(() => {
     vi.mocked(sidebarBadgeApi.getSidebarBadgeCounts).mockResolvedValue({ notifications: 0 })
-    mockUseCompanySettings.mockReturnValue({ companyName: 'TimeForge', logoUrl: null, refresh: vi.fn() })
+    mockUseCompanySettings.mockReturnValue({ companyName: 'All in Time', logoUrl: null, refresh: vi.fn() })
   })
 
   it('shows admin nav links for admin users', () => {
@@ -251,7 +251,7 @@ describe('AppLayout', () => {
     renderLayout()
 
     expect(screen.getAllByText('Acme Corp').length).toBeGreaterThan(0)
-    expect(screen.queryByText('TimeForge')).not.toBeInTheDocument()
+    expect(screen.queryByText('All in Time')).not.toBeInTheDocument()
   })
 
   it('shows the company logo image when one is configured', () => {

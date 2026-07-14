@@ -1,6 +1,6 @@
-# TimeForge Backup and Restore Runbook
+# All in Time Backup and Restore Runbook
 
-Sprint 47. Covers how to back up and restore TimeForge's data — the
+Sprint 47. Covers how to back up and restore All in Time's data — the
 Postgres database, uploaded files, and the environment variables needed
 to reconstruct a working deployment — for both local Docker development
 and Supabase-hosted production (`docs/DEPLOYMENT.md`).

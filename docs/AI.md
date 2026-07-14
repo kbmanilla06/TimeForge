@@ -1,6 +1,6 @@
 # AI Architecture Strategy and Privacy Guardrails
 
-TimeForge includes smart analytics capabilities (such as Daily Work Summaries, KPI Analyses, Recurring Blocker Tracking, and Payroll Auditing). This document defines the AI provider architecture, compares different integration models, and enforces strict privacy guardrails for production.
+All in Time includes smart analytics capabilities (such as Daily Work Summaries, KPI Analyses, Recurring Blocker Tracking, and Payroll Auditing). This document defines the AI provider architecture, compares different integration models, and enforces strict privacy guardrails for production.
 
 ---
 

@@ -128,7 +128,7 @@ export function CompanySettingsPage() {
     <main className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6 sm:px-6">
       <PageHeader
         title="Company Settings"
-        subtitle="Configure organization-level defaults used across TimeForge."
+        subtitle="Configure organization-level defaults used across All in Time."
       />
 
       {loadError && (
@@ -194,7 +194,7 @@ export function CompanySettingsPage() {
               id="company-name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="TimeForge"
+              placeholder="All in Time"
             />
           </Field>
           <Field label="Contact Email" htmlFor="company-contact-email">

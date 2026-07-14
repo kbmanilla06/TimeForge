@@ -1,4 +1,4 @@
-# TimeForge Production Deployment
+# All in Time Production Deployment
 
 Sprint 39 resolved the previously-open "deployment target" decision (`docs/DECISIONS.md` → Decisions Still Required): **Supabase-hosted Postgres** for the database, **Supabase Storage** (S3-compatible) for file storage, **Google SMTP** for mail, **Cloudflare Turnstile** for CAPTCHA. This document covers what's needed to actually deploy, and what was verified.
 
@@ -19,7 +19,7 @@ All of these live in `backend/.env`. `.env.example` documents every one of them 
 ### Application
 
 ```
-APP_NAME=TimeForge
+APP_NAME="All in Time"
 APP_ENV=production
 APP_KEY=                      # generate fresh — see below, never reuse a dev/staging key
 APP_DEBUG=false                # never true in production — leaks stack traces/config
@@ -305,7 +305,7 @@ To safeguard user data privacy, both configurations have default PII settings di
 
 ## Production Credential Cutover Checklist (Sprint 56)
 
-This checklist provides the verification runbook and final go-live checklists to safely transition TimeForge from local development configurations to verified production credentials.
+This checklist provides the verification runbook and final go-live checklists to safely transition All in Time from local development configurations to verified production credentials.
 
 ### ⚠️ Warning: Do Not Copy Development Credentials
 Never copy configuration keys directly from local `.env` files. Reusing development secrets, local SMTP passwords, or Turnstile test keys in production can cause service disruption, bypass CAPTCHA rules, or expose sensitive databases to external networks.
@@ -316,7 +316,7 @@ Use the template below to build the production environment configuration. All va
 
 ```env
 # Application
-APP_NAME=TimeForge
+APP_NAME="All in Time"
 APP_ENV=production
 APP_KEY=                        # Must be a freshly generated 32-byte key
 APP_DEBUG=false                  # Must be false to hide stack traces on errors
@@ -363,7 +363,7 @@ MAIL_PORT=587
 MAIL_USERNAME=resend
 MAIL_PASSWORD=your-real-provider-api-or-smtp-password
 MAIL_FROM_ADDRESS=notifications@your-verified-domain.com
-MAIL_FROM_NAME="TimeForge"
+MAIL_FROM_NAME="All in Time"
 
 # CAPTCHA (Cloudflare Turnstile)
 CAPTCHA_ENABLED=true

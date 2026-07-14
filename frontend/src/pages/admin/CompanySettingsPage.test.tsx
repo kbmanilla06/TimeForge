@@ -9,11 +9,11 @@ vi.mock('../../lib/companySettingsApi')
 
 const mockRefresh = vi.fn()
 vi.mock('../../context/useCompanySettings', () => ({
-  useCompanySettings: () => ({ companyName: 'TimeForge', logoUrl: null, refresh: mockRefresh }),
+  useCompanySettings: () => ({ companyName: 'All in Time', logoUrl: null, refresh: mockRefresh }),
 }))
 
 const BASE_SETTINGS: CompanySettings = {
-  company_name: 'TimeForge',
+  company_name: 'All in Time',
   contact_email: null,
   default_timezone: null,
   has_logo: false,
@@ -71,9 +71,9 @@ describe('CompanySettingsPage', () => {
     })
 
     render(<CompanySettingsPage />)
-    await screen.findByDisplayValue('TimeForge')
+    await screen.findByDisplayValue('All in Time')
 
-    const nameInput = screen.getByDisplayValue('TimeForge')
+    const nameInput = screen.getByDisplayValue('All in Time')
     await user.clear(nameInput)
     await user.type(nameInput, 'Acme Corp')
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
@@ -100,7 +100,7 @@ describe('CompanySettingsPage', () => {
     )
 
     render(<CompanySettingsPage />)
-    await screen.findByDisplayValue('TimeForge')
+    await screen.findByDisplayValue('All in Time')
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     expect(await screen.findByText('The selected default timezone is invalid.')).toBeInTheDocument()

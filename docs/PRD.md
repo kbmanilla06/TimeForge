@@ -1,8 +1,8 @@
-# TimeForge Project Requirements Document
+# All in Time Project Requirements Document
 
 ## 1. Project Overview
 
-TimeForge is an AI-powered Workforce Performance Management System designed to help organizations monitor employee productivity, track working hours, manage daily operations, and prepare payroll.
+All in Time is an AI-powered Workforce Performance Management System designed to help organizations monitor employee productivity, track working hours, manage daily operations, and prepare payroll.
 
 The platform combines:
 
@@ -45,7 +45,7 @@ This causes:
 - Limited visibility into productivity
 - Increased administrative workload
 
-TimeForge consolidates these processes into one intelligent platform that supports the employee work lifecycle from clock-in to payroll preparation.
+All in Time consolidates these processes into one intelligent platform that supports the employee work lifecycle from clock-in to payroll preparation.
 
 ## 4. Objectives
 
@@ -315,7 +315,7 @@ The project should expose interns to:
 
 ## 10. Project Vision
 
-TimeForge should become a comprehensive Workforce Performance Management Platform for:
+All in Time should become a comprehensive Workforce Performance Management Platform for:
 
 - Startups
 - Consulting firms
